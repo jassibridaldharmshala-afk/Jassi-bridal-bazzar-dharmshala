@@ -1,5 +1,5 @@
 const LOCAL_API_PORT = '5000';
-const PRODUCTION_API_URL = 'https://samira-collection-backend-1.onrender.com/api';
+const PRODUCTION_API_URL = 'https://jassi-bridal-bazzar-dharmshala-backend.onrender.com/api';
 
 function isLocalHostname(hostname = '') {
   if (['localhost', '127.0.0.1', '::1'].includes(hostname)) return true;
