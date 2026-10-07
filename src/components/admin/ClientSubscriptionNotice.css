@@ -1,0 +1,57 @@
+.client-access-banner, .client-access-dialog {
+  --access-primary: var(--site-primary, #751d38);
+  --access-surface: var(--site-surface, #fff);
+  --access-text: var(--site-text, #25232a);
+  --access-muted: var(--site-muted, #646575);
+  --access-border: var(--site-border, #e9e0df);
+  color: var(--access-text);
+  font-family: var(--site-body-font, inherit);
+}
+.client-access-banner { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding: 16px 18px; border: 1px solid #efce96; border-radius: 16px; background: var(--access-surface); box-shadow: inset 4px 0 #d99b35; }
+.client-access-banner__icon { flex-shrink: 0; color: #9a6410; }
+.client-access-banner__content { flex: 1; min-width: 0; }
+.client-access-banner__content strong { font-size: 14px; }
+.client-access-banner .client-access-banner__content p { margin: 4px 0 0; font-size: 12px; line-height: 1.6; color: var(--access-muted); }
+.client-access-banner__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.client-access-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--site-action-border, var(--access-primary)); border-radius: var(--site-button-radius, 12px); background: var(--site-action-bg, var(--access-primary)); color: var(--site-action-text, #fff); font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.client-access-button--quiet { background: var(--access-surface); color: var(--access-text); border-color: var(--access-border); }
+.client-access-button:disabled { opacity: .6; cursor: wait; }
+.client-access-button:hover:not(:disabled) { filter: brightness(.96); }
+.client-access-button:focus-visible, .client-access-dialog button:focus-visible { outline: 3px solid var(--access-primary); outline-offset: 3px; }
+.client-access-overlay { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; overflow-y: auto; padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); background: rgb(24 20 30 / 48%); backdrop-filter: blur(5px); }
+body.client-access-dialog-open { overflow: hidden; }
+.client-access-dialog { position: relative; width: min(100%, 520px); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; padding: 32px; border: 1px solid var(--access-border); border-radius: 24px; background: var(--access-surface); box-shadow: 0 24px 80px rgb(24 20 30 / 24%); animation: client-access-enter .18s ease-out; }
+.client-access-dialog__close { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--access-border); border-radius: 50%; background: transparent; color: var(--access-muted); cursor: pointer; }
+.client-access-dialog__icon { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #f0dbb8; border-radius: 20px; background: #fff8ed; color: #946115; }
+.client-access-dialog__eyebrow { margin: 22px 0 9px; padding-right: 10px; color: var(--access-primary); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; overflow-wrap: anywhere; }
+.client-access-dialog h2 { margin: 0; font-family: var(--site-heading-font, inherit); font-size: clamp(23px, 5vw, 28px); font-weight: 750; line-height: 1.25; letter-spacing: -.025em; }
+.client-access-dialog__description { margin: 12px 0 0; color: var(--access-muted); font-size: 14px; line-height: 1.7; }
+.client-access-dialog__period { display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; margin: 22px 0 0; padding: 16px; border: 1px solid var(--access-border); border-radius: 14px; }
+.client-access-dialog__period dt { color: var(--access-muted); font-size: 11px; }
+.client-access-dialog__period dd { margin: 6px 0 0; font-size: 13px; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
+.client-access-dialog__message { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #fff8ed; color: #765019; font-size: 12px; }
+.client-access-dialog__message p { margin: 5px 0 0; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.client-access-dialog__safety { display: flex; align-items: flex-start; gap: 10px; margin-top: 20px; color: var(--access-muted); }
+.client-access-dialog__safety svg { margin-top: 2px; flex-shrink: 0; color: #378066; }
+.client-access-dialog__safety p { margin: 0; font-size: 12px; line-height: 1.7; }
+.client-access-dialog__connection, .client-access-dialog__error { margin: 14px 0 0; font-size: 12px; line-height: 1.6; color: #9a6410; }
+.client-access-dialog__error { color: #b42338; }
+.client-access-dialog__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.client-access-dialog__actions > * { flex: 1; }
+.client-access-dialog__continue { display: block; width: 100%; min-height: 44px; margin-top: 10px; border: 0; border-radius: 10px; background: transparent; color: var(--access-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.client-access-dialog__footnote { margin: 10px 0 0; color: var(--access-muted); font-size: 10px; text-align: center; line-height: 1.6; }
+.client-access-spinning { animation: client-access-spin 1s linear infinite; }
+@keyframes client-access-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes client-access-spin { to { transform: rotate(360deg); } }
+@media (max-width: 767px) {
+  .client-access-banner { flex-wrap: wrap; align-items: flex-start; padding: 14px; }
+  .client-access-banner__content { flex-basis: calc(100% - 40px); }
+  .client-access-banner__actions { width: 100%; }
+  .client-access-banner__actions > * { flex: 1; }
+}
+@media (max-width: 479px) {
+  .client-access-dialog { padding: 24px 20px; border-radius: 20px; }
+  .client-access-dialog__actions { flex-direction: column; }
+  .client-access-dialog__period { grid-template-columns: 1fr; gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .client-access-dialog, .client-access-spinning { animation: none; } }

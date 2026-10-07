@@ -1,0 +1,52 @@
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import TrafficTracking from './TrafficTracking';
+import api from '../../services/api';
+import { flushTraffic, getTrafficContext, resetTrafficRuntime } from '../../utils/trafficTracker';
+let mockStorefront; let mockUser;
+jest.mock('../../services/api', () => ({ get: jest.fn() }));
+jest.mock('../../context/StorefrontContext', () => ({ useStorefront: () => mockStorefront }));
+jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: mockUser }) }));
+jest.mock('../../config/websiteDesigner', () => ({ isWebsitePreview: () => false }));
+const config = { storeKey: 'default-store', privacyGeneration: 1, enabled: true, consentRequired: true, sessionTimeoutMinutes: 30, attributionDays: 7, excludeLocalhost: false, excludedPaths: [], ga4Enabled: false };
+let savedFetch; let sequence = 0;
+beforeAll(() => Object.defineProperty(window, 'crypto', { configurable: true, value: { randomUUID: () => `privacy_test_${String(++sequence).padStart(24, '0')}` } }));
+beforeEach(() => {
+  jest.clearAllMocks(); localStorage.clear(); sessionStorage.clear(); resetTrafficRuntime(); mockUser = null;
+  mockStorefront = { store: null, storeSlug: '', loading: false, hostResolved: true };
+  api.get.mockResolvedValue(config); savedFetch = global.fetch;
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ accepted: 20 }) });
+});
+afterEach(() => { resetTrafficRuntime(); global.fetch = savedFetch; });
+test('default storefront tracks only after choice and SPA/back navigation is independent of the shopping UI', async () => {
+  const page = render(<><div>Shopping is ready</div><TrafficTracking route="/" /></>);
+  expect(screen.getByText('Shopping is ready')).toBeInTheDocument();
+  const allow = await screen.findByRole('button', { name: 'Allow analytics' });
+  await act(async () => { fireEvent.click(allow); });
+  await waitFor(() => expect(getTrafficContext()).toBeDefined()); await flushTraffic();
+  page.rerender(<><div>Shopping is ready</div><TrafficTracking route="/products?token=never-retain" /></>);
+  await act(async () => { await flushTraffic(); });
+  page.rerender(<><div>Shopping is ready</div><TrafficTracking route="/" /></>);
+  await act(async () => { await flushTraffic(); });
+  const events = global.fetch.mock.calls.flatMap(([, options]) => JSON.parse(options.body).events || []);
+  expect(events.filter(event => event.name === 'PAGE_VIEW').map(event => event.path)).toEqual(['/', '/products', '/']);
+  expect(JSON.stringify(events)).not.toContain('never-retain');
+});
+test('host resolution and analytics outages do not block storefront content or manufacture another-store visits', async () => {
+  mockStorefront.hostResolved = false;
+  const page = render(<><span>Shop content</span><TrafficTracking route="/" /></>);
+  expect(api.get).not.toHaveBeenCalled(); expect(screen.getByText('Shop content')).toBeInTheDocument();
+  mockStorefront = { store: { _id: 'brand-b' }, storeSlug: 'brand-b', loading: false, hostResolved: true };
+  api.get.mockRejectedValue(new Error('Analytics unavailable'));
+  page.rerender(<><span>Shop content</span><TrafficTracking route="/" /></>);
+  await waitFor(() => expect(api.get).toHaveBeenCalledWith('/analytics/config?store=brand-b', expect.objectContaining({ silent: true })));
+  expect(screen.getByText('Shop content')).toBeInTheDocument(); expect(getTrafficContext()).toBeUndefined(); expect(global.fetch).not.toHaveBeenCalled();
+});
+test('decline and internal-admin mode never record a customer visit', async () => {
+  const page = render(<TrafficTracking route="/products" />);
+  const decline = await screen.findByRole('button', { name: 'Decline analytics' });
+  await act(async () => { fireEvent.click(decline); await flushTraffic(); });
+  expect(getTrafficContext()).toBeUndefined(); expect(global.fetch).not.toHaveBeenCalled();
+  mockUser = { activeMode: 'admin' }; page.rerender(<TrafficTracking route="/products/one" />);
+  await flushTraffic(); expect(global.fetch).not.toHaveBeenCalled(); expect(screen.queryByRole('button', { name: 'Allow analytics' })).not.toBeInTheDocument();
+});

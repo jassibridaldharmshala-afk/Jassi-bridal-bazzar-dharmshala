@@ -1,0 +1,14 @@
+.image-background-overlay{position:fixed;inset:0;z-index:300;background:#21151db3;display:flex;align-items:center;justify-content:center;padding:16px}
+.image-background-editor{width:min(900px,100%);max-height:92dvh;display:flex;flex-direction:column;background:var(--site-background, #fffaf4);border-radius:20px;color:#30262a;box-shadow:0 20px 80px #0004;overflow:hidden;outline:none}
+.image-background-editor header,.image-background-editor footer{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:white;flex-shrink:0}
+.image-background-editor h2{font-size:20px;font-weight:700;margin:0}.image-background-editor p{font-size:13px;line-height:1.6;margin:6px 0}
+.image-background-editor button{min-height:44px;border:1px solid #dfcbd0;border-radius:10px;padding:8px 12px;background:white;font-size:13px;font-weight:600}
+.image-background-editor button:disabled{opacity:.5;cursor:not-allowed}.image-background-editor button:focus-visible{outline:3px solid #a34968;outline-offset:2px}
+.image-background-editor button[aria-pressed=true],.image-background-editor footer button:last-child{background:var(--site-primary, #711d36);color:white;border-color:var(--site-primary, #711d36)}
+.image-background-body{overflow:auto;padding:20px}.image-background-options,.image-background-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.image-background-presets button{display:flex;align-items:center;gap:6px}.image-background-presets span{width:22px;height:22px;border:1px solid #ddd;border-radius:50%}
+.image-background-previews{display:grid;grid-template-columns:1fr 1fr;gap:16px}.image-background-previews figure{margin:0;min-width:0}.image-background-previews figcaption{font-size:13px;font-weight:700;margin-bottom:8px}
+.image-background-previews figure>div{height:320px;background:repeating-conic-gradient(#f0eded 0% 25%,#fff 0% 50%) 0 0/20px 20px;border:1px solid var(--site-border, #eadfd5);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.image-background-previews img{width:100%;height:100%;object-fit:contain}.image-background-previews p{padding:16px;background:#fffdf9}.image-background-note{color:#75646a}.image-background-editor [role=alert]{color:#a3233b}
+.image-background-editor footer{border-top:1px solid var(--site-border, #eadfd5);justify-content:flex-end}
+@media(max-width:600px){.image-background-overlay{padding:8px}.image-background-editor{max-height:96dvh;border-radius:14px}.image-background-body{padding:12px}.image-background-editor header,.image-background-editor footer{padding:12px}.image-background-previews{gap:8px}.image-background-previews figure>div{height:220px}.image-background-editor h2{font-size:18px}.image-background-options button{flex:1 1 120px}.image-background-editor footer button{flex:1}}

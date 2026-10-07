@@ -1,0 +1,60 @@
+import '@testing-library/jest-dom';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import ImageBackgroundEditor from './ImageBackgroundEditor';
+import api from '../../services/api';
+import * as background from '../../services/imageBackground';
+jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn(), upload: jest.fn() }));
+jest.mock('../../services/imageBackground', () => ({ ...jest.requireActual('../../services/imageBackground'), removeImageBackground: jest.fn(), composeBackground: jest.fn() }));
+const original = { url: '/uploads/original.webp', publicId: 'original', primary: true, sourceFrame: { viewType: 'front' } };
+beforeEach(() => {
+  jest.clearAllMocks();
+  api.get.mockResolvedValue({ available: true });
+  api.post.mockResolvedValue({ image: 'data:image/png;base64,cGhvdG8=' });
+  background.removeImageBackground.mockResolvedValue('data:image/png;base64,cGhvdG8=');
+  background.composeBackground.mockResolvedValue(new File(['edited'], 'edited.webp', { type: 'image/webp' }));
+  URL.createObjectURL = jest.fn(() => 'blob:preview'); URL.revokeObjectURL = jest.fn();
+});
+test('previewing and changing presets keeps original untouched; only applying uploads final pixels', async () => {
+  const onApply = jest.fn();
+  render(<ImageBackgroundEditor image={original} originalFile={new File(['original'], 'original.webp')} uploadPath="/seller/uploads" onApply={onApply} onClose={jest.fn()} />);
+  await waitFor(() => expect(screen.getByText('Use Preset Background')).toBeEnabled());
+  fireEvent.click(screen.getByText('Use Preset Background'));
+  await waitFor(() => expect(screen.getByText('Use this photo')).toBeEnabled());
+  fireEvent.click(screen.getByText('Soft beige'));
+  await waitFor(() => expect(background.composeBackground).toHaveBeenLastCalledWith(expect.any(String), 'beige'));
+  await waitFor(() => expect(screen.getByText('Use this photo')).toBeEnabled());
+  expect(background.removeImageBackground).toHaveBeenCalledTimes(1);
+  expect(api.upload).not.toHaveBeenCalled(); expect(onApply).not.toHaveBeenCalled();
+  api.upload.mockResolvedValue({ files: [{ url: '/uploads/edited.webp', publicId: 'edited' }] });
+  fireEvent.click(screen.getByText('Use this photo'));
+  await waitFor(() => expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ primary: true, sourceFrame: original.sourceFrame, background: { original: { url: original.url, publicId: 'original' }, edited: { url: '/uploads/edited.webp', publicId: 'edited' }, preset: 'beige' } })));
+});
+test('saved image uses protected backend media reader and processing failure cannot replace original', async () => {
+  api.post.mockRejectedValue(new Error('Worker unavailable'));
+  const onApply = jest.fn();
+  render(<ImageBackgroundEditor image={original} uploadPath="/admin/uploads" onApply={onApply} onClose={jest.fn()} />);
+  await waitFor(() => expect(screen.getByText('Remove Background')).toBeEnabled());
+  fireEvent.click(screen.getByText('Remove Background'));
+  expect(await screen.findByText('Worker unavailable')).toBeInTheDocument();
+  expect(api.post).toHaveBeenCalledWith('/admin/uploads/background/stored', { url: original.url }, expect.objectContaining({ silent: true }));
+  expect(screen.getByText('Use this photo')).toBeDisabled(); expect(onApply).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText('Keep Original')); fireEvent.click(screen.getByText('Use this photo'));
+  expect(onApply).toHaveBeenCalledWith(original);
+});
+test('reopening an edited product preserves current selection and can restore original without another upload', async () => {
+  const edited = background.applyBackgroundAsset(original, { url: '/uploads/edit.webp', publicId: 'edit' }, 'white');
+  const onApply = jest.fn();
+  render(<ImageBackgroundEditor image={edited} uploadPath="/admin/uploads" onApply={onApply} onClose={jest.fn()} />);
+  await waitFor(() => expect(screen.getByText('Remove Background')).toBeEnabled());
+  expect(screen.getByText('Previous edit')).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(screen.getByText('Keep Original')); fireEvent.click(screen.getByText('Use this photo'));
+  expect(onApply).toHaveBeenCalledWith({ ...edited, url: original.url, publicId: original.publicId });
+  expect(api.upload).not.toHaveBeenCalled();
+});
+test('unconfigured processing still allows original photos and cancellation', async () => {
+  api.get.mockResolvedValue({ available: false }); const onClose = jest.fn(), onApply = jest.fn();
+  render(<ImageBackgroundEditor image={original} uploadPath="/admin/uploads" onApply={onApply} onClose={onClose} />);
+  expect(await screen.findByText(/tools need the image worker/)).toBeInTheDocument();
+  expect(screen.getByText('Remove Background')).toBeDisabled(); expect(screen.getByText('Use this photo')).toBeEnabled();
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' }); expect(onClose).toHaveBeenCalled(); expect(onApply).not.toHaveBeenCalled();
+});

@@ -1,0 +1,8 @@
+<svg width="280" height="88" viewBox="0 0 280 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="280" height="88" rx="18" fill="#FFFAF2"/>
+  <path d="M38 61C48 35 57 25 66 25C76 25 83 37 89 61" stroke="#6D1F34" stroke-width="6" stroke-linecap="round"/>
+  <path d="M48 61C56 43 61 36 66 36C72 36 76 44 81 61" stroke="#FF5F86" stroke-width="6" stroke-linecap="round"/>
+  <path d="M34 24C45 16 67 15 82 24" stroke="#B8914A" stroke-width="4" stroke-linecap="round"/>
+  <text x="108" y="39" fill="#17161A" font-family="Georgia, serif" font-size="24" font-weight="700">Jassi</text>
+  <text x="108" y="62" fill="#6D1F34" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" letter-spacing="3">COLLECTION</text>
+</svg>

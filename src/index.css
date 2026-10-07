@@ -1,0 +1,358 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap');
+
+@font-face {
+  font-family: 'Figtree';
+  src: url('https://constant.myntassets.com/checkout/fonts/Figtree-Regular.woff2') format('woff2'),
+       url('https://constant.myntassets.com/checkout/fonts/Figtree-Regular.woff') format('woff'),
+       url('https://constant.myntassets.com/checkout/fonts/Figtree-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-sans-app: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-auth-app: 'Figtree', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --wine: var(--site-primary, #6d1f34);
+  --rose: #ff5f86;
+  --blush: var(--site-secondary, #fff0f4);
+  --ivory: var(--site-background, #fffaf2);
+  --gold: var(--site-accent, #b8914a);
+  --charcoal: var(--site-text, #17161a);
+  --text-body: var(--site-text, #282c3f);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--ivory);
+  color: var(--text-body);
+  font-family: var(--font-sans-app);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  font-family: var(--font-sans-app);
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.container-page {
+  width: min(1120px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.glass-card {
+  border: 1px solid color-mix(in srgb, var(--site-primary) 12%, transparent);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--site-text) 8%, transparent);
+}
+
+.auth-font {
+  font-family: var(--font-auth-app);
+}
+
+@keyframes samira-loader-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@layer components {
+  .page-title,
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .header-title {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .product-brand {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  .product-name,
+  .description {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.35;
+    letter-spacing: 0;
+  }
+
+  .body-text {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.45;
+    letter-spacing: 0;
+  }
+
+  .price {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .old-price,
+  .discount {
+    font-size: 13px;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  .label-text {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0;
+  }
+
+  .small-text,
+  .error-text,
+  .helper-text,
+  .badge-text,
+  .rating-text {
+    font-size: 12px;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    background: #fff;
+  }
+
+  body {
+    font-size: 12px;
+    line-height: 1.3;
+    font-family: var(--font-auth-app);
+    overscroll-behavior-y: none;
+  }
+
+  main,
+  section,
+  article,
+  aside,
+  form,
+  header,
+  footer {
+    max-width: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    overflow-wrap: anywhere;
+  }
+
+  .container-page {
+    width: 100%;
+    padding-inline: 12px;
+  }
+
+  .text-4xl,
+  h1.text-4xl {
+    font-size: 17px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+  }
+
+  .text-3xl,
+  h2.text-3xl {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+  }
+
+  .text-2xl {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+  }
+
+  .text-xl {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+  }
+
+  input,
+  select,
+  textarea {
+    /* Mobile browsers zoom focused form fields whose computed text is below
+       16px. Keep the control itself focus-safe; compact placeholder/label
+       styling can remain smaller without changing the viewport scale. */
+    font-size: 16px !important;
+    line-height: 1.35;
+    font-family: var(--font-auth-app);
+    touch-action: manipulation;
+  }
+
+  button,
+  .btn {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    font-family: var(--font-auth-app);
+  }
+
+  label {
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  p,
+  li,
+  span,
+  div {
+    letter-spacing: 0;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .page-title,
+  .section-title {
+    font-size: 15px;
+    line-height: 1.25;
+  }
+
+  .header-title {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .product-brand {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .product-name,
+  .description {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .body-text {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .price {
+    font-size: 13px;
+  }
+
+  .old-price,
+  .discount {
+    font-size: 10px;
+  }
+
+  .label-text {
+    font-size: 10px;
+  }
+
+  .small-text,
+  .error-text,
+  .helper-text,
+  .badge-text,
+  .rating-text {
+    font-size: 9px;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  #samira-receipt {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}

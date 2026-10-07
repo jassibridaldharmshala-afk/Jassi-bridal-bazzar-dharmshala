@@ -1,0 +1,10 @@
+.shopping-discovery { width: min(100%, 1500px); margin-inline: auto; padding: 12px 16px; color: var(--site-text, #292524); }
+.shopping-discovery__section { margin-bottom: 16px; padding: 20px; border: 1px solid var(--site-border, #e8ded8); border-radius: 18px; background: var(--site-surface, #fff); }
+.shopping-discovery__section h2 { margin: 0 0 6px; font-size: clamp(18px, 2vw, 24px); font-weight: 700; }
+.shopping-discovery__section p { margin: 0 0 14px; font-size: 13px; line-height: 1.6; }
+.shopping-discovery__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.shopping-discovery__chips button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--site-border, #e8ded8); border-radius: 999px; background: var(--site-surface, #fff); color: var(--site-primary, #7b1834); font-size: 13px; font-weight: 600; }
+.shopping-discovery__chips button:focus-visible { outline: 2px solid var(--site-primary, #7b1834); outline-offset: 3px; }
+.shopping-discovery__chips .shopping-discovery__primary { background: var(--site-button-bg, var(--site-primary, #7b1834)); color: var(--site-button-text, #fff); }
+.shopping-discovery__rental { background: var(--site-background, #faf6f3); }
+@media (min-width: 1024px) { .shopping-discovery { padding: 20px 32px; } .shopping-discovery__rental { display: flex; align-items: center; justify-content: space-between; gap: 24px; } .shopping-discovery__rental p { margin-bottom: 0; max-width: 600px; } }

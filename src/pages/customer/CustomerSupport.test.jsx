@@ -1,0 +1,61 @@
+import '@testing-library/jest-dom';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import Contact from './Contact';
+import MyReturns from './MyReturns';
+import Footer from '../../components/layout/Footer';
+import api from '../../services/api';
+jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
+jest.mock('../../store/apiSlice', () => ({ useGetSettingsQuery: () => ({ data: {} }) }));
+let mockStoreSlug = '';
+jest.mock('../../context/StorefrontContext', () => ({ useStorefront: () => ({ storeSlug: mockStoreSlug }) }));
+jest.mock('../../context/WebsiteCustomizationContext', () => ({ useWebsiteCustomization: () => ({ config: require('../../config/websiteCustomization').mergeWebsiteConfig() }) }));
+jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { name: 'Shopper' } }) }));
+beforeEach(() => { jest.resetAllMocks(); mockStoreSlug = ''; api.get.mockResolvedValue({ contactEmail: 'help@example.com', whatsappNumber: '9123456789' }); });
+test('footer shopping links stay in the selected boutique while support retains its account route', () => {
+  mockStoreSlug = 'silk'; const navigate = jest.fn(); render(<Footer navigate={navigate} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Sarees', exact: true }));
+  expect(navigate).toHaveBeenCalledWith('/store/silk/products?search=Saree');
+});
+test('policy settings failure retries before showing configured policy text', async () => {
+  api.get.mockRejectedValueOnce(new Error('Settings offline')).mockResolvedValueOnce({ returnPolicy: 'Configured return policy' });
+  render(<Contact route="/return-policy" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+  expect(await screen.findByText('Configured return policy')).toBeInTheDocument();
+  expect(screen.queryByText('Settings offline')).not.toBeInTheDocument();
+});
+test('support retains an unsuccessful message, locks repeated submits and sends the order reference', async () => {
+  let rejectSend;
+  api.post.mockImplementationOnce(() => new Promise((resolve, reject) => { rejectSend = reject; })).mockResolvedValueOnce({ message: 'Enquiry received' });
+  const id = '0123456789abcdef01234567'; render(<Contact route={`/contact?order=${id}`} />);
+  await screen.findByRole('button', { name: 'Send Message' });
+  expect(screen.getByRole('link', { name: /Chat on WhatsApp/ })).toHaveAttribute('href', 'https://wa.me/919123456789');
+  fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Asha' } });
+  fireEvent.change(screen.getByPlaceholderText('you@example.com'), { target: { value: 'asha@example.com' } });
+  const form = screen.getByRole('button', { name: 'Send Message' }).closest('form');
+  fireEvent.submit(form); fireEvent.submit(form); expect(api.post).toHaveBeenCalledTimes(1);
+  await act(async () => rejectSend(new Error('Enquiry offline')));
+  expect(screen.getByRole('alert')).toHaveTextContent('Enquiry offline');
+  expect(screen.getByPlaceholderText('Tell us how we can help...').value).toContain(id);
+  fireEvent.submit(form); expect(await screen.findByRole('status')).toHaveTextContent('Enquiry received');
+  expect(api.post).toHaveBeenLastCalledWith('/contact', expect.objectContaining({ subject: `Help with order #${id}`, name: 'Asha' }));
+});
+test('footer subscription cannot send twice while pending and retains email on failure', async () => {
+  let rejectSend;
+  api.post.mockImplementationOnce(() => new Promise((resolve, reject) => { rejectSend = reject; })).mockResolvedValueOnce({ message: 'Subscribed successfully' });
+  render(<Footer navigate={jest.fn()} />);
+  fireEvent.change(screen.getByRole('textbox', { name: 'Email address' }), { target: { value: 'style@example.com' } });
+  const form = screen.getByRole('button', { name: 'Subscribe' }).closest('form');
+  fireEvent.submit(form); fireEvent.submit(form); expect(api.post).toHaveBeenCalledTimes(1);
+  await act(async () => rejectSend(new Error('Newsletter offline')));
+  expect(screen.getByRole('textbox', { name: 'Email address' })).toHaveValue('style@example.com');
+  fireEvent.submit(form); expect(await screen.findByRole('status')).toHaveTextContent('Subscribed successfully');
+  expect(api.post).toHaveBeenLastCalledWith('/newsletter/subscribe', { email: 'style@example.com', source: 'footer' });
+});
+test('return history recovers malformed data and opens the original order', async () => {
+  api.get.mockResolvedValueOnce({ wrong: [] }).mockResolvedValueOnce([{ _id: 'request-one', type: 'return', order: 'order-one', status: 'Requested', product: { name: 'Silk saree' } }]);
+  const navigate = jest.fn(); render(<MyReturns navigate={navigate} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+  fireEvent.click(await screen.findByRole('button', { name: /View order details/ }));
+  expect(navigate).toHaveBeenCalledWith('/order-detail?id=order-one');
+  await waitFor(() => expect(screen.queryByText('Unable to load requests')).not.toBeInTheDocument());
+});

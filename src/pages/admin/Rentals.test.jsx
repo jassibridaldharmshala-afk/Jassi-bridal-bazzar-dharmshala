@@ -1,0 +1,36 @@
+import '@testing-library/jest-dom';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import Rentals from './Rentals';
+import api from '../../services/api';
+jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn(), put: jest.fn(), delete: jest.fn() }));
+const booking = { _id: 'booking1', number: 'R-EXAMPLE', revision: 3, status: 'READY', customer: { name: 'Bride', phone: '9000000001' }, policy: { timezone: 'Asia/Kolkata', deliveryModes: ['STORE_PICKUP'] }, schedule: { pickupAt: '2030-01-10T04:30Z', returnDueAt: '2030-01-12T04:30Z' }, quote: { rentalPaise: 200000, depositPaise: 500000, dueNowPaise: 560000, items: [{ listingId: 'listing1', title: 'Lehenga', quantity: 1, rentPaise: 200000, depositPaise: 500000 }] }, financial: { balancePaise: 0 }, allocations: [{ assetId: 'asset1', code: 'LEHENGA-001', label: 'Lehenga M' }], requests: [], events: [], ledger: [], assessments: [] };
+const workspace = { configuration: { mode: 'SALE_AND_RENTAL', policy: { timezone: 'Asia/Kolkata' } }, listings: [], assets: [], bookings: { rows: [booking], page: 1, pages: 1, total: 1 }, jobs: [], blocks: [], counts: {}, overdue: 0, readiness: { transactions: true } };
+test('scanner input accumulates a complete piece code and sends one acknowledged handover', async () => {
+  api.get.mockImplementation(async path => path.includes('/bookings/') ? booking : workspace);
+  api.post.mockResolvedValue({ ...booking, status: 'OUT', revision: 4 });
+  render(<Rentals route="/admin/rentals?id=booking1" />);
+  const scan = await screen.findByLabelText('Scan or enter piece code');
+  fireEvent.change(scan, { target: { value: 'LEHENGA-001' } });
+  expect(scan).toHaveValue('LEHENGA-001');
+  fireEvent.keyDown(scan, { key: 'Enter' });
+  expect(await screen.findByText('LEHENGA-001 confirmed.')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Operation note / acknowledgement / assessment reason'), { target: { value: 'Customer acknowledged the complete piece and condition.' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply operation' }));
+  await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/rentals/bookings/booking1/operation', expect.objectContaining({ action: 'HANDOVER', revision: 3, assetIds: ['asset1'] }), { silent: true }));
+});
+test('named contact checks are explicit and reset after approved booking details change', async () => {
+  const original = { ...booking, quote: { ...booking.quote, deliveryMode: 'STORE_PICKUP' }, bookingDetails: { pickupContact: { name: 'Sister', phone: '9876543211', authorised: true } } };
+  api.get.mockImplementation(async path => path.includes('/bookings/') ? original : workspace);
+  api.post.mockResolvedValue({ ...original, revision: 4, bookingDetails: { pickupContact: { name: 'Brother', phone: '9876543212', authorised: true } } });
+  const view = render(<Rentals route="/admin/rentals?id=booking1" />);
+  const check = await screen.findByLabelText('I checked the named contact and customer authorisation for this handover / return');
+  expect(check).not.toBeChecked(); fireEvent.click(check); expect(check).toBeChecked();
+  fireEvent.click(screen.getByText('Edit addresses, contacts & instructions'));
+  fireEvent.change(screen.getByLabelText('Pickup / delivery contact — Name'), { target: { value: 'Brother' } });
+  fireEvent.change(screen.getByLabelText('Pickup / delivery contact — Mobile number'), { target: { value: '9876543212' } });
+  fireEvent.change(screen.getByLabelText('Reason for booking-detail changes'), { target: { value: 'Customer authorised brother instead' } });
+  fireEvent.click(screen.getByLabelText('Customer explicitly approved these booking-detail changes')); fireEvent.click(screen.getByRole('button', { name: 'Save approved booking details' }));
+  await waitFor(() => expect(screen.getByLabelText('Pickup / delivery contact — Name')).toHaveValue('Brother'));
+  await waitFor(() => expect(screen.getByLabelText('I checked the named contact and customer authorisation for this handover / return')).not.toBeChecked());
+  view.unmount();
+});

@@ -1,0 +1,171 @@
+.sc-confirmation {
+  --confirmation-primary: var(--site-primary, #6d1f34);
+  --confirmation-ink: var(--site-text, #30272b);
+  --confirmation-muted: var(--site-muted, #766b68);
+  --confirmation-border: #e9ddd4;
+  --order-border: var(--confirmation-border);
+  --order-muted: var(--confirmation-muted);
+  color: var(--confirmation-ink);
+  background: var(--site-background, #fffaf2);
+  font-family: var(--site-body-font, 'Inter', sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 12px 28px 32px;
+  min-height: 65vh;
+}
+.sc-confirmation__shell { max-width: 1180px; margin: 0 auto; }
+.sc-confirmation button { cursor: pointer; }
+.sc-confirmation button:disabled { opacity: .55; cursor: wait; }
+.sc-confirmation :is(button, a, summary):focus-visible { outline: 2px solid var(--confirmation-primary); outline-offset: 4px; }
+.sc-confirmation svg { flex-shrink: 0; }
+.sc-confirmation__nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: var(--confirmation-muted); font-size: 12px; }
+.sc-confirmation__nav button { display: inline-flex; gap: 8px; align-items: center; min-height: 36px; color: var(--confirmation-primary); font-weight: 600; }
+.sc-confirmation__nav > span { text-transform: uppercase; letter-spacing: .13em; font-size: 10px; font-weight: 600; }
+.sc-confirmation__hero { display: grid; grid-template-columns: minmax(0, 1fr) 186px; gap: 18px 32px; background: var(--site-surface, white); border: 1px solid var(--confirmation-border); border-radius: 12px; padding: 20px 24px 0; }
+.sc-confirmation__welcome { display: flex; gap: 22px; align-items: flex-start; min-width: 0; }
+.sc-confirmation__seal { width: 48px; height: 48px; margin-top: 3px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: #eaf4ed; color: #286747; border: 1px solid #d6e8dc; }
+.sc-confirmation__eyebrow { color: #286747; text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: .17em; margin-bottom: 8px; }
+.sc-confirmation__hero--warning .sc-confirmation__seal { background: #fff6e4; color: #85581f; border-color: #f1e0c2; }
+.sc-confirmation__hero--warning .sc-confirmation__eyebrow { color: #85581f; }
+.sc-confirmation__hero--neutral .sc-confirmation__seal { background: #f6eeef; color: var(--confirmation-primary); border-color: #e7d6db; }
+.sc-confirmation__hero--neutral .sc-confirmation__eyebrow { color: var(--confirmation-primary); }
+.sc-confirmation__hero h1 { font-family: var(--site-heading-font, 'Playfair Display', Georgia, serif); font-size: 28px; line-height: 1.25; font-weight: 600; letter-spacing: -.025em; }
+.sc-confirmation__intro { max-width: 530px; margin-top: 12px; color: var(--confirmation-muted); font-size: 13px; }
+.sc-confirmation__quick-facts { display: none; }
+.sc-confirmation__actions { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.sc-confirmation__button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 11px 17px; border: 1px solid var(--confirmation-primary); border-radius: var(--site-button-radius, 8px); background: var(--confirmation-primary); color: white; font-size: 13px; font-weight: 600; line-height: 1.5; text-align: center; }
+.sc-confirmation__button:hover { filter: brightness(.94); }
+.sc-confirmation__button--outline { background: var(--site-surface, white); color: var(--confirmation-primary); border-color: #dec9ce; }
+.sc-confirmation__link { display: inline-flex; gap: 7px; align-items: center; justify-content: center; min-height: 36px; color: var(--confirmation-primary); font-weight: 600; font-size: 12px; }
+.sc-confirmation__link:hover, .sc-confirmation__nav button:hover { text-decoration: underline; text-underline-offset: 3px; }
+.sc-confirmation__meta { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px; border-top: 1px solid var(--confirmation-border); padding: 10px 0; font-size: 12px; color: var(--confirmation-muted); }
+.sc-confirmation__meta > div { display: flex; gap: 7px; align-items: center; }
+.sc-confirmation__meta strong { color: var(--confirmation-ink); font-weight: 600; }
+.sc-confirmation__meta > div button { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 5px; }
+.sc-confirmation__meta > div button:hover { background: #f9f3f0; }
+.sc-confirmation__meta > .sc-confirmation__link { margin-left: auto; }
+.sc-confirmation__progress { padding: 30px 42px 24px; }
+.sc-confirmation__progress ol { display: flex; margin: 0; padding: 0; list-style: none; }
+.sc-confirmation__progress li { position: relative; flex: 1; display: flex; flex-direction: column; gap: 8px; align-items: center; font-size: 11px; color: var(--confirmation-muted); }
+.sc-confirmation__progress li:not(:last-child)::after { content: ''; position: absolute; top: 16px; left: calc(50% + 24px); width: calc(100% - 48px); height: 1px; background: #e3d9d0; }
+.sc-confirmation__progress li.is-reached:not([aria-current]):not(:last-child)::after { background: #8fac99; }
+.sc-confirmation__step-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; border: 1px solid #e3d9d0; background: var(--site-background, #fffaf2); }
+.sc-confirmation__progress li.is-reached { color: #286747; font-weight: 600; }
+.sc-confirmation__progress li.is-reached .sc-confirmation__step-icon { border-color: #8fac99; background: #ecf4ed; }
+.sc-confirmation__progress li[aria-current] .sc-confirmation__step-icon { background: #326b4f; color: white; border-color: #326b4f; box-shadow: 0 0 0 4px #326b4f0c; }
+.sc-confirmation__progress > p { display: flex; justify-content: center; align-items: center; gap: 7px; color: var(--confirmation-muted); font-size: 12px; text-align: center; margin-top: 22px; }
+.sc-confirmation__grid { display: grid; grid-template-columns: minmax(0, 1fr) 355px; gap: 24px; align-items: start; margin-top: 24px; }
+.sc-confirmation__progress + .sc-confirmation__grid { margin-top: 0; }
+.sc-confirmation__main, .sc-confirmation__aside { display: grid; align-content: start; gap: 20px; min-width: 0; }
+.sc-confirmation__panel { min-width: 0; border: 1px solid var(--confirmation-border); border-radius: 10px; background: var(--site-surface, white); overflow: hidden; }
+.sc-confirmation__panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 20px 24px; border-bottom: 1px solid #f1e9e2; }
+.sc-confirmation__panel > header > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sc-confirmation__panel > header svg { color: var(--confirmation-primary); }
+.sc-confirmation__panel h2, .sc-confirmation__help h2 { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.sc-confirmation__panel > header > span { color: var(--confirmation-muted); font-size: 12px; white-space: nowrap; }
+.sc-confirmation__items { padding: 0 24px; }
+.sc-confirmation .sc-order-item { gap: 18px; padding: 20px 0; }
+.sc-confirmation .sc-order-item__image { width: 76px; height: 96px; }
+.sc-confirmation .sc-order-item h3 { font-family: inherit; font-size: 14px; }
+.sc-confirmation .sc-order-item__variant { font-size: 12px; margin-top: 5px; }
+.sc-confirmation .sc-order-item__price { margin-top: 8px; font-size: 13px; }
+.sc-confirmation__item-footer { padding: 13px 24px; border-top: 1px solid var(--confirmation-border); background: #fdfaf7; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.sc-confirmation__item-footer p { color: var(--confirmation-muted); font-size: 11px; max-width: 280px; }
+.sc-confirmation__item-footer button { flex-shrink: 0; }
+.sc-confirmation summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--confirmation-primary); }
+.sc-confirmation__more { border-top: 1px solid var(--confirmation-border); }
+.sc-confirmation__more > summary, .sc-confirmation__prices > summary { display: flex; list-style: none; align-items: center; justify-content: space-between; min-height: 46px; gap: 12px; }
+.sc-confirmation__more > summary::-webkit-details-marker, .sc-confirmation__prices > summary::-webkit-details-marker { display: none; }
+.sc-confirmation details[open] > summary > svg { transform: rotate(180deg); }
+.sc-confirmation__address { padding: 20px 24px 24px; font-style: normal; font-size: 13px; color: var(--confirmation-muted); overflow-wrap: anywhere; }
+.sc-confirmation__address p + p { margin-top: 4px; }
+.sc-confirmation__address strong { display: block; font-weight: 600; color: var(--confirmation-ink); margin-bottom: 5px; }
+.sc-confirmation__tag { background: #f8f2ed; border: 1px solid #ece0d6; border-radius: 4px; padding: 2px 7px; text-transform: uppercase; letter-spacing: .06em; font-size: 9px !important; }
+.sc-confirmation__billing { padding: 0 24px 20px; }
+.sc-confirmation__billing address { font-style: normal; font-size: 12px; margin-top: 12px; color: var(--confirmation-muted); overflow-wrap: anywhere; }
+.sc-confirmation__payment, .sc-confirmation__invoice { padding: 0 24px 22px; }
+.sc-confirmation__payment > header, .sc-confirmation__invoice > header { padding: 20px 0; border-bottom: 0; }
+.sc-confirmation__total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.sc-confirmation__total > span { font-size: 13px; }
+.sc-confirmation__total > strong { font-size: 25px; line-height: 1.5; letter-spacing: -.025em; }
+.sc-confirmation__payment-status { margin-top: 16px; padding: 12px 14px; background: #faf5ed; border: 1px solid #efe5d4; border-radius: 6px; }
+.sc-confirmation__payment-status > span { display: flex; gap: 7px; align-items: center; font-weight: 600; font-size: 12px; color: #785722; }
+.sc-confirmation__payment-status > p { font-size: 11px; color: var(--confirmation-muted); padding-left: 23px; margin-top: 3px; }
+.sc-confirmation__payment-status.is-paid { background: #eff6f0; border-color: #dce9de; }
+.sc-confirmation__payment-status.is-paid > span { color: #286747; }
+.sc-confirmation__muted { color: var(--confirmation-muted); font-size: 12px; line-height: 1.7; margin-top: 12px; overflow-wrap: anywhere; }
+.sc-confirmation__prices { margin-top: 17px; border-top: 1px solid var(--confirmation-border); }
+.sc-confirmation__prices dl > div { display: flex; gap: 16px; justify-content: space-between; padding: 6px 0; font-size: 12px; }
+.sc-confirmation__prices dt { color: var(--confirmation-muted); }
+.sc-confirmation__prices dd { white-space: nowrap; }
+.sc-confirmation__prices .is-saving dd { color: #286747; }
+.sc-confirmation__prices .sc-confirmation__price-total { border-top: 1px solid var(--confirmation-border); margin-top: 7px; padding-top: 10px; font-weight: 600; }
+.sc-confirmation__prices .sc-confirmation__price-total dt { color: var(--confirmation-ink); }
+.sc-confirmation__savings { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #286747; background: #f0f6ef; border-radius: 5px; padding: 9px 10px; }
+.sc-confirmation__invoice .sc-confirmation__muted { margin-top: -4px; }
+.sc-confirmation__invoice > .sc-confirmation__button { width: 100%; margin-top: 18px; }
+.sc-confirmation__invoice > .sc-confirmation__link { display: flex; width: 100%; margin-top: 7px; }
+.sc-confirmation__help { display: flex; align-items: flex-start; gap: 14px; padding: 2px 8px; }
+.sc-confirmation__help > svg { color: var(--confirmation-primary); margin-top: 2px; }
+.sc-confirmation__help p { color: var(--confirmation-muted); font-size: 12px; margin-top: 4px; }
+.sc-confirmation__footnote { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; margin-top: 32px; font-size: 12px; color: var(--confirmation-muted); }
+.sc-confirmation__footnote svg { margin-right: 4px; }
+.sc-confirmation__footnote button { font-weight: 600; color: var(--confirmation-primary); text-decoration: underline; text-underline-offset: 3px; }
+.sc-confirmation__notice, .sc-confirmation__error { padding: 10px 14px; margin: 14px 0; border-radius: 5px; font-size: 12px; }
+.sc-confirmation__notice { display: flex; align-items: center; gap: 8px; color: #286747; background: #edf5ef; }
+.sc-confirmation__error { background: #fff0f1; color: #962b40; }
+.sc-confirmation__state { max-width: 620px; margin: 44px auto; padding: 48px 28px; border: 1px solid var(--confirmation-border); border-radius: 12px; background: var(--site-surface, white); text-align: center; }
+.sc-confirmation__state > svg { margin: 0 auto 20px; color: var(--confirmation-primary); }
+.sc-confirmation__state h1 { font-family: var(--site-heading-font, Georgia, serif); font-size: 27px; line-height: 1.4; }
+.sc-confirmation__state p { margin: 14px 0 22px; color: var(--confirmation-muted); }
+.sc-confirmation__state .sc-confirmation__actions { flex-direction: row; flex-wrap: wrap; }
+@media (max-width: 1023px) {
+  .sc-confirmation { --confirmation-primary: var(--rose, #ff5f86); --confirmation-ink: var(--text-body, #282c3f); --confirmation-muted: #64748b; --confirmation-border: #e8edf2; padding: 8px 16px 30px; background: #f6f6f7; font-family: var(--font-auth-app, 'Figtree', sans-serif); }
+  .sc-confirmation__button { border-radius: 12px; }
+  .sc-confirmation h1, .sc-confirmation h2 { font-family: inherit; }
+  .sc-confirmation__hero { padding: 20px 20px 0; gap: 16px; grid-template-columns: minmax(0, 1fr) 170px; }
+  .sc-confirmation__welcome { gap: 16px; }
+  .sc-confirmation__seal { width: 48px; height: 48px; }
+  .sc-confirmation__grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; }
+  .sc-confirmation__panel > header, .sc-confirmation__address { padding-left: 18px; padding-right: 18px; }
+  .sc-confirmation__items, .sc-confirmation__payment, .sc-confirmation__invoice { padding-left: 18px; padding-right: 18px; }
+  .sc-confirmation__payment > header, .sc-confirmation__invoice > header { padding-left: 0; padding-right: 0; }
+  .sc-confirmation__item-footer { padding-left: 18px; padding-right: 18px; flex-wrap: wrap; }
+}
+@media (max-width: 767px) {
+  .sc-confirmation__nav button { min-height: 44px; }
+  .sc-confirmation__hero { display: flex; flex-direction: column; gap: 14px; padding: 16px 16px 0; border-radius: 12px; }
+  .sc-confirmation__welcome { align-items: flex-start; text-align: left; gap: 12px; }
+  .sc-confirmation__seal { width: 40px; height: 40px; margin: 0; }
+  .sc-confirmation__seal svg { width: 24px; height: 24px; }
+  .sc-confirmation__hero h1 { font-size: 20px; line-height: 1.3; }
+  .sc-confirmation__eyebrow { margin-bottom: 4px; font-size: 9px; letter-spacing: .08em; }
+  .sc-confirmation__intro { font-size: 12px; margin-top: 10px; }
+  .sc-confirmation__hero--success .sc-confirmation__intro { display: none; }
+  .sc-confirmation__quick-facts { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; margin-top: 8px; color: var(--confirmation-muted); font-size: 12px; }
+  .sc-confirmation__quick-facts strong { font-size: 16px; font-weight: 600; color: var(--confirmation-ink); }
+  .sc-confirmation__actions { width: 100%; gap: 8px; }
+  .sc-confirmation__hero > .sc-confirmation__actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .sc-confirmation__hero > .sc-confirmation__actions button { font-size: 12px; padding: 10px 8px; gap: 6px; }
+  .sc-confirmation__button { min-height: 46px; }
+  .sc-confirmation__meta { justify-content: center; gap: 0 12px; padding: 10px 0; font-size: 11px; }
+  .sc-confirmation__meta > p { width: 100%; text-align: center; order: 3; padding-bottom: 5px; font-size: 10px; }
+  .sc-confirmation__meta > .sc-confirmation__link { margin-left: 0; font-size: 11px; }
+  .sc-confirmation__progress { padding: 18px 0; }
+  .sc-confirmation__progress li { font-size: 10px; text-align: center; gap: 9px; }
+  .sc-confirmation__progress > p { font-size: 11px; align-items: flex-start; text-align: left; padding: 0 8px; margin-top: 12px; }
+  .sc-confirmation__progress > p svg { margin-top: 2px; }
+  .sc-confirmation__grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .sc-confirmation__main, .sc-confirmation__aside { gap: 16px; }
+  .sc-confirmation__panel > header { padding-top: 18px; padding-bottom: 18px; }
+  .sc-confirmation__panel h2 { font-size: 13px; }
+  .sc-confirmation .sc-order-item { gap: 14px; padding: 18px 0; }
+  .sc-confirmation .sc-order-item h3 { font-size: 13px; }
+  .sc-confirmation .sc-order-item__image { width: 70px; height: 90px; }
+  .sc-confirmation__item-footer { gap: 2px; }
+  .sc-confirmation__address { font-size: 12px; }
+  .sc-confirmation__total > strong { font-size: 26px; }
+  .sc-confirmation__help { padding: 10px 4px; }
+  .sc-confirmation__footnote { font-size: 11px; margin-top: 20px; }
+  .sc-confirmation__state { margin: 20px auto; padding: 34px 20px; }
+}

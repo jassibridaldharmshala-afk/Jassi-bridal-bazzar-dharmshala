@@ -1,0 +1,67 @@
+{
+  "format": "standalone-commerce-project",
+  "version": 1,
+  "generatedAt": "2026-10-07T02:32:42.676Z",
+  "project": {
+    "name": "Jassi General Store",
+    "folder": "jassi-general-store",
+    "companyName": "Jassi General Store"
+  },
+  "industry": {
+    "id": "boutique",
+    "name": "Boutique — Sale & Rental"
+  },
+  "commerce": {
+    "mode": "SALE_AND_RENTAL",
+    "rentalModuleVersion": 1,
+    "stockMode": "SEPARATE_RENTAL_ASSETS"
+  },
+  "features": {
+    "masterConfiguration": false,
+    "storePortfolio": false,
+    "projectGenerator": false,
+    "websiteDesigner": true,
+    "applicationWideTheme": true,
+    "ownerEmailAndWhatsAppOrderAlerts": true,
+    "reviewedWorkflowSmartFill": true,
+    "smartFillWorkflows": [
+      "catalog",
+      "category",
+      "banner",
+      "campaign",
+      "website",
+      "coupon",
+      "shipment",
+      "purchase",
+      "support",
+      "returns",
+      "store"
+    ],
+    "responsiveStorefront": true,
+    "installablePhoneApp": true,
+    "offlineAppShell": true,
+    "mobileNavigation": true,
+    "cartWishlistCheckout": true,
+    "ordersReturnsTracking": true,
+    "customerNotifications": true,
+    "rentalManagementAvailable": true,
+    "rentalManagementEnabled": true,
+    "rentalPhysicalAssetsAndCalendar": true,
+    "rentalDepositsAndReturnInspection": true,
+    "rentalCompulsoryOwnerConfiguredAdvance": true,
+    "rentalPrivateConditionEvidence": true,
+    "rentalInvoicesAndReceipts": true,
+    "rentalTrialCalendarAndSaleTransfer": true,
+    "rentalConnectedCourierLegs": true,
+    "reportsAndInsights": true,
+    "privacyAwareTrafficAnalytics": true,
+    "trafficSettingsAndDigests": true,
+    "sellerAndAdminMobileViews": true,
+    "backendTrustValidation": true,
+    "signedPlatformEntitlements": true,
+    "systemUpdateStatus": true
+  },
+  "dataIncluded": false,
+  "credentialsIncluded": true,
+  "managedInstallation": true
+}

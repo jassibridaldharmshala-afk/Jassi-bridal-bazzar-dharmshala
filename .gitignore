@@ -1,0 +1,33 @@
+# Dependencies and output
+node_modules/
+build/
+dist/
+coverage/
+.cache/
+.pytest_cache/
+__pycache__/
+.venv/
+/backend
+/build
+/docs
+
+# Runtime and private files
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+client-installation.json
+uploads/
+**/uploads/
+tmp/
+**/tmp/
+*.log
+*.pid
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

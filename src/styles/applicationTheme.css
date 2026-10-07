@@ -1,0 +1,74 @@
+/* Published appearance is application-wide. Layout overrides remain device
+   specific. Semantic success/warning/error colours deliberately stay stable. */
+html[data-app-theme] {
+  --wine: var(--site-primary);
+  --rose: var(--site-primary);
+  --blush: var(--site-secondary);
+  --ivory: var(--site-background);
+  --gold: var(--site-accent);
+  --charcoal: var(--site-text);
+  --text-body: var(--site-text);
+  --font-sans-app: var(--site-body-font);
+  --font-auth-app: var(--site-body-font);
+  --samira-primary-soft: color-mix(in srgb, var(--site-primary) 80%, white);
+  --samira-gold-soft: color-mix(in srgb, var(--site-accent) 40%, var(--site-surface));
+  accent-color: var(--site-primary);
+}
+html[data-app-theme] body { background: var(--site-background); color: var(--site-text); font-weight: var(--site-body-weight); }
+html[data-app-theme] :is(h1, h2, h3, .font-display) { font-family: var(--site-heading-font); font-weight: var(--site-heading-weight); }
+html[data-app-theme] :is(button, input, select, textarea) { accent-color: var(--site-primary); }
+/* A zero-specificity fallback must not recolour Tailwind's transparent
+   outline-none, or controls with their own focus border/ring get a second box. */
+:where(html[data-app-theme] :focus-visible) { outline-color: var(--site-primary); }
+html[data-app-theme] ::selection { background: var(--site-secondary); color: var(--site-primary); }
+html[data-app-theme] .bg-white { background-color: var(--site-surface); }
+html[data-app-theme] .bg-white\/95 { background-color: color-mix(in srgb, var(--site-surface) 95%, transparent); }
+html[data-app-theme] :is(.text-slate-800, .text-slate-900, .text-gray-800, .text-gray-900) { color: var(--site-text); }
+html[data-app-theme] :is(.text-slate-500, .text-slate-600, .text-slate-700, .text-gray-500, .text-gray-600, .text-gray-700) { color: var(--site-muted); }
+html[data-app-theme] :is(.border-slate-100, .border-slate-200, .border-gray-200) { border-color: var(--site-border); }
+html[data-app-theme] :is(.bg-wine, .bg-brand-primary) { color: var(--site-on-primary); }
+html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .card-action--primary, .preview-toggle--active, .site-theme-button) {
+  background: var(--site-action-bg); color: var(--site-action-text); border: 1px solid var(--site-action-border);
+  border-radius: var(--site-button-radius); font-family: var(--site-button-font); font-weight: var(--site-button-weight);
+  transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+html[data-app-theme] .admin-sidebar__link.is-active { color: var(--site-on-primary); }
+html[data-app-theme] .admin-shell {
+  --admin-wine: var(--site-primary);
+  --admin-wine-deep: var(--site-primary-dark);
+  --admin-gold: var(--site-accent);
+  --admin-ivory: var(--site-background);
+  --admin-cream: var(--site-secondary);
+  --admin-border: var(--site-border);
+  --admin-text: var(--site-text);
+  --admin-muted: var(--site-muted);
+  --admin-radius: var(--site-card-radius);
+}
+html[data-app-theme] :is(.admin-card, .admin-sidebar, .admin-header, .store-settings__panel, .store-settings__sidebar) { background-color: var(--site-surface); color: var(--site-text); }
+html[data-app-theme] :is(.sc-bag, .sc-bag-dialog, .sc-wishlist, .sc-wish-dialog, .sc-addresses, .sc-address-dialog, .sc-address-form, .sc-mobile-checkout) {
+  --shopping-action: var(--site-primary);
+  --shopping-tint: var(--site-secondary);
+  --shopping-canvas: var(--site-background);
+  --shopping-border: var(--site-border);
+  --shopping-ink: var(--site-text);
+  --shopping-muted: var(--site-muted);
+}
+html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .admin-btn-ghost, .admin-btn-outline) { border-radius: var(--site-button-radius); font-family: var(--site-button-font); }
+@media (hover: hover) and (pointer: fine) {
+  html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .card-action--primary, .site-theme-button):not(:disabled):hover {
+    background: var(--site-action-bg); transform: var(--site-button-hover-transform);
+    filter: var(--site-button-hover-filter); box-shadow: var(--site-button-hover-shadow);
+  }
+}
+html[data-app-theme] [data-mobile-loader] span > span:first-child { border-color: var(--site-loader-track); }
+html[data-app-theme] [data-mobile-loader] span > span:last-child { border-top-color: var(--site-loader); border-right-color: var(--site-loader); }
+html[data-app-theme] [data-storefront-skeleton] .skeleton-block { background: var(--site-skeleton); }
+@media (max-width: 1023px) {
+  html[data-app-theme] .site-storefront, html[data-app-theme] .mobile-home { background: var(--site-mobile-bg); color: var(--site-text); font-family: var(--site-body-font); }
+  html[data-app-theme] [data-mobile-header] { background: var(--site-mobile-header-bg); color: var(--site-mobile-header-text); }
+  html[data-app-theme] [data-mobile-header] button { color: inherit; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .card-action--primary, .site-theme-button),
+  html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .card-action--primary, .site-theme-button):not(:disabled):hover { transition: none; transform: none; }
+}

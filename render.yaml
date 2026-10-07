@@ -1,0 +1,347 @@
+services:
+  - type: web
+    name: jassi-general-store
+    runtime: static
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin-allow-popups
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self' https://checkout.razorpay.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https: http://localhost:5000 http://127.0.0.1:5000; frame-src 'self' https://*.razorpay.com https://*.facebook.com https://*.instagram.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'; manifest-src 'self'"
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://jassi-general-store-backend-1.onrender.com/api
+      - key: REACT_APP_ENABLE_REEL_PRODUCT_IMPORT
+        value: "true"
+      - key: REACT_APP_RAZORPAY_KEY_ID
+        sync: false
+
+  - type: keyvalue
+    name: jassi-general-store-reel-queue
+    plan: free
+    region: oregon
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: jassi-general-store-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STRICT_PRODUCTION_CONFIG
+        value: "true"
+      - key: ENABLE_REEL_PRODUCT_IMPORT
+        value: "true"
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: jassi-general-store-reel-queue
+          property: connectionString
+      - key: REQUIRE_DATABASE
+        value: "true"
+      - key: REQUIRE_MEDIA_STORAGE
+        value: "true"
+      - key: REQUIRE_REDIS
+        value: "false"
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_ADMIN_EXPIRES_IN
+        value: 24h
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: PUBLIC_API_URL
+        sync: false
+      - key: CLIENT_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: ADMIN_PHONE_NUMBERS
+        sync: false
+      # Switch to "production" once a real SMS provider is connected. In demo
+      # mode the fixed DEMO_OTP is accepted and returned to the client.
+      - key: OTP_MODE
+        value: demo
+      - key: DEMO_OTP
+        value: "123456"
+      - key: ALLOW_REFRESH_TOKEN_BODY
+        value: "false"
+      - key: RETURN_REFRESH_TOKEN_IN_BODY
+        value: "false"
+      - key: AUTH_COOKIE_SAME_SITE
+        value: none
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      # Temporary team-demo access for the platform owner. Set false before live use.
+      - key: ALLOW_HOSTED_OWNER_DEMO
+        value: "false"
+      - key: OTP_EXPIRY_MINUTES
+        value: "5"
+      - key: OTP_MAX_ATTEMPTS
+        value: "5"
+      - key: OTP_RESEND_COOLDOWN_SECONDS
+        value: "60"
+      - key: SMS_PROVIDER
+        sync: false
+      # For MSG91 or 2Factor, change SMS_PROVIDER in the backend environment
+      # and add only that provider's keys documented in backend/SMS.md.
+      - key: SMS_ACCOUNT_SID
+        value: ""
+      - key: SMS_AUTH_TOKEN
+        value: ""
+      - key: SMS_SENDER_ID
+        value: ""
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      # Central control-plane identity and signed entitlement responses.
+      # Generate the key pair once with: npm run keys:license
+      - key: APP_VERSION
+        value: 1.0.0
+      - key: LICENSE_SIGNING_PUBLIC_KEY
+        sync: false
+      - key: CONTROL_PLANE_URL
+        sync: false
+      - key: CLIENT_INSTALLATION_ID
+        sync: false
+      - key: CLIENT_LICENSE_KEY
+        sync: false
+      - key: LICENSE_VALID_MINUTES
+        value: "15"
+      - key: LICENSE_GRACE_HOURS
+        value: "72"
+      # Platform subscription defaults. Change these values in Render when
+      # pricing changes; checkout amounts are always decided by this backend.
+      - key: SUBSCRIPTION_TRIAL_DAYS
+        value: "30"
+      - key: SUBSCRIPTION_BASIC_MONTHLY_INR
+        value: "999"
+      - key: SUBSCRIPTION_BASIC_YEARLY_INR
+        value: "9990"
+      - key: SUBSCRIPTION_BASIC_LIFETIME_INR
+        value: "24999"
+      - key: SUBSCRIPTION_PROFESSIONAL_MONTHLY_INR
+        value: "1999"
+      - key: SUBSCRIPTION_PROFESSIONAL_YEARLY_INR
+        value: "19990"
+      - key: SUBSCRIPTION_PROFESSIONAL_LIFETIME_INR
+        value: "49999"
+      - key: SUBSCRIPTION_PREMIUM_MONTHLY_INR
+        value: "3499"
+      - key: SUBSCRIPTION_PREMIUM_YEARLY_INR
+        value: "34990"
+      - key: SUBSCRIPTION_PREMIUM_LIFETIME_INR
+        value: "89999"
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: R2_FOLDER
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: samira-products
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      # Courier accounts are optional. Add credentials only for providers this
+      # store has onboarded, then select the active provider in store Settings.
+      - key: BLUEDART_MODE
+        value: sandbox
+      - key: BLUEDART_CLIENT_ID
+        sync: false
+      - key: BLUEDART_CLIENT_SECRET
+        sync: false
+      - key: BLUEDART_LOGIN_ID
+        sync: false
+      - key: BLUEDART_LICENCE_KEY
+        sync: false
+      - key: BLUEDART_CUSTOMER_CODE
+        sync: false
+      - key: BLUEDART_ORIGIN_AREA
+        sync: false
+      - key: BLUEDART_PRODUCT_CODE
+        sync: false
+      - key: BLUEDART_PACK_TYPE
+        sync: false
+      - key: BLUEDART_FEATURE
+        sync: false
+      - key: BLUEDART_LIVE_BOOKING_ENABLED
+        value: "false"
+      - key: BLUEDART_COD_ENABLED
+        value: "false"
+      - key: BLUEDART_REVERSE_ENABLED
+        value: "false"
+      - key: SHIPROCKET_EMAIL
+        sync: false
+      - key: SHIPROCKET_PASSWORD
+        sync: false
+      - key: SHIPROCKET_PICKUP_LOCATION
+        sync: false
+      - key: SHIPROCKET_FALLBACK_EMAIL
+        sync: false
+      - key: SHIPROCKET_LIVE_BOOKING_ENABLED
+        value: "false"
+      - key: SHIPROCKET_COD_ENABLED
+        value: "false"
+      - key: SHIPROCKET_REVERSE_ENABLED
+        value: "false"
+      - key: SHIPROCKET_SELECTION_STRATEGY
+        value: recommended
+      - key: DELHIVERY_MODE
+        value: sandbox
+      - key: DELHIVERY_TOKEN
+        sync: false
+      - key: DELHIVERY_CLIENT_NAME
+        sync: false
+      - key: DELHIVERY_WAREHOUSE_NAME
+        sync: false
+      - key: DELHIVERY_LIVE_BOOKING_ENABLED
+        value: "false"
+      - key: DELHIVERY_COD_ENABLED
+        value: "false"
+      - key: DELHIVERY_REVERSE_ENABLED
+        value: "false"
+      - key: DELHIVERY_SHIPPING_MODE
+        value: Surface
+      - key: XPRESSBEES_EMAIL
+        sync: false
+      - key: XPRESSBEES_PASSWORD
+        sync: false
+      - key: XPRESSBEES_WAREHOUSE_NAME
+        sync: false
+      - key: XPRESSBEES_LIVE_BOOKING_ENABLED
+        value: "false"
+      - key: XPRESSBEES_COD_ENABLED
+        value: "false"
+      - key: XPRESSBEES_REVERSE_ENABLED
+        value: "false"
+
+  - type: pserv
+    name: jassi-general-store-reel-ai-worker
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./ai-video-worker/Dockerfile
+    envVars:
+      - key: AI_VIDEO_WORKER_SERVICE_TOKEN
+        generateValue: true
+      - key: MODEL_DEVICE
+        value: cpu
+      - key: MAX_PROCESSING_SECONDS
+        value: "1200"
+      - key: R2_ACCOUNT_ID
+        fromService:
+          type: web
+          name: jassi-general-store-backend
+          envVarKey: R2_ACCOUNT_ID
+      - key: R2_ACCESS_KEY_ID
+        fromService:
+          type: web
+          name: jassi-general-store-backend
+          envVarKey: R2_ACCESS_KEY_ID
+      - key: R2_SECRET_ACCESS_KEY
+        fromService:
+          type: web
+          name: jassi-general-store-backend
+          envVarKey: R2_SECRET_ACCESS_KEY
+      - key: R2_BUCKET_NAME
+        fromService:
+          type: web
+          name: jassi-general-store-backend
+          envVarKey: R2_BUCKET_NAME
+      - key: R2_PUBLIC_URL
+        fromService:
+          type: web
+          name: jassi-general-store-backend
+          envVarKey: R2_PUBLIC_URL
+
+  - type: worker
+    name: jassi-general-store-reel-queue-worker
+    runtime: node
+    rootDir: backend
+    plan: starter
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm run worker:reels
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ENABLE_REEL_PRODUCT_IMPORT
+        value: "true"
+      - key: MONGO_URI
+        fromService:
+          type: web
+          name: jassi-general-store-backend
+          envVarKey: MONGO_URI
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: jassi-general-store-reel-queue
+          property: connectionString
+      - key: AI_VIDEO_WORKER_URL
+        fromService:
+          type: pserv
+          name: jassi-general-store-reel-ai-worker
+          property: hostport
+      - key: AI_VIDEO_WORKER_SERVICE_TOKEN
+        fromService:
+          type: pserv
+          name: jassi-general-store-reel-ai-worker
+          envVarKey: AI_VIDEO_WORKER_SERVICE_TOKEN

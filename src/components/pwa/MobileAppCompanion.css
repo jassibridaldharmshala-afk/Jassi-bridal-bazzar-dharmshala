@@ -1,0 +1,12 @@
+.sc-app-companion{position:relative;z-index:95}
+.sc-app-companion__notice{position:fixed;top:10px;left:50%;z-index:95;display:flex;width:min(540px,calc(100vw - 24px));transform:translateX(-50%);align-items:center;gap:10px;border:1px solid var(--site-border, #ecd8cc);border-radius:14px;background:var(--site-background, #fffaf5);padding:11px 13px;color:var(--site-text, #4d2430);box-shadow:0 14px 35px rgba(48,24,28,.16)}
+.sc-app-companion__notice--offline{background:#2c2730;color:#fff;border-color:#2c2730}
+.sc-app-companion__notice span,.sc-app-companion__install>span:nth-child(2){min-width:0;display:grid;gap:2px;flex:1}
+.sc-app-companion__notice strong,.sc-app-companion__install strong{font-size:13px;line-height:1.2}
+.sc-app-companion__notice small,.sc-app-companion__install small{font-size:11px;line-height:1.35;opacity:.78}
+.sc-app-companion__notice button,.sc-app-companion__install>button:not(.sc-app-companion__close){min-height:38px;border:1px solid var(--site-action-border, transparent);border-radius:var(--site-button-radius, 10px);background:var(--site-action-bg, #7b1834);padding:0 14px;color:var(--site-action-text, #fff);font-family:var(--site-button-font, inherit);font-size:12px;font-weight:var(--site-button-weight, 800)}
+.sc-app-companion__install{position:fixed;right:16px;bottom:18px;z-index:94;display:flex;width:min(430px,calc(100vw - 24px));transform:none;align-items:center;gap:10px;border:1px solid var(--site-border, #ead8cf);border-radius:16px;background:color-mix(in srgb, var(--site-surface, #fff) 98%, transparent);padding:12px;color:var(--site-text, #4d2430);box-shadow:0 18px 45px rgba(45,24,29,.2);backdrop-filter:blur(14px)}
+.sc-app-companion__install-icon{display:grid;height:38px;width:38px;flex:none;place-items:center;border-radius:12px;background:var(--site-secondary, #fae9ed);color:var(--site-primary, #861d3d)}
+.sc-app-companion__close{display:grid;height:34px;width:34px;flex:none;place-items:center;border:0;background:transparent;color:var(--site-muted, #64748b)}
+@media(max-width:767px){.sc-app-companion__notice{top:max(8px,env(safe-area-inset-top));border-radius:12px}.sc-app-companion__install{right:12px;bottom:calc(74px + env(safe-area-inset-bottom));left:12px;width:auto}.sc-app-companion__install>button:not(.sc-app-companion__close){min-width:68px}.sc-app-companion__close{width:28px}}
+@media(min-width:768px){.sc-app-companion__install{display:none}}

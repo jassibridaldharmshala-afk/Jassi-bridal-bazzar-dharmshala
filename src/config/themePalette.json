@@ -1,0 +1,9 @@
+{
+  "wine": { "variable": "--site-primary", "colors": ["6d1f34", "7a1f36", "751d39", "6f1c38", "690825", "830b31", "7b1834", "5f1128", "951c3e", "a92d4f", "a7284c", "9d3154", "a32d50", "8d2441", "7b1f3a", "8a4a42", "c73562", "b9345e", "b02a50", "8e2045", "6b1734", "8b1e3f"] },
+  "gold": { "variable": "--site-accent", "colors": ["b8914a", "b88945", "c9a26f"] },
+  "blush": { "variable": "--site-secondary", "colors": ["fff0f4", "fff5f8", "fff1f5", "fff7f9", "f8e8e4", "fbf1ef", "f9ecef", "f8f2ec", "fff7f0", "f6e8df", "fce8ef", "fdf2f5", "f9f0f3", "f8f0f2"] },
+  "ivory": { "variable": "--site-background", "colors": ["fffaf2", "fcfaf7", "faf8f9", "f5f5f6", "fff8f5", "fff9f5", "fff8f4", "f7f4ef", "f9f6f2"] },
+  "charcoal": { "variable": "--site-text", "colors": ["17161a", "1f2a44", "282532", "282c3f", "1f2937", "2d2430", "35202a", "351a21"] },
+  "theme-muted": { "variable": "--site-muted", "colors": ["6f6470", "77717e", "5c5a62", "6a5761", "6b7280", "69616a"] },
+  "theme-border": { "variable": "--site-border", "colors": ["ead8cb", "eadfd5", "e2d5ce", "eee8ec", "ebe7e2", "ead5da", "ebd8ce", "e8d7ca", "ecd7df"] }
+}

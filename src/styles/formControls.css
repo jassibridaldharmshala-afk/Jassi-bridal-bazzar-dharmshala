@@ -1,0 +1,91 @@
+/* Composite fields own their border and focus indicator at the outside edge.
+   Explicit aliases cover existing wrappers without changing standalone fields,
+   checkboxes, radios, file uploads, colour pickers or buttons inside the field. */
+html[data-app-theme] :is(
+  .sc-field-shell,
+  .admin-header__search,
+  .admin-filter-bar__search,
+  .category-form__slug,
+  .product-copy-modal__search,
+  .sc-help-search,
+  .sc-footer__email,
+  .sc-filter__search,
+  .dash-search,
+  .draft-search,
+  .returns-search,
+  .returns-date-filter,
+  .store-settings__search,
+  .social-import__url,
+  .social-search,
+  .content-history-search,
+  .variant-family-search,
+  .variant-candidate-toolbar > label,
+  .sc-orders__search,
+  .sc-wishlist__search,
+  .sc-wishlist__sort
+):focus-within {
+  border-color: var(--site-primary, #6d1f34);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgb(var(--site-primary-rgb, 109 31 52) / 12%);
+}
+
+html[data-app-theme] :is(
+  .sc-field-shell,
+  .admin-header__search,
+  .admin-filter-bar__search,
+  .category-form__slug,
+  .product-copy-modal__search,
+  .sc-help-search,
+  .sc-footer__email,
+  .sc-filter__search,
+  .dash-search,
+  .draft-search,
+  .returns-search,
+  .returns-date-filter,
+  .store-settings__search,
+  .social-import__url,
+  .social-search,
+  .content-history-search,
+  .variant-family-search,
+  .variant-candidate-toolbar > label,
+  .sc-orders__search,
+  .sc-wishlist__search,
+  .sc-wishlist__sort
+) :where(
+  input:not([type="checkbox"], [type="radio"], [type="file"], [type="color"], [type="range"], [type="hidden"], [type="button"], [type="submit"], [type="reset"]),
+  select,
+  textarea
+):is(:focus, :focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Keep one visible, outer focus edge in high-contrast accessibility modes. */
+@media (forced-colors: active) {
+  html[data-app-theme] :is(
+    .sc-field-shell,
+    .admin-header__search,
+    .admin-filter-bar__search,
+    .category-form__slug,
+    .product-copy-modal__search,
+    .sc-help-search,
+    .sc-footer__email,
+    .sc-filter__search,
+    .dash-search,
+    .draft-search,
+    .returns-search,
+    .returns-date-filter,
+    .store-settings__search,
+    .social-import__url,
+    .social-search,
+    .content-history-search,
+    .variant-family-search,
+    .variant-candidate-toolbar > label,
+    .sc-orders__search,
+    .sc-wishlist__search,
+    .sc-wishlist__sort
+  ):focus-within {
+    outline-color: Highlight;
+  }
+}

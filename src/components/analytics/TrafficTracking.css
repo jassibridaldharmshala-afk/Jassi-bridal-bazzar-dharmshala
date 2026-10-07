@@ -1,0 +1,13 @@
+.traffic-privacy { --theme-text: var(--site-text, #241b21); --theme-primary: var(--site-primary, #751d39); --theme-on-primary: var(--site-on-primary, white); --theme-surface: var(--site-surface, white); --theme-border: var(--site-border, #e5d8ce); position: fixed; bottom: max(1rem, env(safe-area-inset-bottom)); right: 1rem; z-index: 65; color: var(--theme-text, #241b21); font-size: .78rem; }
+.traffic-privacy__trigger { border: 1px solid var(--theme-border, #e5d8ce); background: var(--theme-surface, white); border-radius: 999px; padding: .45rem .85rem; box-shadow: 0 4px 16px #0000000d; }
+.traffic-privacy__panel { width: min(440px, calc(100vw - 2rem)); max-height: 60vh; overflow: auto; padding: 1.35rem; background: var(--theme-surface, white); border: 1px solid var(--theme-border, #e5d8ce); border-radius: 1.4rem; box-shadow: 0 15px 60px #00000020; }
+.traffic-privacy__panel strong { font-size: 1rem; }
+.traffic-privacy__panel p { margin: .65rem 0; line-height: 1.6; }
+.traffic-privacy__panel a { text-decoration: underline; }
+.traffic-privacy__actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem; }
+.traffic-privacy__actions button { padding: .6rem .8rem; border-radius: .8rem; border: 1px solid var(--theme-border, #e5d8ce); }
+.traffic-privacy__actions .traffic-privacy__allow { background: var(--theme-primary, #751d39); color: var(--theme-on-primary, white); border-color: transparent; }
+.traffic-privacy button:focus-visible { outline: 2px solid var(--theme-primary, #751d39); outline-offset: 3px; }
+.traffic-privacy__notice { max-width: 360px; padding: 1rem; background: var(--theme-surface, white); border: 1px solid var(--theme-border, #e5d8ce); border-radius: 1rem; }
+.traffic-privacy__notice button { margin-left: .5rem; }
+@media (max-width: 767px) { .traffic-privacy { bottom: calc(76px + env(safe-area-inset-bottom)); right: .65rem; } .traffic-privacy__panel { width: calc(100vw - 1.3rem); } .traffic-privacy__trigger { font-size: .67rem; } }

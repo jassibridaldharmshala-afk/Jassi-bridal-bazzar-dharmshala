@@ -1,0 +1,158 @@
+.sc-addresses__mobile-header { display: none; }
+.sc-addresses {
+  --address-primary: var(--site-primary, #6d1f34);
+  --address-muted: var(--site-muted, #766b68);
+  --address-border: var(--site-border, #ead8cb);
+  min-height: 65vh;
+  padding: 24px 0 48px;
+  background: var(--site-background, #fffaf2);
+  color: var(--site-text, #30272b);
+  font-family: var(--site-body-font, 'Inter', sans-serif);
+}
+.sc-addresses button { transition: background .15s, border-color .15s; }
+.sc-addresses button:disabled, .sc-address-dialog button:disabled { cursor: wait; opacity: .55; }
+.sc-addresses button:focus-visible, .sc-address-dialog button:focus-visible { outline: 2px solid var(--address-primary); outline-offset: 4px; }
+.sc-addresses__main { min-width: 0; max-width: 1050px; }
+.sc-addresses__heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 4px 0 30px; }
+.sc-addresses__eyebrow { color: var(--site-accent, #a17842); font-size: 12px; font-weight: 700; letter-spacing: .16em; margin-bottom: 8px; }
+.sc-addresses__heading h1 { font-family: var(--site-heading-font, 'Playfair Display', Georgia, serif); font-size: clamp(26px, 2.5vw, 36px); line-height: 1.2; margin: 0 0 10px; }
+.sc-addresses__heading div > p:last-child { font-size: 14px; color: var(--address-muted); }
+.sc-addresses__primary, .sc-addresses__secondary { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 20px; border: 1px solid var(--address-primary); border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.sc-addresses__primary { color: #fff; background: var(--address-primary); }
+.sc-addresses__primary:hover { filter: brightness(.94); }
+.sc-addresses__secondary { color: var(--address-primary); background: #fff; }
+.sc-addresses__group { margin-top: 28px; }
+.sc-addresses__group > h2 { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--address-muted); }
+.sc-addresses__group > h2 > span { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border: 1px solid var(--address-border); border-radius: 50%; font-size: 11px; letter-spacing: 0; }
+.sc-addresses__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.sc-address-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--address-border); border-radius: 10px; background: var(--site-surface, #fff); box-shadow: 0 4px 16px #46231404; }
+.sc-address-card.is-default { border-top: 3px solid var(--address-primary); }
+.sc-address-card__content { flex: 1; padding: 24px; }
+.sc-address-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+.sc-address-card__top h3 { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.sc-address-card__type { display: inline-flex; flex-shrink: 0; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 4px; background: var(--site-secondary, #f7f2ed); color: var(--address-muted); font-size: 12px; }
+.sc-address-card address { display: grid; font-size: 14px; font-style: normal; line-height: 1.75; color: var(--address-muted); overflow-wrap: anywhere; }
+.sc-address-card__phone { margin-top: 18px; font-size: 14px; }
+.sc-address-card__phone strong { font-weight: 600; }
+.sc-address-card__landmark { margin-top: 6px; font-size: 13px; color: var(--address-muted); overflow-wrap: anywhere; }
+.sc-address-card__default { display: flex; align-items: center; gap: 6px; color: var(--address-primary); font-size: 12px; font-weight: 600; margin-top: 18px; }
+.sc-address-card__actions { display: flex; border-top: 1px solid var(--address-border); }
+.sc-address-card__actions button { flex: 1; min-height: 46px; font-size: 14px; font-weight: 600; color: var(--address-primary); background: transparent; }
+.sc-address-card__actions button + button { border-left: 1px solid var(--address-border); }
+.sc-address-card__actions button:hover, .sc-addresses__add:hover { background: var(--site-secondary, #fbf5ef); }
+.sc-addresses__add { display: flex; width: 100%; justify-content: center; align-items: center; gap: 8px; border: 1px dashed #cbb4a7; border-radius: 8px; color: var(--address-primary); padding: 20px; margin-top: 22px; font-size: 14px; font-weight: 600; }
+.sc-addresses__hint { color: var(--address-muted); font-size: 13px; line-height: 1.6; margin-top: 18px; }
+.sc-addresses__empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 18px; padding: 60px 24px; border: 1px solid var(--address-border); border-radius: 10px; background: var(--site-surface, #fff); }
+.sc-addresses__empty-icon { padding: 20px; background: var(--site-secondary, #fbf5ef); color: var(--address-primary); border-radius: 50%; }
+.sc-addresses__empty h2 { font-family: var(--site-heading-font, Georgia, serif); font-size: 25px; }
+.sc-addresses__empty p { font-size: 14px; color: var(--address-muted); }
+.sc-addresses__notice { display: flex; align-items: center; gap: 8px; margin: 16px 0; color: #2f6744; font-size: 14px; }
+.sc-addresses__error { background: #fff0f0; color: #a52236; border-radius: 6px; padding: 12px; margin: 16px 0; font-size: 14px; }
+.sc-address-dialog { --address-primary: var(--site-primary, #6d1f34); --address-muted: var(--site-muted, #766b68); --address-border: var(--site-border, #ead8cb); margin: auto; padding: 0; width: min(640px, calc(100% - 40px)); max-height: calc(100dvh - 64px); border: 1px solid var(--address-border); border-radius: 14px; color: var(--site-text, #30272b); background: var(--site-background, #fffaf2); box-shadow: 0 24px 80px #2f152a38; overscroll-behavior: contain; }
+.sc-address-dialog::backdrop { background: #25161e80; backdrop-filter: blur(3px); }
+.sc-address-dialog--compact { max-width: 460px; }
+.sc-addresses__confirm { padding: 30px; }
+.sc-addresses__confirm > svg { color: var(--address-primary); margin-bottom: 18px; }
+.sc-addresses__confirm h2 { font-size: 22px; font-weight: 600; margin-bottom: 14px; }
+.sc-addresses__confirm p { margin-top: 12px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.sc-addresses__confirm-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 26px; }
+.sc-address-dialog .sc-address-form { border-radius: 0; background: var(--site-background, #fffaf2); }
+.sc-address-dialog .sc-address-form > div:first-child { position: sticky; top: 0; z-index: 1; padding: 12px; background: var(--site-background, #fffaf2); }
+.sc-address-dialog .sc-address-form input, .sc-address-dialog .sc-address-form select { width: 100%; font-size: 14px; }
+.sc-address-dialog .sc-address-form label > span { font-size: 14px; color: var(--address-primary); }
+.sc-address-dialog .sc-address-form button[type=submit] { background: var(--address-primary); }
+.sc-address-dialog .sc-address-form button[aria-pressed=true] { border-color: var(--address-primary); box-shadow: 0 0 0 1px var(--address-primary); }
+.sc-address-dialog .sc-address-form input[type=checkbox] { width: auto; accent-color: var(--address-primary); }
+@media (min-width: 1024px) {
+  .sc-addresses .sc-account__shell { width: min(1440px, calc(100% - 74px)); }
+  .sc-addresses .sc-account__sidebar .is-active { background: var(--address-primary); border-color: var(--address-primary); }
+  .sc-address-dialog .sc-address-form > div:last-child { padding: 24px 30px; }
+}
+@media (max-width: 1100px) { .sc-addresses__cards { grid-template-columns: 1fr; } }
+@media (max-width: 1023px) {
+  .sc-addresses { padding: 20px 16px 32px; }
+  .sc-addresses .sc-account__sidebar { display: none; }
+  .sc-addresses__breadcrumb { display: flex; align-items: center; gap: 6px; margin-bottom: 24px; font-size: 12px; color: var(--address-muted); }
+  .sc-addresses__heading { flex-wrap: wrap; gap: 18px; }
+  .sc-addresses__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .sc-addresses__cards { grid-template-columns: 1fr; }
+  .sc-addresses__heading > button { width: 100%; }
+  .sc-address-card__content { padding: 20px; }
+  .sc-address-dialog:not(.sc-address-dialog--compact) { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; }
+  .sc-address-dialog .sc-address-form input, .sc-address-dialog .sc-address-form select { font-size: 16px; }
+  .sc-addresses__confirm { padding: 24px; }
+}
+
+
+@media (max-width: 1023px) {
+  .sc-addresses, .sc-address-dialog, .sc-address-form { --address-primary: var(--rose, #ff5f86); --address-muted: #64748b; --address-border: #e8edf2; font-family: var(--font-auth-app, 'Figtree', sans-serif); color: var(--text-body, #282c3f); }
+  .sc-addresses { background: #f7f8fa; padding: 0 0 24px; }
+  .sc-addresses .sc-account__shell { width: 100%; max-width: 720px; margin: auto; padding: 12px; }
+  .sc-addresses .sc-account__layout { display: block; }
+  .sc-addresses .sc-addresses__breadcrumb, .sc-addresses__eyebrow, .sc-addresses__heading > div { display: none; }
+  .sc-addresses__mobile-header { position: sticky; top: 0; z-index: 45; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 8px 12px 8px 4px; border-bottom: 1px solid var(--address-border); background: white; }
+  .sc-addresses__mobile-header button { display: grid; place-items: center; width: 44px; height: 44px; }
+  .sc-addresses__mobile-header h1 { font: 650 16px/1.4 var(--font-auth-app, sans-serif); }
+  .sc-addresses__heading { margin: 0; }
+  .sc-addresses__heading > button { width: 100%; background: white; color: var(--address-primary); border-color: var(--address-border); }
+  .sc-addresses__primary, .sc-addresses__secondary { border-radius: 12px; font-size: 13px; min-height: 46px; }
+  .sc-addresses__group { margin-top: 20px; }
+  .sc-addresses__group > h2 { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .sc-addresses__cards { gap: 12px; }
+  .sc-address-card { border-radius: 12px; background: white; box-shadow: none; }
+  .sc-address-card.is-default { border: 1px solid var(--address-primary); }
+  .sc-address-card__content { padding: 16px; }
+  .sc-address-card__top { margin-bottom: 10px; }
+  .sc-address-card__top h3 { font-size: 14px; font-weight: 650; }
+  .sc-address-card__type { color: var(--address-primary); background: var(--blush, #fff0f4); font-size: 10px; border-radius: 6px; }
+  .sc-address-card address { font-size: 12px; line-height: 1.7; }
+  .sc-address-card__phone { font-size: 12px; margin-top: 12px; }
+  .sc-address-card__landmark { font-size: 11px; }
+  .sc-address-card__default { font-size: 11px; margin-top: 12px; }
+  .sc-address-card__actions button { min-height: 46px; font-size: 12px; }
+  .sc-addresses__add { border-color: var(--address-border); background: white; border-radius: 12px; padding: 14px; margin-top: 16px; font-size: 13px; }
+  .sc-addresses__hint { font-size: 11px; margin: 12px 4px; }
+  .sc-addresses__empty { background: white; border-radius: 12px; padding: 32px 20px; }
+  .sc-addresses__empty h2 { font-family: inherit; font-size: 20px; font-weight: 600; }
+  .sc-addresses__empty-icon { background: var(--blush, #fff0f4); }
+  .sc-address-dialog { background: white; }
+  .sc-address-form, .sc-address-dialog .sc-address-form { background: white; border-radius: 0; font-family: var(--font-auth-app, sans-serif); }
+  .sc-address-form > div:first-child, .sc-address-dialog .sc-address-form > div:first-child { background: white; border-color: var(--address-border); min-height: 60px; padding: 8px 4px; }
+  .sc-address-form > div:first-child :is(h3, button) { color: var(--text-body, #282c3f); }
+  .sc-address-form > div:first-child h3 { font: 650 16px/1.4 var(--font-auth-app, sans-serif); text-align: left; margin-left: 8px; }
+  .sc-address-form > div:first-child button { width: 44px; height: 44px; }
+  .sc-address-form > div:last-child { padding: 20px 16px max(24px, env(safe-area-inset-bottom)); }
+  .sc-address-form > div:last-child > div { border-color: var(--address-border); }
+  .sc-address-form > div:last-child > div > p:first-child { color: var(--address-muted); font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 600; }
+  .sc-address-form .sc-address-form__field > span, .sc-address-dialog .sc-address-form label > span { color: var(--text-body, #282c3f); font-size: 12px; }
+  .sc-address-form .sc-address-form__field > span svg { color: #94a3b8; }
+  .sc-address-form .sc-address-form__field > div { border-color: var(--address-border); border-radius: 10px; }
+  .sc-address-form .sc-address-form__field :is(input, select) { min-height: 44px; width: 100%; font-size: 16px; color: var(--text-body, #282c3f); }
+  .sc-address-form button[aria-pressed] { border-color: var(--address-border); gap: 8px; padding: 12px 8px; box-shadow: none; }
+  .sc-address-form button[aria-pressed=true], .sc-address-dialog .sc-address-form button[aria-pressed=true] { border-color: var(--address-primary); background: var(--blush, #fff0f4); box-shadow: none; }
+  .sc-address-form button[aria-pressed] > span:first-child { background: #f4f6f8; color: var(--address-muted); flex-shrink: 0; width: 30px; height: 30px; }
+  .sc-address-form button[aria-pressed=true] > span:first-child { background: var(--address-primary); color: white; }
+  .sc-address-form button[aria-pressed] > span:last-child > span:first-child { color: var(--text-body, #282c3f); }
+  .sc-address-form input[type=checkbox] { accent-color: var(--address-primary); width: 18px; height: 18px; flex-shrink: 0; }
+  .sc-address-form button[type=submit], .sc-address-dialog .sc-address-form button[type=submit] { background: var(--address-primary); color: white; }
+  .sc-address-form button[type=submit], .sc-address-form button[type=submit] + button { min-height: 48px; }
+  .sc-address-form > div:last-child > div:last-child > button:first-child { border-color: var(--address-border); color: var(--text-body, #282c3f); min-height: 48px; }
+}
+
+/* Profile dialogs and desktop/mobile checkout share AddressForm. Its shell
+   owns the only border/focus edge; inner controls must not render a second
+   rounded box, including disabled dropdowns and focused TextInput controls. */
+.sc-address-form .sc-address-form__field > .sc-field-shell > :is(input, select) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding-inline: 0;
+  outline: none;
+  box-shadow: none;
+}

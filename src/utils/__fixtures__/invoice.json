@@ -1,0 +1,26 @@
+{
+  "orderId": "0123456789abcdefd44eb06c",
+  "invoiceNumber": "SC-SAMPLE01",
+  "invoiceDate": "2026-09-01T04:30:00Z",
+  "orderDate": "2026-08-31T16:41:23Z",
+  "storeDetails": { "storeName": "Jassi General Store", "contactPhone": "+91 90000 00000", "contactEmail": "orders@example.com", "address": "Sample Store, Market Road, Kangra, Himachal Pradesh - 176001" },
+  "customer": { "name": "Sample Customer", "email": "customer@example.com" },
+  "shippingAddress": { "fullName": "Sample Customer", "houseNo": "12", "area": "Garden Enclave", "landmark": "Near the community centre", "city": "Kangra", "state": "Himachal Pradesh", "pincode": "176001", "mobile": "9000000000" },
+  "billingAddress": { "fullName": "Sample Customer", "houseNo": "12", "area": "Garden Enclave", "landmark": "Near the community centre", "city": "Kangra", "state": "Himachal Pradesh", "pincode": "176001", "mobile": "9000000000" },
+  "items": [
+    { "name": "Sage Green Floral Printed A-Line Skirt", "sku": "SC-SK-001", "size": "S", "color": "Sage Green", "quantity": 1, "price": 899, "originalPrice": 1899 },
+    { "name": "White Modern Top", "sku": "SC-TP-014", "size": "S", "color": "Wine", "quantity": 1, "price": 999, "originalPrice": 1999 },
+    { "name": "Ivory Green Printed Cotton Straight Kurti Set", "sku": "SC-KS-021", "size": "S", "color": "Ivory Cream & Olive Green", "quantity": 1, "price": 899, "originalPrice": 1899 }
+  ],
+  "totalMRP": 5797,
+  "productDiscount": 3000,
+  "couponDiscount": 0,
+  "deliveryCharge": 0,
+  "codCharge": 0,
+  "finalAmount": 2797,
+  "paymentMethod": "COD",
+  "paymentProvider": "COD",
+  "paymentStatus": "Pending",
+  "orderStatus": "Shipped",
+  "policies": { "returnPolicy": "Return and exchange eligibility is shown in your order details. For help with your order, contact the store and quote your order number." }
+}

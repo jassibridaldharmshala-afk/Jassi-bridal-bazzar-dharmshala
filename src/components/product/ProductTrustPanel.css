@@ -1,0 +1,60 @@
+@media (min-width: 1024px) {
+  .sc-trust {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sc-trust__card {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .sc-trust__item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--site-border, #ead8cb);
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 6px 14px rgba(70, 35, 20, 0.04);
+  }
+
+  .sc-trust__item--last {
+    border-bottom: 1px solid var(--site-border, #ead8cb);
+  }
+
+  .sc-trust__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--site-border, #ead8cb);
+    border-radius: 6px;
+    background: var(--site-background, #fff8f2);
+    color: var(--site-accent, #b88945);
+    flex: 0 0 auto;
+  }
+
+  .sc-trust__item strong {
+    display: block;
+    font-size: 10px;
+    font-weight: 800;
+    color: #111;
+    white-space: nowrap;
+  }
+
+  .sc-trust__item p {
+    margin: 2px 0 0;
+    font-size: 9px;
+    color: #666;
+  }
+}

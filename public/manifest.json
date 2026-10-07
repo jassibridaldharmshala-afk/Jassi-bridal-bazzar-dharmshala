@@ -1,0 +1,93 @@
+{
+  "short_name": "Jassi General St",
+  "name": "Jassi General Store",
+  "id": "/",
+  "description": "Shop boutique — sale & rental products, manage your bag and track orders with Jassi General Store.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/?source=installed-app",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "theme_color": "#6d1f34",
+  "background_color": "#fffaf2",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": [
+    "shopping",
+    "business",
+    "lifestyle"
+  ],
+  "shortcuts": [
+    {
+      "name": "Shop products",
+      "short_name": "Shop",
+      "url": "/products?source=app-shortcut",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Shopping bag",
+      "short_name": "Bag",
+      "url": "/cart?source=app-shortcut",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "My orders",
+      "short_name": "Orders",
+      "url": "/orders?source=app-shortcut",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Wishlist",
+      "short_name": "Wishlist",
+      "url": "/wishlist?source=app-shortcut",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
