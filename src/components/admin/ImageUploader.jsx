@@ -7,8 +7,6 @@ import { inspectProductImage } from '../../utils/imageQuality';
 import ImageBackgroundEditor from './ImageBackgroundEditor';
 import { newUploadKey, selectionFingerprint } from '../../services/uploadRetry';
 
-const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
 export default function ImageUploader({
   value = [],
   onChange,
@@ -16,9 +14,7 @@ export default function ImageUploader({
   maxFiles = 1,
   uploadContext = 'products',
   uploadPath = '/admin/uploads',
-  compressAboveMb = 2,
   maxUploadMb = 20,
-  targetSizeMb = 0.7,
   label = 'Choose Images',
   helpText = 'Drag and drop or click to upload.',
   showPrimaryControl = true,
@@ -63,20 +59,18 @@ export default function ImageUploader({
       const inspections = retry?.inspections || [];
       if (!retry) {
         for (const file of incoming) {
-          if (!isSupportedImageFile(file) || !allowedTypes.includes(file.type)) {
+          if (!isSupportedImageFile(file)) {
             throw new Error('Only JPG, JPEG, PNG, and WEBP images are allowed.');
           }
           if (file.size > maxUploadMb * 1024 * 1024) {
             throw new Error(`Each image must be under ${maxUploadMb}MB before compression.`);
           }
-          inspections.push(await inspectProductImage(file));
           setPhase('compressing');
           const compressedFile = await compressImageFile(file, {
-            maxOriginalSizeMb: compressAboveMb,
-            targetMaxSizeMb: targetSizeMb,
             maxWidthOrHeight: 1600,
             onProgress: (value) => setProgress(Math.max(0, Math.min(100, Math.round(value || 0)))),
           });
+          inspections.push(await inspectProductImage(compressedFile));
           converted.push(compressedFile);
           uploadStats.push({
             name: file.name,
@@ -150,6 +144,7 @@ export default function ImageUploader({
             {uploading ? (phase === 'compressing' ? 'Compressing images...' : 'Uploading images...') : label}
           </span>
           <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{helpText}</span>
+          <span className="block text-xs leading-5 text-slate-500">Photos up to 20 MB · automatically optimized below 100 KB</span>
           <span className="mt-3 inline-flex rounded-xl bg-white px-4 py-2 text-xs font-black text-wine shadow-sm">Browse Files</span>
         </span>
       </button>

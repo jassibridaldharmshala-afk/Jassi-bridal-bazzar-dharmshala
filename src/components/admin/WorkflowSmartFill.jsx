@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronDown, Copy, FileText, Sparkles, Undo2, X } from 'lucide-react';
 import api from '../../services/api';
+import { compressImageFile, isSupportedImageFile } from '../../services/imageCompression';
 import { applySmartReview, reviewSmartSuggestions, smartCurrent, smartEndpoint, smartRowUnchanged } from '../../utils/workflowSmartFill';
 import './WorkflowSmartFill.css';
 
@@ -79,11 +80,17 @@ export default function WorkflowSmartFill({ workflow, form, onChange, apiBase, c
     const revision = ++fileRevision.current;
     const file = event.target.files?.[0]; event.target.value = ''; setError(''); setDocument(null); setConsent(false); setPreview(null);
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type) || file.size > 512 * 1024) { setError('Choose a JPEG, PNG, WebP or PDF under 512 KB, or paste its text.'); return; }
+    let prepared;
+    try {
+      if (isSupportedImageFile(file)) prepared = await compressImageFile(file);
+      else if (file.type === 'application/pdf' && file.size <= 512 * 1024) prepared = file;
+      else throw new Error('Choose a photo up to 20 MB or a PDF under 512 KB, or paste its text.');
+    } catch (failure) { if (alive.current && fileRevision.current === revision) setError(failure.message); return; }
+    if (!alive.current || fileRevision.current !== revision) return;
     const reader = new FileReader();
     reader.onerror = () => { if (alive.current && fileRevision.current === revision) setError('Could not read this document. Paste its text instead.'); };
-    reader.onload = () => { if (alive.current && fileRevision.current === revision) setDocument({ mimeType: file.type, data: String(reader.result).split(',')[1] }); };
-    reader.readAsDataURL(file);
+    reader.onload = () => { if (alive.current && fileRevision.current === revision) setDocument({ mimeType: prepared.type, data: String(reader.result).split(',')[1] }); };
+    reader.readAsDataURL(prepared);
   };
   const stale = preview && (preview.sourceNotes !== notes || preview.sourceDocument !== document);
   const reviewRows = preview?.rows.filter(row => !protectedPaths.includes(row.path)) || [];
@@ -92,7 +99,7 @@ export default function WorkflowSmartFill({ workflow, form, onChange, apiBase, c
     {open && <div id={id} className="workflow-smart__body">
       <p>Algorithms suggest content and extract explicit facts. Existing values stay protected. Nothing is saved, sent, published or executed automatically.</p>
       {!['support', 'returns'].includes(workflow) && <label className="workflow-smart__source"><span>Source notes / brief</span><textarea aria-label={`${titles[workflow]} source notes`} maxLength={16000} value={notes} disabled={busy || disabled} placeholder={examples[workflow] || 'Paste verified source details'} onChange={event => setNotes(event.target.value)} /></label>}
-      {documents && <div className="workflow-smart__document"><label><FileText size={16} />Optional document (JPEG/PNG/WebP/PDF, 512 KB max)<input type="file" aria-label="Smart Fill source document" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={busy || disabled || !status?.documentExtraction} onChange={chooseDocument} /></label><small>{status?.documentExtraction ? 'The configured Gemini extracts text only. Check every machine-extracted value.' : 'Document extraction needs the existing backend Gemini configuration. Pasted notes work without AI.'}</small>{document && <><button type="button" className="admin-btn-ghost" disabled={busy} onClick={() => { setDocument(null); setConsent(false); }}>Remove document</button><label className="workflow-smart__choice"><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} /><span>I may use this document and agree to send it to the configured AI for text extraction. Remove unnecessary personal information first.</span></label></>}</div>}
+      {documents && <div className="workflow-smart__document"><label><FileText size={16} />Optional document (photos up to 20 MB, PDF up to 512 KB)<input type="file" aria-label="Smart Fill source document" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={busy || disabled || !status?.documentExtraction} onChange={chooseDocument} /></label><small>{status?.documentExtraction ? 'The configured Gemini extracts text only. Check every machine-extracted value.' : 'Document extraction needs the existing backend Gemini configuration. Pasted notes work without AI.'}</small>{document && <><button type="button" className="admin-btn-ghost" disabled={busy} onClick={() => { setDocument(null); setConsent(false); }}>Remove document</button><label className="workflow-smart__choice"><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} /><span>I may use this document and agree to send it to the configured AI for text extraction. Remove unnecessary personal information first.</span></label></>}</div>}
       <div className="workflow-smart__actions"><button type="button" className="admin-btn" disabled={disabled || busy || (!!document && !consent)} onClick={analyze}><Sparkles size={15} />{busy ? 'Preparing suggestions…' : 'Suggest draft fields'}</button>{busy && <button type="button" className="admin-btn-ghost" onClick={() => { active.current?.abort(); active.current = null; setBusy(false); }}>Cancel analysis</button>}{undo && <button type="button" className="admin-btn-ghost" disabled={disabled || busy} onClick={() => { const result = applySmartReview(currentForm.current, undo.filter(row => !protectedPaths.includes(row.path)), undo.map(row => row.path), true, true); if (onChange(result.form, result.applied, true) === false) return; setUndo(null); setNotice('Last fill undone. Later manual edits were preserved.'); }}><Undo2 size={15} />Undo last fill</button>}</div>
       {error && <p role="alert" className="workflow-smart__warning">{error}</p>}{notice && <p role="status" className="workflow-smart__notice">{notice}</p>}
       {preview && <>{preview.warnings?.map((warning, index) => <p key={index} className="workflow-smart__warning">{warning}</p>)}{preview.extractedText && <details><summary>Compare extracted source text</summary><pre className="workflow-smart__value">{preview.extractedText}</pre></details>}{stale && <p role="status" className="workflow-smart__warning">Source changed. Refresh suggestions before applying.</p>}{reviewRows.length ? <SmartFillReview key={JSON.stringify(reviewRows)} rows={reviewRows} form={form} disabled={busy || disabled || stale} onApply={(rows, replace) => { const result = applySmartReview(currentForm.current, rows, rows.map(row => row.path), replace); if (result.applied.length) { if (onChange(result.form, result.applied, false, preview) === false) return; setUndo(result.applied); setNotice(`${result.applied.length} fields filled in the draft. Use the existing Save action after reviewing.`); setPreview(null); } }} /> : <p role="status">No safe changes found. Add explicit source details or edit the form manually.</p>}<button type="button" className="admin-btn-ghost" disabled={busy} onClick={() => setPreview(null)}><X size={14} />Discard suggestions</button></>}

@@ -1,6 +1,6 @@
 import { createApi, defaultSerializeQueryArgs, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { getApiBaseUrl } from './apiBaseUrl';
-import { compressImageFile, isSupportedImageFile } from '../services/imageCompression';
+import { compressImageFile, isSupportedImageFile, preparePhotoUploads } from '../services/imageCompression';
 import { logout, setCredentials } from './authSlice';
 import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
 import { getOrCreateSessionId } from '../utils/attribution';
@@ -196,11 +196,16 @@ export const samiraApi = createApi({
       invalidatesTags: (_result, _error, arg) => tagsForPath(arg.path, true),
     }),
     upload: builder.mutation({
-      query: ({ path, files, fieldName = 'images', silent = false, fields = {}, idempotencyKey }) => {
-        const formData = new FormData();
-        Array.from(files || []).forEach((file) => formData.append(fieldName, file));
-        Object.entries(fields).forEach(([key, value]) => formData.append(key, String(value)));
-        return { url: path, method: 'POST', body: formData, silent, ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}) };
+      queryFn: async ({ path, files, fieldName = 'images', silent = false, fields = {}, idempotencyKey }, api, extraOptions, baseQuery) => {
+        try {
+          const scope = uploadScope(api.getState().auth);
+          const prepared = await preparePhotoUploads(files, { imagesOnly: fieldName === 'images' || fieldName === 'image' });
+          if (api.signal.aborted || uploadScope(api.getState().auth) !== scope) return { error: { status: 409, data: { message: 'Your session changed or the upload was cancelled. Please retry.' } } };
+          const formData = new FormData();
+          prepared.forEach(file => formData.append(fieldName, file));
+          Object.entries(fields).forEach(([key, value]) => formData.append(key, String(value)));
+          return await baseQuery({ url: path, method: 'POST', body: formData, silent, ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}) }, api, extraOptions);
+        } catch (error) { return { error: { status: 400, data: { code: 'UPLOAD_IMAGE_INVALID', message: error.message || 'Unable to prepare the photo.' } } }; }
       },
       invalidatesTags: (_result, _error, arg) => arg.path.endsWith('/background') || /\/rentals\/bookings\/[^/]+\/proofs(?:\?|$)/.test(arg.path) ? [] : ['AdminProducts', 'Products'],
     }),
@@ -304,7 +309,9 @@ export const samiraApi = createApi({
           if (!['single', 'separate', 'grouped'].includes(groupMode)) throw new Error('Choose a valid product photo grouping option.');
           if (groupMode === 'grouped' && (!Array.isArray(photoGroups) || !photoGroups.length)) throw new Error('Create product photo groups before uploading.');
           const fields = { groupMode, ...(groupMode === 'grouped' ? { photoGroups: JSON.stringify(photoGroups) } : {}) };
-          idempotencyKey = await getDurableUploadRetryKey({ path, files, fields, scope: uploadScope(api.getState().auth) });
+          const scope = uploadScope(api.getState().auth);
+          idempotencyKey = await getDurableUploadRetryKey({ path, files, fields, scope });
+          if (api.signal.aborted || uploadScope(api.getState().auth) !== scope) throw new Error('Your session changed or the upload was cancelled. Please retry.');
           if (hasUploadAttempt(idempotencyKey)) {
             // All photos may already be stored even though draft save/response
             // failed. Resume by receipt, without posting the photos again.
@@ -318,21 +325,16 @@ export const samiraApi = createApi({
           const preparedFiles = [];
           for (const file of Array.from(files || [])) {
             if (!file) throw new Error('A selected photo is missing. Review the photos before uploading.');
-            if (file.__compressionMeta) {
-              preparedFiles.push(file);
-              continue;
-            }
             if (!isSupportedImageFile(file)) {
               return { error: { status: 400, data: { message: 'Only JPG, JPEG, PNG, and WEBP images are allowed.' } } };
             }
             preparedFiles.push(await compressImageFile(file, {
-              maxOriginalSizeMb: 2,
-              targetMaxSizeMb: 0.7,
               maxWidthOrHeight: 1600,
             }));
           }
           const formData = new FormData();
           preparedFiles.forEach((file) => formData.append('images', file));
+          if (api.signal.aborted || uploadScope(api.getState().auth) !== scope) throw new Error('Your session changed or the upload was cancelled. Please retry.');
           Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
           markUploadAttempt(idempotencyKey);
           const result = await baseQuery({ url: path, method: 'POST', body: formData, headers: { 'Idempotency-Key': idempotencyKey } }, api, extraOptions);

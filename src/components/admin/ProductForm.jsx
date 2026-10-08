@@ -849,9 +849,7 @@ export default function ProductForm({
             maxFiles={20}
             uploadContext="products"
             uploadPath={uploadPrefix}
-            compressAboveMb={2}
             maxUploadMb={20}
-            targetSizeMb={0.7}
             value={form.images}
             onChange={(images) => update('images', images)}
             disabled={saving}

@@ -26,7 +26,7 @@ export default function RentalProofPanel({ booking, base, storeSlug, staff = fal
     const prepared = [];
     for (const file of files) {
       if (file.size > 20 * 1024 * 1024) throw new Error('Each source photo must be under 20 MB.');
-      const compressed = await compressImageFile(file, { maxOriginalSizeMb: 0.7, targetMaxSizeMb: 0.7, targetMinSizeMb: 0.3, maxWidthOrHeight: 1600 });
+      const compressed = await compressImageFile(file);
       if (compressed.size > 1024 * 1024) throw new Error('A compressed photo is still above 1 MB. Choose a smaller image.');
       prepared.push(compressed);
     }

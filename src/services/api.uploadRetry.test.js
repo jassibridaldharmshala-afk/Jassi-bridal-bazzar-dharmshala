@@ -17,6 +17,18 @@ beforeEach(() => {
 });
 function file() { return new File(['photo'], 'photo.webp', { type: 'image/webp' }); }
 
+test('mixed evidence photos are compressed before dispatch while videos remain unchanged', async () => {
+  const photo = new File([new Uint8Array(3 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
+  const compressed = new File(['optimized'], 'large.webp', { type: 'image/webp' });
+  const video = new File(['video'], 'packing.mp4', { type: 'video/mp4' });
+  isSupportedImageFile.mockImplementation(file => file.type.startsWith('image/'));
+  compressImageFile.mockResolvedValue(compressed);
+  mockDispatch.mockImplementation(() => ({ unwrap: async () => ({ files: [{ url: '/uploads/evidence.webp' }, { url: '/uploads/packing.mp4' }] }), reset: jest.fn() }));
+  await api.upload('/admin/orders/evidence/uploads', [photo, video], { fieldName: 'files' });
+  expect(mockInitiate.mock.calls[0][0].files).toEqual([compressed, video]);
+  expect(compressImageFile).toHaveBeenCalledTimes(1);
+});
+
 test('already-uploaded evidence is reused when the following form save fails', async () => {
   const photos = [file()];
   const first = await api.upload('/returns/evidence/uploads', photos, { fieldName: 'files' });

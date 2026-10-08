@@ -29,6 +29,15 @@ test('previewing and changing presets keeps original untouched; only applying up
   fireEvent.click(screen.getByText('Use this photo'));
   await waitFor(() => expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ primary: true, sourceFrame: original.sourceFrame, background: { original: { url: original.url, publicId: 'original' }, edited: { url: '/uploads/edited.webp', publicId: 'edited' }, preset: 'beige' } })));
 });
+
+test('a compressed WebP cutout from stored media is accepted for preview and composition', async () => {
+  api.post.mockResolvedValue({ image: 'data:image/webp;base64,cGhvdG8=' });
+  render(<ImageBackgroundEditor image={original} uploadPath="/admin/uploads" onApply={jest.fn()} onClose={jest.fn()} />);
+  await waitFor(() => expect(screen.getByText('Use Preset Background')).toBeEnabled());
+  fireEvent.click(screen.getByText('Use Preset Background'));
+  await waitFor(() => expect(background.composeBackground).toHaveBeenCalledWith('data:image/webp;base64,cGhvdG8=', expect.any(String)));
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
 test('saved image uses protected backend media reader and processing failure cannot replace original', async () => {
   api.post.mockRejectedValue(new Error('Worker unavailable'));
   const onApply = jest.fn();

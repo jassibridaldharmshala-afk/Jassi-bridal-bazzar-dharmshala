@@ -5,6 +5,14 @@ import { samiraApi } from './apiSlice';
 import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
 import { STOREFRONT_READ_TIMEOUT } from './storefrontTransport';
 import { getDurableUploadRetryKey, hasUploadAttempt, retainUploadedReceipt, uploadScope } from '../services/uploadRetry';
+
+test('logout during photo preparation prevents multipart upload under a changed session', async () => {
+  const photo = new File(['photo'], 'logout.webp', { type: 'image/webp' });
+  const operation = testStore.dispatch(samiraApi.endpoints.upload.initiate({ path: '/admin/uploads', files: [photo] }));
+  testStore.dispatch(logout());
+  await operation;
+  expect(mockRawQuery).not.toHaveBeenCalled();
+});
 test('multipart condition proof uploads preserve stage/consent/revision fields and stay silent', async () => {
   mockRawQuery.mockResolvedValue({ data: { booking: { revision: 5 } } });
   const photo = new File(['photo'], 'photo.webp', { type: 'image/webp' });

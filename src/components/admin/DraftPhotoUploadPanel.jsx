@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ImagePlus, Upload, X } from 'lucide-react';
+import { isSupportedImageFile, PHOTO_SOURCE_MAX_BYTES } from '../../services/imageCompression';
 
 const MAX_PHOTOS = 30;
 const groupTitle = (group, index) => group.name.trim() || `Product ${index + 1}`;
@@ -20,8 +21,8 @@ export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setG
     const added = Array.from(incoming || []);
     if (!added.length) return;
     if (files.length + added.length > MAX_PHOTOS) return setError('Choose up to 30 photos per upload. Remove some photos or upload the remaining products in another batch.');
-    if (added.some((file) => !['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type))) return setError('Choose JPG, PNG or WEBP photos only.');
-    if (added.some((file) => file.size > 2 * 1024 * 1024)) return setError('Each photo can be up to 2MB. Choose a smaller copy of the large photo.');
+    if (added.some((file) => !isSupportedImageFile(file))) return setError('Choose JPG, PNG or WEBP photos only.');
+    if (added.some((file) => file.size > PHOTO_SOURCE_MAX_BYTES)) return setError('Each source photo can be up to 20 MB before automatic compression.');
     setError('');
     setFiles((current) => [...current, ...added.filter((file) => !current.includes(file))]);
   };
@@ -60,7 +61,7 @@ export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setG
       <label className={groupMode === 'separate' ? 'is-selected' : ''}><input type="radio" disabled={uploading} name="draft-group" checked={groupMode === 'separate'} onChange={() => setGroupMode('separate')} /><strong>One draft per photo</strong><span>Use when each photo is a different item.</span></label>
       <label className={`${grouped ? 'is-selected' : ''}${!groupingSupported ? ' is-disabled' : ''}`}><input type="radio" disabled={uploading || !groupingSupported} name="draft-group" checked={grouped} onChange={() => setGroupMode('grouped')} /><strong>Several products, grouped photos</strong><span>{groupingSupported ? 'Give each product its own set of photos: 2, 4, 6 or any number.' : 'Grouped uploads are currently unavailable.'}</span></label>
     </div>
-    <label className="draft-dropzone"><Upload size={24} /><strong>Choose up to 30 product photos</strong><span>JPG, PNG or WEBP. Each photo can be up to 2MB.</span><input aria-label="Choose product photos" type="file" disabled={uploading} multiple accept="image/jpeg,image/jpg,image/png,image/webp" onChange={(event) => { add(event.target.files); event.target.value = ''; }} /></label>
+    <label className="draft-dropzone"><Upload size={24} /><strong>Choose up to 30 product photos</strong><span>JPG, PNG or WEBP, up to 20 MB each. Automatically optimized below 100 KB before upload.</span><input aria-label="Choose product photos" type="file" disabled={uploading} multiple accept="image/jpeg,image/jpg,image/png,image/webp" onChange={(event) => { add(event.target.files); event.target.value = ''; }} /></label>
     {error && <p role="alert" className="draft-alert is-error">{error}</p>}
     {grouped && files.length > 0 && <div className="draft-group-tools">
       <p>Select all views of one product, then create its group. Repeat for the next product. Photos can be moved between groups before uploading.</p>

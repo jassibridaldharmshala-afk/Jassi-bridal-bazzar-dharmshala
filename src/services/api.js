@@ -92,24 +92,13 @@ async function request(path, options = {}) {
 }
 
 async function prepareUploadFiles(files, fieldName) {
-  const incoming = Array.from(files || []);
-  if (fieldName !== 'images') return incoming;
-
   const prepared = [];
-  for (const file of incoming) {
+  for (const file of Array.from(files || [])) {
     if (!file) continue;
-    if (file.__compressionMeta) {
-      prepared.push(file);
-      continue;
-    }
-    if (!isSupportedImageFile(file)) {
-      throw new Error('Only JPG, JPEG, PNG, and WEBP images are allowed.');
-    }
-    prepared.push(await compressImageFile(file, {
-      maxOriginalSizeMb: 2,
-      targetMaxSizeMb: 0.7,
-      maxWidthOrHeight: 1600,
-    }));
+    if (isSupportedImageFile(file)) prepared.push(await compressImageFile(file));
+    else if (fieldName === 'images' || fieldName === 'image' || String(file.type || '').startsWith('image/')) {
+      throw Object.assign(new Error('Only JPG, JPEG, PNG, and WEBP images are allowed.'), { status: 400 });
+    } else prepared.push(file);
   }
   return prepared;
 }
@@ -216,9 +205,10 @@ function toCustomerError(error, path, fallbackMessage) {
   const status = error?.status || error?.originalStatus || 500;
   const data = error?.data || {};
   const message = data.message || error?.message || fallbackMessage;
-  const customerError = new Error(customerSafeMessage(message, status, path, data.code));
+  const code = data.code || error?.code || '';
+  const customerError = new Error(customerSafeMessage(message, status, path, code));
   customerError.status = status;
-  customerError.code = data.code;
+  customerError.code = code;
   customerError.details = message;
   return customerError;
 }

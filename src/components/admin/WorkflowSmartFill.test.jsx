@@ -4,11 +4,30 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import WorkflowSmartFill, { CopySmartDraft } from './WorkflowSmartFill';
 import ManualShipmentForm from './ManualShipmentForm';
 import api from '../../services/api';
+import { compressImageFile } from '../../services/imageCompression';
 jest.mock('../../services/api', () => ({ __esModule: true, default: { get: jest.fn(), post: jest.fn() } }));
+jest.mock('../../services/imageCompression', () => ({ ...jest.requireActual('../../services/imageCompression'), compressImageFile: jest.fn() }));
 const suggestion = (path, value, extra = {}) => ({ path, value, label: path, source: 'notes', ...extra });
 const answer = (...suggestions) => ({ suggestions, warnings: ['Review the source before applying.'] });
 const open = () => fireEvent.click(screen.getByRole('button', { name: /Smart Fill.*Source/ }));
 const analyze = () => fireEvent.click(screen.getByRole('button', { name: 'Suggest draft fields' }));
+
+test('large document photos are compressed before base64 encoding and still require explicit AI consent', async () => {
+  api.get.mockResolvedValue({ documentExtraction: true }); api.post.mockResolvedValue(answer());
+  const source = new File([new Uint8Array(3 * 1024 * 1024)], 'invoice.jpg', { type: 'image/jpeg' });
+  const optimized = new File(['optimized document'], 'invoice.webp', { type: 'image/webp' });
+  compressImageFile.mockResolvedValue(optimized);
+  render(<WorkflowSmartFill workflow="purchase" form={{}} onChange={jest.fn()} documents />); open();
+  await waitFor(() => expect(screen.getByLabelText('Smart Fill source document')).toBeEnabled());
+  fireEvent.change(screen.getByLabelText('Smart Fill source document'), { target: { files: [source] } });
+  const consent = await screen.findByLabelText(/I may use this document/);
+  expect(compressImageFile).toHaveBeenCalledWith(source);
+  expect(api.post).not.toHaveBeenCalled(); expect(consent).not.toBeChecked();
+  expect(screen.getByRole('button', { name: 'Suggest draft fields' })).toBeDisabled();
+  fireEvent.click(consent); analyze();
+  await waitFor(() => expect(api.post).toHaveBeenCalled());
+  expect(api.post.mock.calls[0][1].document).toEqual({ mimeType: 'image/webp', data: btoa('optimized document'), consent: true });
+});
 function Category() {
   const [form, setForm] = useState({ name: 'Existing name', description: '' });
   return <><WorkflowSmartFill workflow="category" form={form} onChange={setForm} /><input aria-label="Manual name" value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} /><textarea aria-label="Manual description" value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} /></>;

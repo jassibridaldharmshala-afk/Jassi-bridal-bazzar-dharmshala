@@ -8,6 +8,7 @@ jest.mock('../../hooks/useDesktopFeedback', () => () => ({ notify: () => false }
 jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ notify: jest.fn() }) }));
 jest.mock('../../utils/imageQuality', () => ({ inspectProductImage: async () => null }));
 jest.mock('../../services/imageCompression', () => ({
+  PHOTO_SOURCE_MAX_BYTES: 20 * 1024 * 1024,
   compressImageFile: async (file) => file,
   isSupportedImageFile: (file) => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
 }));

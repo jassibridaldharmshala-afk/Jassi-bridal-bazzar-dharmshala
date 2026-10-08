@@ -12,7 +12,7 @@ export const BACKGROUND_PRESETS = [
 
 export async function removeImageBackground(file, uploadPath, onRequest) {
   const result = await api.upload(`${uploadPath}/background`, [file], { fieldName: 'image', silent: true, onRequest });
-  if (!result.image?.startsWith('data:image/png;base64,')) throw new Error('No background preview was returned.');
+  if (!/^data:image\/(?:png|webp);base64,/.test(result.image || '')) throw new Error('No background preview was returned.');
   return result.image;
 }
 
@@ -39,7 +39,7 @@ export async function composeBackground(cutout, presetId) {
   context.drawImage(source, 0, 0);
   const blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Could not prepare the preview.')), 'image/webp', 0.92));
   // Preview exactly the compressed file that the normal uploader will store.
-  return compressImageFile(new File([blob], `product-${presetId}.webp`, { type: blob.type }), { maxOriginalSizeMb: 2, maxWidthOrHeight: 1600 });
+  return compressImageFile(new File([blob], `product-${presetId}.webp`, { type: blob.type }));
 }
 
 export function applyBackgroundAsset(image, asset, preset) {

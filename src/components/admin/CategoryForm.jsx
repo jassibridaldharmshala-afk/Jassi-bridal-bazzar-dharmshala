@@ -220,7 +220,7 @@ export default function CategoryForm({ mode = 'Add', categoryId, onSaved, onCanc
           <TextArea label="Description" value={form.description} onChange={(value) => update('description', value)} maxLength={1200} rows={4} />
           <CharacterCount value={form.description} max={1200} />
           <div className="mt-5">
-            <ImageUploader label="Choose Category Image" helpText="JPG, PNG or WEBP. A portrait or square image around 1200px works best; large files are compressed before upload." uploadContext="categories" value={form.image ? [{ url: form.image }] : []} onChange={(images) => updateMedia('image', images)} compressAboveMb={2} maxUploadMb={20} targetSizeMb={0.5} showPrimaryControl={false} />
+            <ImageUploader label="Choose Category Image" helpText="JPG, PNG or WEBP. A portrait or square image around 1200px works best; large files are compressed before upload." uploadContext="categories" value={form.image ? [{ url: form.image }] : []} onChange={(images) => updateMedia('image', images)} maxUploadMb={20} showPrimaryControl={false} />
           </div>
         </section>
 
@@ -233,7 +233,7 @@ export default function CategoryForm({ mode = 'Add', categoryId, onSaved, onCanc
             <div><TextArea label="SEO description" value={form.metaDescription} onChange={(value) => update('metaDescription', value)} placeholder="Short description for search results" maxLength={300} rows={3} /><CharacterCount value={form.metaDescription} max={300} /></div>
           </div>
           <div className="mt-5">
-            <ImageUploader label="Choose Social Image" helpText="Optional landscape image for shared category links. The category image is used when empty." uploadContext="categories" value={form.socialImage ? [{ url: form.socialImage }] : []} onChange={(images) => updateMedia('socialImage', images)} compressAboveMb={2} maxUploadMb={20} targetSizeMb={0.5} showPrimaryControl={false} />
+            <ImageUploader label="Choose Social Image" helpText="Optional landscape image for shared category links. The category image is used when empty." uploadContext="categories" value={form.socialImage ? [{ url: form.socialImage }] : []} onChange={(images) => updateMedia('socialImage', images)} maxUploadMb={20} showPrimaryControl={false} />
           </div>
         </section>
       </div>

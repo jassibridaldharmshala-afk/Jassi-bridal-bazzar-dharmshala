@@ -53,7 +53,7 @@ export default function ImageBackgroundEditor({ image, originalFile, uploadPath,
         if (originalFile) cutout.current = await removeImageBackground(originalFile, uploadPath, handle => { request.current = handle; });
         else {
           const result = await api.post(`${uploadPath}/background/stored`, { url: original.url }, { silent: true, signal: abort.current.signal });
-          if (!result.image?.startsWith('data:image/png;base64,')) throw new Error('No background preview was returned.');
+          if (!/^data:image\/(?:png|webp);base64,/.test(result.image || '')) throw new Error('No background preview was returned.');
           cutout.current = result.image;
         }
       }

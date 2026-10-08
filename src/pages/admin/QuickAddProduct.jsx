@@ -323,9 +323,7 @@ export default function QuickAddProduct() {
               maxFiles={8}
               uploadContext="products"
               uploadPath="/admin/uploads"
-              compressAboveMb={2}
               maxUploadMb={20}
-              targetSizeMb={0.7}
               showPrimaryControl={false}
               value={form.images}
               disabled={saving}
