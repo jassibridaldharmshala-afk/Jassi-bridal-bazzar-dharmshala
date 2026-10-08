@@ -1,8 +1,8 @@
 const PREFIX = 'samira_checkout_attempt:';
 const MAX_AGE = 24 * 60 * 60 * 1000;
 
-function accountKey(user) {
-  return String(user?._id || user?.id || user?.phone || 'guest');
+function accountKey(user, storeSlug) {
+  return String(user?._id || user?.id || user?.phone || 'guest') + (storeSlug ? `:store:${storeSlug}` : '');
 }
 
 function newAttemptId() {
@@ -20,8 +20,8 @@ export function checkoutPayloadSignature(payload = {}) {
   });
 }
 
-export function getCheckoutAttempt(user, signature) {
-  const key = PREFIX + accountKey(user);
+export function getCheckoutAttempt(user, signature, storeSlug = '') {
+  const key = PREFIX + accountKey(user, storeSlug);
   try {
     const saved = JSON.parse(localStorage.getItem(key) || 'null');
     if (saved?.id && saved.signature === signature && Date.now() - Number(saved.createdAt || 0) < MAX_AGE) return saved.id;
@@ -33,8 +33,8 @@ export function getCheckoutAttempt(user, signature) {
   }
 }
 
-export function clearCheckoutAttempt(user, attemptId) {
-  const key = PREFIX + accountKey(user);
+export function clearCheckoutAttempt(user, attemptId, storeSlug = '') {
+  const key = PREFIX + accountKey(user, storeSlug);
   try {
     const saved = JSON.parse(localStorage.getItem(key) || 'null');
     if (!attemptId || saved?.id === attemptId) localStorage.removeItem(key);

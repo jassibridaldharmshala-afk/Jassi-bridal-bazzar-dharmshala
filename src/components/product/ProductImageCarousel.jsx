@@ -1,6 +1,7 @@
+import { responsiveImage } from '../../utils/responsiveImages';
 import { useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { normalizeImageEntries, normalizeImageUrl } from '../../services/normalize';
+import { normalizeImageEntries } from '../../services/normalize';
 import { ProductVisual } from './ProductVisual';
 
 export default function ProductImageCarousel({
@@ -139,7 +140,7 @@ export default function ProductImageCarousel({
             {images.map((image, imageIndex) => (
               <div key={`${image.url}-${imageIndex}`} className="h-full w-full shrink-0">
                 {visited.includes(imageIndex) && <img
-                  src={normalizeImageUrl(image.url)}
+                  {...responsiveImage(image, 'card')}
                   alt={product?.name || 'Product'}
                   className="h-full w-full object-cover object-center"
                   loading={priority && imageIndex === 0 ? 'eager' : 'lazy'}

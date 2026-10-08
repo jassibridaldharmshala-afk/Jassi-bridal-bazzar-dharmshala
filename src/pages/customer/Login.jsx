@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { Button, TextInput } from '../../components/ui';
 import { ArrowLeft, HelpCircle, Smartphone } from 'lucide-react';
 import useDesktopFeedback from '../../hooks/useDesktopFeedback';
-import { pushAppRoute } from '../../utils/routing';
+import { pushAppRoute, storefrontPath } from '../../utils/routing';
+import { parseStoreSlug } from '../../utils/attribution';
 import { clearOtpState, readOtpState, writeOtpState } from '../../utils/loginOtpStorage';
 import { digitsOnly, PHONE_VALIDATION_MESSAGE } from '../../utils/phoneInput';
 import { normalizeIndianPhone } from '../../utils/phoneFormatter';
@@ -14,7 +15,8 @@ const OTP_COOLDOWN_SECONDS = 60;
 export default function Login({ route = '/login' }) {
   const brand = useBrandIdentity();
   const searchParams = useMemo(() => new URLSearchParams(route.split('?')[1] || ''), [route]);
-  const redirectTo = searchParams.get('redirect') || '/profile';
+  const storeSlug = parseStoreSlug(route);
+  const redirectTo = storefrontPath(searchParams.get('redirect') || '/profile', storeSlug);
   const autoSendOtp = searchParams.get('autoSendOtp') === '1';
   const routeStep = searchParams.get('step') || '';
   const { sendOtp, verifyOtp, resendOtp } = useAuth();
@@ -54,14 +56,14 @@ export default function Login({ route = '/login' }) {
     if (consent) params.set('consent', '1');
     if (nextStep && nextStep !== 'phone') params.set('step', nextStep);
     const qs = params.toString();
-    return qs ? `/login?${qs}` : '/login';
-  }, [consent, normalizedPhone, phone, redirectTo]);
+    return storefrontPath(qs ? `/login?${qs}` : '/login', storeSlug);
+  }, [consent, normalizedPhone, phone, redirectTo, storeSlug]);
 
   const enterAuthStep = useCallback((nextStep, nextPhone = normalizedPhone || phone) => {
     const phoneUrl = buildLoginUrl('phone', nextPhone);
     const nextUrl = buildLoginUrl(nextStep, nextPhone);
     const current = `${window.location.pathname}${window.location.search}`;
-    const onLoginPhone = window.location.pathname === '/login' && !new URLSearchParams(window.location.search).get('step');
+    const onLoginPhone = window.location.pathname === storefrontPath('/login', storeSlug) && !new URLSearchParams(window.location.search).get('step');
 
     if (nextStep === 'phone') {
       setDemoOtp('');
@@ -74,7 +76,7 @@ export default function Login({ route = '/login' }) {
     }
 
     if (!onLoginPhone) {
-      if (window.location.pathname === '/login') {
+      if (window.location.pathname === storefrontPath('/login', storeSlug)) {
         window.history.replaceState(null, '', phoneUrl);
       } else {
         window.history.pushState(null, '', phoneUrl);
@@ -84,7 +86,7 @@ export default function Login({ route = '/login' }) {
     }
     if (`${window.location.pathname}${window.location.search}` !== nextUrl) pushAppRoute(nextUrl);
     setStep(nextStep);
-  }, [buildLoginUrl, normalizedPhone, phone]);
+  }, [buildLoginUrl, normalizedPhone, phone, storeSlug]);
 
   useEffect(() => {
     if (!cooldown) return undefined;

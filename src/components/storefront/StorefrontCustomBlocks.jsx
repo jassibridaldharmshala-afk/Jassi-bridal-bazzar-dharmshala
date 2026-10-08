@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, ChevronRight, Copy, PlayCircle } from 'lucide-react';
-import { getPrimaryImageUrl, normalizeImageUrl } from '../../services/normalize';
-import { productHref } from '../../utils/routing';
+import { normalizeImageUrl } from '../../services/normalize';
+import { productHref, rentalProductHref } from '../../utils/routing';
+import { responsiveImage } from '../../utils/responsiveImages';
 import './StorefrontCustomBlocks.css';
 
 export default function StorefrontCustomBlocks({ blocks = [], catalog = [], categories = [], navigate, mobile = false, storeSlug = '' }) {
@@ -28,10 +29,15 @@ function CustomBlock({ block, products, categories, navigate = () => {}, mobile,
 
   if (block.type === 'product-grid') return <section className="sc-custom-block sc-custom-block--catalog" style={style} data-custom-block={block.id}>
     <BlockHeading block={block} />
-    <div className="sc-custom-block__products">{selectedProducts.map((product) => <button type="button" key={product._id || product.id || product.slug} onClick={() => navigate(productHref(product, storeSlug))}>
-      <span>{getPrimaryImageUrl(product.images || []) ? <img src={normalizeImageUrl(getPrimaryImageUrl(product.images || []))} alt={product.name || 'Product'} loading="lazy" decoding="async" /> : null}</span>
-      <strong>{product.name}</strong><small>₹{Number(product.price || 0).toLocaleString('en-IN')}</small>
-    </button>)}</div>{!selectedProducts.length && <p className="sc-custom-block__empty">Choose products in Website Designer.</p>}{action}
+    <div className="sc-custom-block__products">{selectedProducts.map((product) => {
+      const rentalOnly = product.commerceMode === 'RENTAL_ONLY' || product.purchaseEnabled === false;
+      const rental = rentalOnly || product.commerceMode === 'SALE_AND_RENTAL';
+      const photo = responsiveImage(product.images?.find(image => image?.primary) || product.images?.[0]);
+      return <div key={product._id || product.id || product.slug}><button type="button" onClick={() => navigate(rentalOnly ? rentalProductHref(product, storeSlug) : productHref(product, storeSlug))}>
+        <span>{photo.src ? <img {...photo} alt={product.name || 'Product'} loading="lazy" decoding="async" /> : null}</span>
+        <strong>{product.name}</strong><small>{rentalOnly ? 'Check rental dates & price' : `₹${Number(product.sellingPrice ?? product.price ?? 0).toLocaleString('en-IN')}`}</small>
+      </button>{rental && !rentalOnly && <button className="sc-custom-block__rental" type="button" onClick={() => navigate(rentalProductHref(product, storeSlug))}>Rent {product.name} · check dates</button>}</div>;
+    })}</div>{!selectedProducts.length && <p className="sc-custom-block__empty">Choose products in Website Designer.</p>}{action}
   </section>;
 
   if (['category-grid', 'category-carousel'].includes(block.type)) return <section className={`sc-custom-block sc-custom-block--catalog ${block.type === 'category-carousel' ? 'sc-custom-block--category-carousel' : ''}`} style={style} data-custom-block={block.id}>

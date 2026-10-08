@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../services/api';
 import { normalizeProduct } from '../services/normalize';
 import { useAuth } from './AuthContext';
@@ -8,15 +8,18 @@ import { trackEvent } from '../utils/analytics';
 import { bagTotals, selectedBagItems } from '../utils/bag';
 import { getSelectableSizes } from '../utils/productSizing';
 
+import { useStorefront } from './StorefrontContext';
+
 export const CartContext = createContext(null);
-const GUEST_STORAGE = createStoragePlan('samira_cart', null);
 const EMPTY_STORAGE_NAMES = [];
 const SYNC_KEY = 'samira_cart_sync';
 
 export function CartProvider({ children, storageName: storageNameProp, legacyStorageNames = EMPTY_STORAGE_NAMES }) {
   const { user } = useAuth();
-  const account = String(user?._id || user?.id || user?.phone || 'guest');
-  const authenticated = account !== 'guest';
+  const { storeSlug } = useStorefront();
+  const GUEST_STORAGE = useMemo(() => createStoragePlan(storeSlug ? `samira_cart_store_${storeSlug}` : 'samira_cart', null), [storeSlug]);
+  const account = String(user?._id || user?.id || user?.phone || 'guest') + (storeSlug ? `:store:${storeSlug}` : '');
+  const authenticated = Boolean(user);
   const owner = useRef({ account });
   const alive = useRef(true), queue = useRef(Promise.resolve()), requests = useRef(new Map());
   const refreshRequests = useRef(new Map());
@@ -50,7 +53,8 @@ export function CartProvider({ children, storageName: storageNameProp, legacySto
     queue.current = next; return next;
   }, [valid]);
   const refresh = useCallback((forceRefetch = false) => {
-    if (refreshRequests.current.has(account)) return refreshRequests.current.get(account);
+    const refreshKey = `${account}:${forceRefetch ? 'force' : 'cache'}`;
+    if (refreshRequests.current.has(refreshKey)) return refreshRequests.current.get(refreshKey);
     const request = enqueue(async () => {
       setLoading(true); setError('');
       try {
@@ -81,8 +85,8 @@ export function CartProvider({ children, storageName: storageNameProp, legacySto
         if (valid()) setError(failure.message || 'Could not refresh your bag. Please retry.');
         return { ok: false, message: failure.message };
       } finally { if (valid()) { setLoading(false); setHydrated(true); } }
-    }).finally(() => { if (refreshRequests.current.get(account) === request) refreshRequests.current.delete(account); });
-    refreshRequests.current.set(account, request);
+    }).finally(() => { if (refreshRequests.current.get(refreshKey) === request) refreshRequests.current.delete(refreshKey); });
+    refreshRequests.current.set(refreshKey, request);
     return request;
   }, [account, authenticated, commit, enqueue, guestLegacy, guestName, valid]);
 

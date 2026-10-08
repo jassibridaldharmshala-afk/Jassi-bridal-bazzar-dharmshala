@@ -1,9 +1,10 @@
 import { createSelector, createSlice } from '@reduxjs/toolkit';
 
 const sortOptions = ['newest', 'bestSeller', 'priceLowHigh', 'priceHighLow', 'discount', 'rating'];
-export const clearableCatalogFilterKeys = ['search', 'category', 'size', 'color', 'fabric', 'occasion', 'discount', 'rating', 'stock', 'minPrice', 'maxPrice', 'featured', 'newArrival', 'bestSeller', 'trending'];
+export const clearableCatalogFilterKeys = ['mode', 'search', 'category', 'size', 'color', 'fabric', 'occasion', 'discount', 'rating', 'stock', 'minPrice', 'maxPrice', 'featured', 'newArrival', 'bestSeller', 'trending'];
 
 const initialState = {
+  mode: '',
   search: '',
   sort: 'newest',
   category: '',
@@ -52,6 +53,7 @@ export const selectVisibleProducts = createSelector(
 export function normalizeCatalogQuery(query = {}) {
   const source = query instanceof URLSearchParams ? Object.fromEntries(query.entries()) : query;
   const normalized = {
+    mode: ['buy', 'rent'].includes(source.mode) ? source.mode : '',
     search: normalizeText(source.search),
     sort: normalizeSort(source.sort),
     category: normalizeText(source.category),
@@ -105,6 +107,8 @@ export function clearCatalogFilters(filters) {
 
 export function matchesCatalogFilters(product, filters, categories, ignoredKeys = []) {
   const ignored = ignoredKeys instanceof Set ? ignoredKeys : new Set(ignoredKeys);
+  if (filters.mode === 'buy' && (product.commerceMode === 'RENTAL_ONLY' || product.purchaseEnabled === false)) return false;
+  if (filters.mode === 'rent' && !['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode)) return false;
   if (!ignored.has('search') && !matchesSearch(product, filters.search)) return false;
   if (!ignored.has('category') && !matchesCategory(product, filters.category, categories)) return false;
   if (!ignored.has('size') && !matchesArrayValue(getProductOptionValues(product, 'size'), filters.size)) return false;

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Bell, ChevronRight, LayoutDashboard, Package, Tags, ShoppingBag, Users, Ticket, Image, Star, RefreshCcw, Boxes, BarChart3, Settings, FilePlus2, GitBranch, Video, MessageCircle, Mail, ClipboardList, Menu, Palette, HeartPulse, ShieldCheck } from 'lucide-react';
+import { Bell, ChevronRight, LayoutDashboard, Package, Tags, ShoppingBag, Users, Ticket, Image, Star, RefreshCcw, Boxes, BarChart3, Settings, FilePlus2, GitBranch, Video, MessageCircle, Mail, ClipboardList, Menu, Palette, HeartPulse, ShieldCheck, CalendarDays } from 'lucide-react';
 import logo from '../../assets/generated-brand-logo.svg';
 import useAppPath from '../../hooks/useAppPath';
 import { reelProductImportEnabled } from '../../config/features';
@@ -42,7 +42,7 @@ const MOBILE_TABS = [
   ['Dashboard', '/admin', LayoutDashboard],
   ['Products', '/admin/products', Package],
   ['Orders', '/admin/orders', ShoppingBag],
-  ['Customers', '/admin/customers', Users],
+  ['Rentals', '/admin/rentals', CalendarDays],
 ];
 
 export function adminTitleFromPath(path = '/admin') {
@@ -81,7 +81,15 @@ export default function AdminSidebar({ open = false, onClose = () => {}, onOpen 
         <p className="admin-sidebar__label">Admin workspace</p>
       </div>
       <nav className="admin-sidebar__nav">
-        {items.map((item) => (
+        {[
+          ['Daily shop work', ['/admin', '/admin/notifications', '/admin/orders', '/admin/rentals', '/admin/returns', '/admin/customers', '/admin/support']],
+          ['Products & stock', ['/admin/products', '/admin/product-drafts', '/admin/social-import', '/admin/reel-import', '/admin/categories', '/admin/variant-groups', '/admin/inventory']],
+          ['Marketing & content', ['/admin/social', '/admin/coupons', '/admin/banners', '/admin/campaigns', '/admin/reviews', '/admin/subscribers', '/admin/store-content']],
+          ['Reports & business', ['/admin/reports', '/admin/traffic', '/admin/business', '/admin/audit']],
+          ['Store setup', ['/admin/customization', '/admin/system', '/admin/settings']],
+        ].map(([label, paths], index) => ({ label, items: items.filter(item => paths.includes(item.path)), expanded: index < 2 || paths.includes(activeHref) })).map(group => <details key={group.label + activeHref} open={group.expanded} className="admin-sidebar__group">
+          <summary className="px-3 py-3 text-xs font-bold uppercase tracking-wide cursor-pointer">{group.label}</summary>
+        {group.items.map((item) => (
           <a
             key={item.label}
             href={item.path}
@@ -96,6 +104,7 @@ export default function AdminSidebar({ open = false, onClose = () => {}, onOpen 
             <ChevronRight className="h-3.5 w-3.5 opacity-50" />
           </a>
         ))}
+        </details>)}
       </nav>
     </aside>
   );
@@ -140,6 +149,7 @@ function iconForLabel(label) {
     'Reel Product Import': <Video className="h-4 w-4" />,
     Categories: <Tags className="h-4 w-4" />,
     'Variant Groups': <GitBranch className="h-4 w-4" />,
+    'Rental studio': <CalendarDays className="h-4 w-4" />,
     Orders: <ShoppingBag className="h-4 w-4" />,
     Customers: <Users className="h-4 w-4" />,
     Coupons: <Ticket className="h-4 w-4" />,

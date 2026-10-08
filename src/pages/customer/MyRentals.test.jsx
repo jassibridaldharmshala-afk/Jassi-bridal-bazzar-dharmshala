@@ -39,8 +39,20 @@ test('late responses from a different booking cannot replace the current booking
 test('a failed booking load offers retry without an endless loading message', async () => {
   api.get.mockImplementation(path => path.includes('payment-methods') ? Promise.resolve([]) : Promise.reject(new Error('Booking unavailable')));
   render(<MyRentals route="/rentals?id=missing" navigate={jest.fn()} />); await flush();
-  expect(screen.getByRole('alert')).toHaveTextContent('Booking unavailable'); expect(screen.queryByText('Loading booking…')).not.toBeInTheDocument();
+  expect(screen.getAllByRole('alert').some(node => node.textContent.includes('Booking unavailable'))).toBe(true); expect(screen.queryByText('Loading booking…')).not.toBeInTheDocument();
   api.get.mockResolvedValue(booking('missing'));
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' })); await flush();
   expect(screen.getByText('R-missing')).toBeInTheDocument();
+});
+
+test('failed payment methods expose retry and refresh also reloads the options', async () => {
+  let failMethods = true;
+  api.get.mockImplementation(path => path.includes('payment-methods') ? failMethods ? Promise.reject(new Error('Payment options offline')) : Promise.resolve([{ key: 'UPI', label: 'UPI', enabled: true }]) : Promise.resolve(booking('one')));
+  render(<MyRentals route="/rentals?id=one" navigate={jest.fn()} />); await flush();
+  expect(screen.getByRole('button', { name: 'Retry payment options' })).toBeInTheDocument();
+  failMethods = false; fireEvent.click(screen.getByRole('button', { name: 'Retry payment options' })); await flush();
+  expect(screen.getByLabelText('Online payment method')).toHaveValue('UPI');
+  const previous = api.get.mock.calls.filter(([path]) => path.includes('payment-methods')).length;
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' })); await flush();
+  expect(api.get.mock.calls.filter(([path]) => path.includes('payment-methods')).length).toBe(previous + 1);
 });

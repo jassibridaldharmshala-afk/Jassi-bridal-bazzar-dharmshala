@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 test('downloads a named PDF even when the optional logo is unavailable', async () => {
   await downloadReceiptPdf(sample);
-  expect(mockDownload).toHaveBeenCalledWith('Jassi-Collection-Invoice-SC-SAMPLE01.pdf');
+  expect(mockDownload).toHaveBeenCalledWith('Jassi-General-Store-Invoice-SC-SAMPLE01.pdf');
   expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 'A4', info: expect.objectContaining({ title: 'Invoice SC-SAMPLE01' }) }));
 });
 test('incomplete invoice data is rejected rather than downloading an incorrect zero total', async () => {

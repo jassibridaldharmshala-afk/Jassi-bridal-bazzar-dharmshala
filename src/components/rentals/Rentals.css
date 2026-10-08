@@ -40,3 +40,19 @@ button.rental-timeline-chip:not(:disabled) { cursor:pointer; }
 .rental-timeline-chip--preparation,.rental-timeline-chip--held { background:#fff3d9; color:#775219; border-color:#e8d4a4; }
 .rental-timeline-free { color:#576b59; font-size:12px; }
 @media(max-width:640px) { .rental-setup-steps { grid-template-columns:1fr; } .rental-setup-steps button { padding:12px; } .rental-desk-filters { grid-template-columns:repeat(2,minmax(0,1fr)); } .rental-desk-filter { padding:12px; font-size:12px; } }
+
+.rental-mode-tabs,.rental-journey{display:flex;gap:.6rem;flex-wrap:wrap}
+.rental-mode-tabs button,.rental-journey button{border:1px solid #dfc8cb;background:#fff;border-radius:14px;padding:.8rem 1.1rem;text-align:left;color:#632039;min-height:44px}
+.rental-mode-tabs .is-selected,.rental-journey .is-selected{background:#6c2039;color:white;border-color:#6c2039}
+.rental-mode-selector{margin:1rem 0}.rental-mode-selector strong{display:block;font-size:1rem;margin-top:.25rem}
+.rental-journey{margin:1rem 0}.rental-journey span{margin-right:.6rem;font-weight:800}.rental-journey button:disabled{opacity:.5}
+.rental-sticky-action{position:fixed;bottom:calc(4rem + env(safe-area-inset-bottom));left:0;right:0;z-index:40;padding:.65rem 1rem;background:#fff;box-shadow:0 -4px 16px #0001;display:flex;align-items:center;gap:1rem}.rental-sticky-action>.rental-button{flex:1}
+.rental-grid [hidden]{display:none!important}
+
+/* Keep the final customer review compact; earlier steps remain editable. */
+.rental-grid--review { grid-template-columns: minmax(0, 1fr); }
+.rental-grid--review > .rental-plan-card { display: none; }
+.rental-grid--review > aside { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 900px) {
+  .rental-grid--review > aside { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}

@@ -23,7 +23,7 @@ test.each(['/rentals', '/rental-book'])('rental route %s is not a boutique slug 
 test.each(['/', '/products?category=silk', '/search?search=kurta', '/product?id=one', '/category?category=silk'])('catalog navigation %s remains in the selected boutique', path => {
   expect(storefrontPath(path, 'silk')).toBe(`/store/silk${path === '/' ? '' : path}`);
 });
-test.each(['/cart', '/checkout', '/profile', '/seller', '/admin/products', '/store/other/products', 'https://example.com'])('non-catalog navigation %s retains its correct destination', path => {
+test.each(['/seller', '/admin/products', '/store/other/products', 'https://example.com'])('non-catalog navigation %s retains its correct destination', path => {
   expect(storefrontPath(path, 'silk')).toBe(path);
 });
 
@@ -58,4 +58,8 @@ describe('product routes', () => {
   test('does not crash on malformed encoded route text', () => {
     expect(parseProductKey('/product/broken%')).toBe('broken%');
   });
+});
+
+test.each(['/cart', '/checkout', '/profile', '/orders', '/returns', '/notifications'])('customer route %s stays in the selected boutique', path => {
+  expect(storefrontPath(path, 'silk')).toBe('/store/silk' + path);
 });

@@ -19,11 +19,11 @@ test('bridal Smart Fill reviews rich fields, SEO and category specifications wit
   expect(selectedSmartPatch(rows, rows.map(row => row.key), { ...form, category: 'lehenga' }).some(row => row.key === 'attributeValues.jewellery_type')).toBe(false);
 });
 
-test('new bridal products need no size chart and legacy size or variant inventory remains editable', () => {
-  expect(usesGarmentSizing(structure, { sizes: '' })).toBe(false);
+test('bridal products expose optional manual sizing while AI never invents a size matrix', () => {
+  expect(usesGarmentSizing(structure, { sizes: '' })).toBe(true);
   expect(usesGarmentSizing(structure, { sizes: 'M, L', sizingMode: 'auto' })).toBe(true);
   expect(usesGarmentSizing(structure, { variants: [{ size: 'M', stock: 2 }] })).toBe(true);
-  expect(productAttributeDefinitions(structure, categories, { category: 'jewellery' }).map(item => item.key)).toEqual(['pattern', 'jewellery_type']);
+  expect(productAttributeDefinitions(structure, categories, { category: 'jewellery' }).map(item => item.key)).toEqual(['size', 'pattern', 'jewellery_type']);
   const copy = buildAssistantSuggestions({ categoryName: 'Lehenga', sizingEnabled: false });
   expect(copy.sizes).toEqual([]); expect(copy.caption).not.toContain('Available Sizes');
 });

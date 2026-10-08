@@ -1,0 +1,29 @@
+{
+  "http": 200,
+  "status": "ok",
+  "ready": true,
+  "database": "connected",
+  "imageStorage": "r2",
+  "checks": {
+    "database": {
+      "required": true,
+      "ready": true
+    },
+    "mediaStorage": {
+      "required": false,
+      "ready": true
+    },
+    "redis": {
+      "required": false,
+      "ready": false
+    },
+    "tenantIndexes": {
+      "required": true,
+      "ready": true
+    },
+    "trafficIndexes": {
+      "required": false,
+      "ready": true
+    }
+  }
+}

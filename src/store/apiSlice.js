@@ -25,10 +25,14 @@ const rawBaseQuery = fetchBaseQuery({
       const queryScope = new URLSearchParams(String(typeof arg === 'string' ? arg : arg?.url || '').split('?')[1] || '');
       const hasParamScope = arg?.params && Object.prototype.hasOwnProperty.call(arg.params, 'store');
       const hasStoreScope = hasParamScope || queryScope.has('store');
-      const storeSlug = hasParamScope ? arg.params.store : queryScope.has('store') ? queryScope.get('store') : sessionStorage.getItem('samira_store_slug');
+      const storeSlug = hasParamScope ? arg.params.store : queryScope.has('store') ? queryScope.get('store') : (/^\/store\/([^/]+)/.exec(window.location.pathname)?.[1] || sessionStorage.getItem('samira_store_slug'));
       if (storeSlug) headers.set('x-store-slug', storeSlug);
       else if (hasStoreScope) headers.delete('x-store-slug');
       const requestPath = String(typeof arg === 'string' ? arg : arg?.url || '').split('?')[0];
+      if (requestPath.startsWith('/admin/rentals')) {
+        const targetStoreId = queryScope.get('storeId') || new URLSearchParams(window.location.search).get('storeId');
+        if (/^[a-f\d]{24}$/i.test(targetStoreId || '')) headers.set('x-store-id', targetStoreId);
+      }
       if (requestPath.startsWith('/seller/') || requestPath === '/stores/me/current') {
         const sellerStoreId = sessionStorage.getItem('samira_seller_store_id');
         if (sellerStoreId) headers.set('x-store-id', sellerStoreId);

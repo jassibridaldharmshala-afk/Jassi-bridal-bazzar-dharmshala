@@ -1,0 +1,5 @@
+import { rentalMoney } from '../../utils/rentals';
+export default function RentalModeSelector({ product, value, onChange, purchaseEnabled = true }) {
+  const canBuy = product.commerceMode !== 'RENTAL_ONLY' && purchaseEnabled;
+  return <div className="rental-mode-selector"><span className="rental-eyebrow">CHOOSE HOW TO SHOP</span><div className="rental-mode-tabs" role="group" aria-label="Buy or rent this product">{canBuy && <button type="button" aria-pressed={value === 'buy'} className={value === 'buy' ? 'is-selected' : ''} onClick={() => onChange?.('buy')}>Buy & keep <strong>{rentalMoney(Number(product.sellingPrice ?? product.price ?? 0) * 100)}</strong></button>}<button type="button" aria-pressed={value === 'rent' || !canBuy} className={value === 'rent' || !canBuy ? 'is-selected' : ''} onClick={() => onChange?.('rent')}>Rent & return <strong>{product.rentalPreview?.dailyRatePaise ? `${rentalMoney(product.rentalPreview.dailyRatePaise)} / day` : 'Check dates & price'}</strong></button></div></div>;
+}

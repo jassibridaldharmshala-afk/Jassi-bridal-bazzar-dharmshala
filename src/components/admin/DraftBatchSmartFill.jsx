@@ -9,7 +9,7 @@ import './ProductSmartFill.css';
 import './DraftBatchSmartFill.css';
 
 const draftId = draft => String(draft?._id || draft?.id || '');
-const financial = key => ['sellingPrice', 'price', 'originalPrice'].includes(key);
+const financial = key => ['sellingPrice', 'price', 'originalPrice'].includes(key) || key.startsWith('rentalPricing.');
 const pending = record => ['queued', 'failed', 'paused'].includes(record.state);
 const halt = error => [401, 403, 429, 'FETCH_ERROR', 'TIMEOUT_ERROR'].includes(error.status)
   || ['AI_QUOTA_EXCEEDED', 'AI_ACCESS_DENIED', 'SMART_FILL_UNAVAILABLE', 'DUPLICATE_REQUEST'].includes(error.code);
@@ -87,7 +87,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
           const rows = suggestionRows(result, baseline, { categories, structure, priceField: 'sellingPrice', seo: true });
           setNotice('');
           update(record.id, { baseline, rows, selected: rows.filter(row => row.empty && !financial(row.key)).map(row => row.key), replace: false,
-            warnings: Array.isArray(result.warnings) ? result.warnings : [], state: rows.length ? 'ready' : 'empty', mode: result.mode });
+            similarProducts: result.similarProducts || [], warnings: Array.isArray(result.warnings) ? result.warnings : [], state: rows.length ? 'ready' : 'empty', mode: result.mode });
         } catch (error) {
           if (!valid(controller)) break;
           if (error.status === 429 && !rateRetries.has(record.id)) {
@@ -157,7 +157,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
         <header>{smartPhotos(record.baseline)[0] && <img src={normalizeImageUrl(smartPhotos(record.baseline)[0])} alt="" />}<div><h3>{record.baseline.name || `Product ${index + 1}`}</h3><span>{smartPhotos(record.baseline).length} photos · {labels[record.state]}</span></div></header>
         {pending(record) && <label className="product-smart-fill__label">Notes for product {index + 1}<textarea rows={2} maxLength={7000} disabled={!!busy} value={record.notes} onChange={event => update(record.id, { notes: event.target.value })} placeholder="Optional details for this product only" /></label>}
         {record.error && <p role="alert" className="product-smart-fill__warning">{record.error}</p>}
-        {record.warnings.map((warning, i) => <p key={i} className="product-smart-fill__warning">{warning}</p>)}
+        {record.similarProducts?.length > 0 && <section><strong>Similar catalogue products</strong>{record.similarProducts.map(product => <p key={product._id}><a href={`${apiPrefix}/products?edit=${encodeURIComponent(product._id)}`} target="_blank" rel="noopener noreferrer">{product.name}</a> — {product.reason}</p>)}<p>Review before publishing; grouping and merging remain your decision.</p></section>}{record.warnings.map((warning, i) => <p key={i} className="product-smart-fill__warning">{warning}</p>)}
         {record.state === 'conflict' && <button type="button" className="admin-btn-ghost" disabled={!!busy} onClick={() => update(record.id, { state: 'queued', rows: [], selected: [], error: '' })}>Re-analyse this draft</button>}
         {record.state === 'ready' && <details open={records.length === 1}><summary>{selectedSmartPatch(record.rows, record.selected, record.baseline, record.replace).length} selected details · Review suggestions</summary>
           <label className="product-smart-fill__choice"><input type="checkbox" checked={record.replace} disabled={!!busy} onChange={event => update(record.id, { replace: event.target.checked, selected: event.target.checked ? record.selected : record.rows.filter(row => row.empty && !financial(row.key)).map(row => row.key) })} />Allow replacing selected existing details for this product</label>

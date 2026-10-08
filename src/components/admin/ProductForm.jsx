@@ -567,14 +567,13 @@ export default function ProductForm({
       };
       if (productId && !tracksVariants && sizingMode !== 'sized' && !getEffectiveVariantConfig(structure, categories, form).enabled) delete payload.variants;
       if (!payload.category) delete payload.category;
-      if (productId) await api.put(`${apiPrefix}/products/${productId}`, payload);
-      else await api.post(`${apiPrefix}/products`, payload);
+      const savedProduct = productId ? await api.put(`${apiPrefix}/products/${productId}`, payload) : await api.post(`${apiPrefix}/products`, payload);
       autosavePauseRef.current = true;
       if (!cloudDraft && autosaveIdRef.current) await api.delete(`${apiPrefix}/product-drafts/${autosaveIdRef.current}`).catch(() => {});
       if (!productId) setForm(emptyProduct);
       clearDraft(productId, apiPrefix);
       setMessage(intent === 'schedule' ? 'Product scheduled successfully.' : intent === 'publish' ? 'Product published successfully.' : 'Product saved successfully.');
-      onSaved?.();
+      onSaved?.(savedProduct);
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -834,7 +833,7 @@ export default function ProductForm({
                     </td>
                     <td className="p-3"><input aria-label={`${variant.size || 'Default'} ${variant.color || 'default'} selling price`} type="number" min="0.01" step="0.01" value={variant.price || ''} onChange={(event) => updateVariant(index, 'price', event.target.value)} className="admin-field__control h-10 w-28 min-h-10 px-3" placeholder="Main price" /></td>
                     <td className="p-3"><input aria-label={`${variant.size || 'Default'} ${variant.color || 'default'} MRP`} type="number" min="0.01" step="0.01" value={variant.originalPrice || ''} onChange={(event) => updateVariant(index, 'originalPrice', event.target.value)} className="admin-field__control h-10 w-28 min-h-10 px-3" placeholder="Main MRP" /></td>
-                    <td className="p-3"><select aria-label={`${variant.size || 'Default'} ${variant.color || 'default'} photo`} value={variant.images?.[0]?.url || ''} onChange={(event) => updateVariant(index, 'images', event.target.value ? [{ url: event.target.value, primary: true }] : [])} className="admin-field__control h-10 min-h-10 min-w-36 px-2"><option value="">Main product photo</option>{form.images.map((image, imageIndex) => <option key={`${image.url}-${imageIndex}`} value={image.url}>Photo {imageIndex + 1}{image.primary ? ' · Main' : ''}</option>)}</select></td>
+                    <td className="p-3"><select aria-label={`${variant.size || 'Default'} ${variant.color || 'default'} photo`} value={variant.images?.[0]?.url || ''} onChange={(event) => updateVariant(index, 'images', event.target.value ? [{ ...form.images.find(image => image.url === event.target.value), url: event.target.value, primary: true }] : [])} className="admin-field__control h-10 min-h-10 min-w-36 px-2"><option value="">Main product photo</option>{form.images.map((image, imageIndex) => <option key={`${image.url}-${imageIndex}`} value={image.url}>Photo {imageIndex + 1}{image.primary ? ' · Main' : ''}</option>)}</select></td>
                     <td className="p-3"><label className="inline-flex items-center gap-2 font-semibold"><input type="checkbox" checked={variant.isActive !== false} onChange={(event) => updateVariant(index, 'isActive', event.target.checked)} className="accent-wine" /> Sell</label></td>
                   </tr>
                 ))}
@@ -1480,7 +1479,7 @@ function DynamicVariantEditor({ variantConfiguration, attributes, form, setForm,
                 <CompactVariantInput label="Selling price" type="number" min={0.01} step={0.01} value={variant.price} onChange={(value) => onUpdateVariant(index, 'price', value)} />
                 <CompactVariantInput label="MRP" type="number" min={0.01} step={0.01} value={variant.originalPrice} onChange={(value) => onUpdateVariant(index, 'originalPrice', value)} />
               </div>
-              <label className="mt-3 grid gap-1 text-[11px] font-semibold text-slate-500"><span>Variant photo</span><select value={variant.images?.[0]?.url || ''} onChange={(event) => onUpdateVariant(index, 'images', event.target.value ? [{ url: event.target.value, primary: true }] : [])} className="h-9 rounded-lg border border-theme-border px-2"><option value="">Main product photo</option>{form.images.map((image, imageIndex) => <option key={`${image.url}-${imageIndex}`} value={image.url}>Photo {imageIndex + 1}</option>)}</select></label>
+              <label className="mt-3 grid gap-1 text-[11px] font-semibold text-slate-500"><span>Variant photo</span><select value={variant.images?.[0]?.url || ''} onChange={(event) => onUpdateVariant(index, 'images', event.target.value ? [{ ...form.images.find(image => image.url === event.target.value), url: event.target.value, primary: true }] : [])} className="h-9 rounded-lg border border-theme-border px-2"><option value="">Main product photo</option>{form.images.map((image, imageIndex) => <option key={`${image.url}-${imageIndex}`} value={image.url}>Photo {imageIndex + 1}</option>)}</select></label>
               <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-600"><input type="checkbox" checked={variant.isActive !== false} onChange={(event) => onUpdateVariant(index, 'isActive', event.target.checked)} /> Available for sale</label>
             </article>
           ))}
@@ -1874,6 +1873,7 @@ function prepareImages(images) {
     normalized[0] = { ...normalized[0], primary: true };
   }
   return normalized.map((image) => ({
+    ...image,
     url: image.url,
     publicId: image.publicId,
     ...(image.background ? { background: image.background } : {}),

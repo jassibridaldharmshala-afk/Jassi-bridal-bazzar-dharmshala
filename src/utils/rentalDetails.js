@@ -6,7 +6,7 @@ export const pieceMeasurementFields = {
 };
 const mobile = value => String(value || '').replace(/[\s()-]/g, '').replace(/^\+?91(?=\d{10}$)/, '');
 export function blankRentalAddress(customer = {}, saved = {}) {
-  return Object.fromEntries(rentalAddressFields.map(([key]) => [key, saved?.[key] ?? (key === 'fullName' ? customer.name || '' : key === 'mobile' ? mobile(customer.phone) : '')]));
+  return Object.fromEntries(rentalAddressFields.map(([key]) => [key, saved?.[key] ?? (key === 'fullName' ? customer?.name || '' : key === 'mobile' ? mobile(customer?.phone) : '')]));
 }
 export function editableRentalDetails(saved, customer = {}) {
   const contact = value => value ? { name: value.name || '', phone: mobile(value.phone), ...(value.authorised !== undefined ? { relationship: value.relationship || '', authorised: value.authorised === true } : {}) } : null;

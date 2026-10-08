@@ -1,78 +1,54 @@
-import { compressImageFile, isSupportedImageFile, preparePhotoUploads, PHOTO_MAX_BYTES, PHOTO_SOURCE_MAX_BYTES } from './imageCompression';
-const mockLoadModule = jest.fn();
+import { compressImageFile, isSupportedImageFile, preparePhotoUploads, prepareAnalysisImageFile,
+  PHOTO_SOURCE_MAX_BYTES, PHOTO_BATCH_MAX_BYTES } from './imageCompression';
+import { getUploadRetryKey } from './uploadRetry';
 const mockCompress = jest.fn();
-jest.mock('browser-image-compression', () => {
-  mockLoadModule();
-  return { __esModule: true, default: (...args) => mockCompress(...args) };
-});
+jest.mock('browser-image-compression', () => ({ __esModule: true, default: (...args) => mockCompress(...args) }));
 
-test('file validation and small WebP uploads do not load the compression library', async () => {
-  expect(isSupportedImageFile({ name: 'image.jpg' })).toBe(true);
-  const file = new File(['small'], 'small.webp', { type: 'image/webp' });
-  expect(await compressImageFile(file)).toBe(file);
-  expect(file.__compressionMeta.skipped).toBe(true);
-  await expect(compressImageFile(new File(['x'], 'bad.txt', { type: 'text/plain' }))).rejects.toThrow('Only JPG');
-  expect(mockLoadModule).not.toHaveBeenCalled();
-});
-
-test('compression module loads on first required upload and keeps worker/options behavior', async () => {
-  mockCompress.mockResolvedValue(new Blob(['compressed'], { type: 'image/webp' }));
-  const file = new File(['jpg'], 'photo.jpg', { type: 'image/jpeg' });
+test.each(['image/jpeg', 'image/png', 'image/webp'])('saved %s photos retain their original encoded bytes despite legacy size options', async type => {
+  const file = new File([new Uint8Array(3 * 1024 * 1024)], 'detailed-photo.' + type.split('/')[1], { type });
   const progress = jest.fn();
-  const result = await compressImageFile(file, { onProgress: progress });
-  expect(mockLoadModule).toHaveBeenCalledTimes(1);
-  expect(mockCompress).toHaveBeenCalledWith(file, expect.objectContaining({ useWebWorker: true, fileType: 'image/webp', onProgress: progress }));
-  expect(result.name).toBe('photo.webp');
-  expect(result.__compressionMeta.convertedToWebp).toBe(true);
+  const output = await compressImageFile(file, { maxWidthOrHeight: 320, targetMaxSizeMb: 0.1, onProgress: progress });
+  expect(output).toBe(file);
+  expect(output.size).toBe(3 * 1024 * 1024);
+  expect(output.__compressionMeta).toMatchObject({ skipped: true, lossless: true, convertedToWebp: false });
+  expect(progress).toHaveBeenCalledWith(100);
+  expect(mockCompress).not.toHaveBeenCalled();
 });
 
-test('compression failure is reported and another upload can retry', async () => {
-  const file = new File(['jpg'], 'photo.jpg', { type: 'image/jpeg' });
-  mockCompress.mockRejectedValueOnce(new Error('Compression interrupted')).mockResolvedValueOnce(new Blob(['ok'], { type: 'image/webp' }));
-  await expect(compressImageFile(file)).rejects.toThrow('Compression interrupted');
-  expect((await compressImageFile(file)).type).toBe('image/webp');
-});
-
-test('photos over 2 MB and oversized WebP are optimized below 100 decimal KB, ignoring old form targets', async () => {
-  mockCompress.mockReset().mockResolvedValue(new Blob(['optimized'], { type: 'image/webp' }));
-  for (const type of ['image/jpeg', 'image/webp']) {
-    const file = new File([new Uint8Array(3 * 1024 * 1024)], type === 'image/webp' ? 'large.webp' : 'large.jpg', { type });
-    file.__compressionMeta = { skipped: true }; // stale metadata must not bypass size policy
-    const output = await compressImageFile(file, { targetMaxSizeMb: 0.7, targetMinSizeMb: 0.3 });
-    expect(output.size).toBeLessThan(100_000);
-    expect(mockCompress).toHaveBeenLastCalledWith(file, expect.objectContaining({ maxSizeMB: PHOTO_MAX_BYTES / (1024 * 1024), maxIteration: 1, initialQuality: 0.92 }));
-  }
-  expect(mockCompress).toHaveBeenCalledTimes(2);
-});
-
-test('adaptive retries use the original photo and shrink dimensions while keeping high encoding quality', async () => {
-  mockCompress.mockReset()
-    .mockResolvedValueOnce(new Blob([new Uint8Array(220000)], { type: 'image/webp' }))
-    .mockResolvedValueOnce(new Blob(['fits'], { type: 'image/webp' }));
-  const file = new File(['source'], 'detail.png', { type: 'image/png' });
+test('extension-only photos receive the correct MIME without changing bytes or retry identity', async () => {
+  const file = new File(['original pixels'], 'detail.png');
   const output = await compressImageFile(file);
-  expect(output.size).toBeLessThanOrEqual(PHOTO_MAX_BYTES);
-  expect(mockCompress.mock.calls[1][0]).toBe(file);
-  expect(mockCompress.mock.calls[1][1].maxWidthOrHeight).toBeLessThan(1600);
-  expect(mockCompress.mock.calls[1][1].initialQuality).toBe(0.92);
+  expect(output.type).toBe('image/png'); expect(output.name).toBe(file.name); expect(output.size).toBe(file.size);
+  expect(getUploadRetryKey({ path: '/admin/uploads', files: [output] })).toBe(getUploadRetryKey({ path: '/admin/uploads', files: [file] }));
+  expect(isSupportedImageFile({ name: 'forged.jpg', type: 'text/plain' })).toBe(false);
 });
 
-test('an oversized result fails clearly and never uploads the original as a fallback', async () => {
-  mockCompress.mockReset().mockResolvedValue(new Blob([new Uint8Array(200000)], { type: 'image/webp' }));
-  const file = new File(['source'], 'complex.jpg', { type: 'image/jpeg' });
-  await expect(compressImageFile(file)).rejects.toMatchObject({ status: 400, code: 'UPLOAD_IMAGE_INVALID' });
-  expect(mockCompress.mock.calls.length).toBeLessThanOrEqual(8);
+test('empty, unsupported and oversized photos fail before upload', async () => {
+  await expect(compressImageFile(new File([], 'empty.png', { type: 'image/png' }))).rejects.toThrow('empty');
+  await expect(compressImageFile(new File(['x'], 'bad.txt', { type: 'text/plain' }))).rejects.toThrow('Only JPG');
   await expect(compressImageFile(new File([new Uint8Array(PHOTO_SOURCE_MAX_BYTES + 1)], 'huge.jpg', { type: 'image/jpeg' }))).rejects.toThrow('20 MB');
 });
 
-test('mixed evidence compresses photos only and rejects unsupported photos', async () => {
-  mockCompress.mockReset().mockResolvedValue(new Blob(['fits'], { type: 'image/webp' }));
-  const photo = new File(['source'], 'photo.jpg', { type: 'image/jpeg' });
+test('mixed evidence preserves photos, videos and documents, with a bounded total photo size', async () => {
+  const photo = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' });
   const video = new File(['video'], 'video.mp4', { type: 'video/mp4' });
   const document = new File(['pdf'], 'invoice.pdf', { type: 'application/pdf' });
-  const files = await preparePhotoUploads([photo, video, document]);
-  expect(files[0].type).toBe('image/webp');
-  expect(files.slice(1)).toEqual([video, document]);
+  expect(await preparePhotoUploads([photo, video, document])).toEqual([photo, video, document]);
+  await expect(preparePhotoUploads([video], { imagesOnly: true })).rejects.toThrow('Only JPG');
   await expect(preparePhotoUploads([new File(['gif'], 'animated.gif', { type: 'image/gif' })])).rejects.toThrow('Only JPG');
-  expect(isSupportedImageFile({ name: 'forged.jpg', type: 'text/plain' })).toBe(false);
+  const large = new File([new Uint8Array(PHOTO_SOURCE_MAX_BYTES)], 'large.jpg', { type: 'image/jpeg' });
+  expect(PHOTO_BATCH_MAX_BYTES).toBe(3 * PHOTO_SOURCE_MAX_BYTES);
+  await expect(preparePhotoUploads([large, large, large, photo])).rejects.toThrow('60 MB');
+});
+
+test('document AI gets its own bounded copy while the saved original remains untouched', async () => {
+  const original = new File([new Uint8Array(3 * 1024 * 1024)], 'invoice.jpg', { type: 'image/jpeg' });
+  mockCompress.mockResolvedValueOnce(new Blob(['analysis'], { type: 'image/webp' }));
+  const analysis = await prepareAnalysisImageFile(original);
+  expect(analysis.name).toBe('invoice-analysis.webp'); expect(analysis.size).toBeLessThanOrEqual(512 * 1024);
+  expect(mockCompress).toHaveBeenLastCalledWith(original, expect.objectContaining({ maxSizeMB: 0.5, maxWidthOrHeight: 2400, initialQuality: 0.95 }));
+  expect(await compressImageFile(original)).toBe(original);
+  expect(original.size).toBe(3 * 1024 * 1024);
+  mockCompress.mockResolvedValueOnce(new Blob([new Uint8Array(600 * 1024)], { type: 'image/webp' }));
+  await expect(prepareAnalysisImageFile(original)).rejects.toThrow('too detailed');
 });

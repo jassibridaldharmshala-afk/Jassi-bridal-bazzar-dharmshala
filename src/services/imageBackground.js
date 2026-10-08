@@ -37,14 +37,14 @@ export async function composeBackground(cutout, presetId) {
     context.fillStyle = fill; context.fillRect(0, 0, canvas.width, canvas.height);
   }
   context.drawImage(source, 0, 0);
-  const blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Could not prepare the preview.')), 'image/webp', 0.92));
-  // Preview exactly the compressed file that the normal uploader will store.
-  return compressImageFile(new File([blob], `product-${presetId}.webp`, { type: blob.type }));
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Could not prepare the preview.')), 'image/png'));
+  // Lossless output retains fine detail and transparency in the edited preview.
+  return compressImageFile(new File([blob], `product-${presetId}.png`, { type: blob.type }));
 }
 
 export function applyBackgroundAsset(image, asset, preset) {
-  const original = image.background?.original || { url: image.url, publicId: image.publicId };
-  return { ...image, url: asset.url, publicId: asset.publicId, background: { original, edited: { url: asset.url, publicId: asset.publicId }, preset } };
+  const original = image.background?.original || { url: image.url, publicId: image.publicId, variants: image.variants, width: image.width, height: image.height, mimeType: image.mimeType, sizeBytes: image.sizeBytes, provider: image.provider };
+  return { ...image, ...asset, background: { original, edited: { ...asset }, preset } };
 }
 
 export function restoreOriginalAsset(image) {

@@ -1,0 +1,50 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "hostStore": false,
+      "storefrontRoute": "/",
+      "returnedToAdmin": true,
+      "authenticatedAdminPreserved": true,
+      "switchModeRequests": 0,
+      "modeEndpointFixture": "503 if requested",
+      "pageErrors": [],
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "hostStore": true,
+      "storefrontRoute": "/",
+      "returnedToAdmin": true,
+      "authenticatedAdminPreserved": true,
+      "switchModeRequests": 0,
+      "modeEndpointFixture": "503 if requested",
+      "pageErrors": [],
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "hostStore": false,
+      "storefrontRoute": "/",
+      "returnedToAdmin": true,
+      "authenticatedAdminPreserved": true,
+      "switchModeRequests": 0,
+      "modeEndpointFixture": "503 if requested",
+      "pageErrors": [],
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "hostStore": true,
+      "storefrontRoute": "/",
+      "returnedToAdmin": true,
+      "authenticatedAdminPreserved": true,
+      "switchModeRequests": 0,
+      "modeEndpointFixture": "503 if requested",
+      "pageErrors": [],
+      "overflow": false
+    }
+  ],
+  "api": "isolated fixtures",
+  "realProvidersCalled": false
+}

@@ -4,7 +4,7 @@ import { localDateTime, rentalDate, rentalMoney } from '../../utils/rentals';
 import { RentalField, RentalStatus } from './RentalUi';
 const views = [['all', 'All bookings'], ['pickups', 'Pickups'], ['returns', 'Returns'], ['overdue', 'Overdue returns'], ['balance', 'Pending balance'], ['refunds', 'Refund available']];
 export default function RentalBookingDesk({ base, timezone, refresh = 0, onOpen }) {
-  const [day, setDay] = useState(localDateTime(new Date(), timezone).slice(0, 10)), [view, setView] = useState('all'), [status, setStatus] = useState('');
+  const [day, setDay] = useState(localDateTime(new Date(), timezone).slice(0, 10)), [view, setView] = useState('pickups'), [status, setStatus] = useState('');
   const [search, setSearch] = useState(''), [query, setQuery] = useState(''), [page, setPage] = useState(1), [reload, setReload] = useState(0);
   const [data, setData] = useState(null), [desk, setDesk] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState('');
   useEffect(() => {

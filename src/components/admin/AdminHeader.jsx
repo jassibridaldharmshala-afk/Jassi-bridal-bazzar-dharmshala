@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { pushAppRoute } from '../../utils/routing';
+import { useStorefront } from '../../context/StorefrontContext';
+import { pushAppRoute, storefrontPath } from '../../utils/routing';
 import Icon from '../layout/Icon';
-import { Search } from 'lucide-react';
+import { Search, Store } from 'lucide-react';
 import NotificationBell from '../notifications/NotificationBell';
 import { adminTitleFromPath } from './AdminSidebar';
 import useAppPath from '../../hooks/useAppPath';
@@ -10,7 +11,9 @@ import { useBrandIdentity } from '../../context/BrandIdentityContext';
 
 export default function AdminHeader({ onOpenSidebar }) {
   const brand = useBrandIdentity();
-  const { logout, user, switchMode } = useAuth();
+  const { logout, user } = useAuth();
+  const { storeSlug, isHostStore } = useStorefront();
+  const storefrontHref = isHostStore ? '/' : storefrontPath('/', storeSlug);
   const path = useAppPath();
   const title = adminTitleFromPath(path);
   const [search, setSearch] = useState('');
@@ -47,6 +50,9 @@ export default function AdminHeader({ onOpenSidebar }) {
           <p className="admin-header__title">{title}</p>
         </div>
         <NotificationBell navigate={pushAppRoute} admin />
+        <a href={storefrontHref} className="admin-header__icon-btn" aria-label="Storefront" title="Open storefront">
+          <Store size={18} aria-hidden="true" />
+        </a>
         <button type="button" onClick={logout} className="admin-btn admin-header__logout">
           Logout
         </button>
@@ -70,9 +76,9 @@ export default function AdminHeader({ onOpenSidebar }) {
               <p className="text-[11px] text-slate-500">{user?.systemRole === 'MASTER_OWNER' ? 'Master Owner' : 'Store Admin'}</p>
             </div>
           </div>
-          <button type="button" onClick={() => switchMode('customer')} className="admin-btn-ghost">
+          <a href={storefrontHref} className="admin-btn-ghost">
             Storefront
-          </button>
+          </a>
           <button type="button" onClick={logout} className="admin-btn">
             Logout
           </button>

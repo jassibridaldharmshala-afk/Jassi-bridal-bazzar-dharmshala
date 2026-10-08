@@ -26,6 +26,8 @@ const mockProduct = {
   returnPolicy: '',
 };
 let mockVariantGroupData = null;
+let mockDesktop = false;
+jest.mock('@mantine/hooks', () => ({ useMediaQuery: () => mockDesktop }));
 
 jest.mock('../../store/apiSlice', () => ({
   useGetProductQuery: () => ({ data: mockProduct, isLoading: false, error: null }),
@@ -64,6 +66,7 @@ jest.mock('../../utils/analytics', () => ({ trackEvent: jest.fn() }));
 
 beforeEach(() => {
   mockAddConfirmed.mockReset();
+  mockDesktop = false;
   mockVariantGroupData = null;
   delete mockProduct.variantGroupId;
   delete mockProduct.sizingMode;
@@ -110,6 +113,7 @@ test('storefront family selector shows live choices and switches to the selected
 });
 
 describe.each(['mobile', 'desktop'])('%s purchase confirmation', (view) => {
+  beforeEach(() => { mockDesktop = view === 'desktop'; });
   function buyButton() {
     return view === 'desktop'
       ? within(screen.getByTestId('desktop-purchase-actions')).getByRole('button', { name: 'Desktop buy now' })
@@ -143,6 +147,7 @@ describe.each(['mobile', 'desktop'])('%s purchase confirmation', (view) => {
 });
 
 describe.each(['mobile', 'desktop'])('%s explicit size selection', (view) => {
+  beforeEach(() => { mockDesktop = view === 'desktop'; });
   test('does not preselect a size and blocks bag or checkout until the customer chooses one', async () => {
     mockProduct.sizingMode = 'sized';
     mockProduct.sizeChartProfile = 'dress';
@@ -166,7 +171,7 @@ describe.each(['mobile', 'desktop'])('%s explicit size selection', (view) => {
       : screen.getByRole('button', { name: 'Size S' });
 
     expect(sizeButton).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByTestId('desktop-selected-size')).toHaveTextContent('No size selected');
+    if (view === 'desktop') expect(screen.getByTestId('desktop-selected-size')).toHaveTextContent('No size selected');
     fireEvent.click(buy);
     expect(mockAddConfirmed).not.toHaveBeenCalled();
     expect((await screen.findAllByText('Please select a size first.')).length).toBeGreaterThan(0);
@@ -174,14 +179,15 @@ describe.each(['mobile', 'desktop'])('%s explicit size selection', (view) => {
 
     fireEvent.click(sizeButton);
     expect(sizeButton).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getAllByLabelText('Selected size S').length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Bust 36 in · Waist 30 in/).length).toBeGreaterThan(0);
+    if (view === 'mobile') expect(screen.getAllByLabelText('Selected size S').length).toBeGreaterThan(0);
+    if (view === 'mobile') expect(screen.getAllByText(/Bust 36 in · Waist 30 in/).length).toBeGreaterThan(0);
     fireEvent.click(buy);
     await waitFor(() => expect(mockAddConfirmed).toHaveBeenCalledWith(expect.objectContaining({ _id: 'product-1' }), 'S', 'Navy', '', 1));
   });
 });
 
 test('a pending Buy now cannot redirect after the customer leaves the product', async () => {
+  mockDesktop = true;
   let resolveAdd;
   mockAddConfirmed.mockReturnValue(new Promise((resolve) => { resolveAdd = resolve; }));
   const navigate = jest.fn();

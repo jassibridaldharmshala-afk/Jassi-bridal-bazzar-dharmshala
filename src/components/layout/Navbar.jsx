@@ -1,3 +1,4 @@
+import RentalStorefrontLink from '../rentals/RentalStorefrontLink';
 import NotificationBell from '../notifications/NotificationBell';
 import { useEffect, useMemo, useState } from 'react';
 import { Flower2, Heart, HelpCircle, Search, ShoppingBag, Shield, Truck, UserRound } from 'lucide-react';
@@ -127,6 +128,7 @@ export default function Navbar({
           </div>
 
           <nav className="sc-navbar__links" aria-label="Primary" style={{ justifyContent: headerConfig.menuAlignment === 'right' ? 'flex-end' : headerConfig.menuAlignment }}>
+            <RentalStorefrontLink className="sc-navbar__link" navigate={go} />
             {navLinks.map((link) => {
               const targetPath = String(link.path || '').split('?')[0];
               const isActive = activeLinkLabel === link.label || (targetPath !== '/' && routePath === targetPath) || (targetPath === '/' && routePath === '/');

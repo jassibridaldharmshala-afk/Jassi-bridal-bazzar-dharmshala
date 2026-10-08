@@ -28,13 +28,14 @@ import { useBrandIdentity } from '../../context/BrandIdentityContext';
 import { SETTINGS_CHANGED_EVENT, SETTINGS_STORAGE_KEY } from '../../config/storeSettings';
 import { trackEvent } from '../../utils/analytics';
 import { readTrafficAttribution, getTrafficContext } from '../../utils/trafficTracker';
+import { useStorefront } from '../../context/StorefrontContext';
 import { clearPendingPayment, pendingPaymentKey, readPendingPayment, savePendingPayment } from '../../utils/pendingPayment';
 import { AddressForm } from './AddressManagement';
 import { getPrimaryImageUrl, normalizeImageUrl } from '../../services/normalize';
 import useDesktopFeedback from '../../hooks/useDesktopFeedback';
 import { couponApplyBody } from '../../utils/couponApply';
 import { shouldExitEmptyCheckout } from '../../utils/checkoutGuard';
-import { bagKey, checkoutCart } from '../../utils/bag';
+import { checkoutCart } from '../../utils/bag';
 import { checkoutPayloadSignature, clearCheckoutAttempt, getCheckoutAttempt } from '../../utils/checkoutAttempt';
 import CouponSelector from '../../components/coupon/CouponSelector';
 import './Checkout.css';
@@ -109,7 +110,8 @@ export default function Checkout({ navigate }) {
     : fullCart;
   const cart = checkoutCart(checkoutSource);
   const { setToast, user } = useAuth();
-  const receiptStorageKey = pendingPaymentKey(user);
+  const { storeSlug } = useStorefront();
+  const receiptStorageKey = pendingPaymentKey(user, storeSlug);
   const { isDesktop, notify } = useDesktopFeedback();
   const [addresses, setAddresses] = useState([]);
   const [addressLoading, setAddressLoading] = useState(true);
@@ -333,7 +335,7 @@ export default function Checkout({ navigate }) {
     navigate('/cart');
   }, [cartHydrated, cartItemCount, cart.error, cart.loading, pendingReceipt, navigate, setCartCoupon, setToast]);
 
-  const deliveryWindow = useMemo(() => getDeliveryWindow(), []);
+  const deliveryWindow = useMemo(() => getDeliveryWindow(quote?.shipping), [quote?.shipping]);
   const placeOrderLabel = getPlaceOrderLabel(paymentMethod, placing);
   const quoteReady = Boolean(quote) && !paymentLoading && !paymentError && !addressLoading && !addressError && !cart.error && !cart.loading && !cart.pendingCount;
 
@@ -431,7 +433,7 @@ export default function Checkout({ navigate }) {
       attribution: readTrafficAttribution(),
       traffic: getTrafficContext(),
     };
-    payload.checkoutAttemptId = getCheckoutAttempt(user, checkoutPayloadSignature(payload));
+    payload.checkoutAttemptId = getCheckoutAttempt(user, checkoutPayloadSignature(payload), storeSlug);
     return payload;
   };
 
@@ -443,16 +445,12 @@ export default function Checkout({ navigate }) {
     });
     if (!result?.order?._id) throw new Error('Order confirmation is not available yet.');
     checkoutCompletedRef.current = true;
-    const unchanged = purchased.filter(item => {
-      const current = currentCart.current.items.find(line => bagKey(line) === bagKey(item));
-      return !current || current.quantity === item.quantity;
-    });
-    const cleanup = await (buyNowItemId
-      ? currentCart.current.refresh()
-      : currentCart.current.completeCheckout(unchanged)).catch(() => ({ ok: false }));
+    // The server has already subtracted the purchased quantities atomically.
+    // Refresh its remaining bag, including changes made by another tab.
+    const cleanup = await currentCart.current.refresh(true).catch(() => ({ ok: false }));
     clearPendingPayment(receiptStorageKey, response);
-    clearCheckoutAttempt(user, checkoutAttemptId);
-    setToast(unchanged.length !== purchased.length ? 'Payment successful. Your bag changed during payment; please review the remaining quantities.' : cleanup.ok ? 'Payment successful' : 'Payment successful. Refresh your bag to check remaining items.');
+    clearCheckoutAttempt(user, checkoutAttemptId, storeSlug);
+    setToast(cleanup.ok ? 'Payment successful' : 'Payment successful. Refresh your bag to check remaining items.');
     navigate(`/order-success?id=${result.order._id}`);
   };
 
@@ -466,8 +464,8 @@ export default function Checkout({ navigate }) {
 
   const completeCodCheckout = async (orderId, checkoutAttemptId) => {
     checkoutCompletedRef.current = true;
-    clearCheckoutAttempt(user, checkoutAttemptId);
-    const cleanup = await (buyNowItemId ? fullCart.refresh() : fullCart.completeCheckout(cart.items)).catch(() => ({ ok: false }));
+    clearCheckoutAttempt(user, checkoutAttemptId, storeSlug);
+    const cleanup = await currentCart.current.refresh(true).catch(() => ({ ok: false }));
     setToast(cleanup.ok ? 'COD order confirmed successfully' : 'Order confirmed. Refresh your bag to check remaining items.');
     navigate(`/order-success?id=${orderId}`);
   };
@@ -530,7 +528,7 @@ export default function Checkout({ navigate }) {
       pendingPayment = await api.post('/payments/create-order', payload);
       if (pendingPayment?.alreadyCompleted && pendingPayment?.orderId) {
         checkoutCompletedRef.current = true;
-        clearCheckoutAttempt(user, payload.checkoutAttemptId);
+        clearCheckoutAttempt(user, payload.checkoutAttemptId, storeSlug);
         await fullCart.refresh().catch(() => null);
         navigate(`/order-success?id=${pendingPayment.orderId}`);
         return;
@@ -587,12 +585,12 @@ export default function Checkout({ navigate }) {
         if (providerOrderId) {
           try {
             await api.post('/payments/failure', { reason, razorpayOrderId: providerOrderId });
-            clearCheckoutAttempt(user, checkoutAttemptId);
+            clearCheckoutAttempt(user, checkoutAttemptId, storeSlug);
           } catch {
             // Keep the attempt so retry can recover a possibly-created order.
           }
         } else if (!setupOutcomeUnknown) {
-          clearCheckoutAttempt(user, checkoutAttemptId);
+          clearCheckoutAttempt(user, checkoutAttemptId, storeSlug);
         }
 
         if (setupOutcomeUnknown) {
@@ -1364,12 +1362,8 @@ function buildAddressLines(address) {
   return lines;
 }
 
-function getDeliveryWindow() {
-  const start = new Date();
-  start.setDate(start.getDate() + 5);
-  const end = new Date();
-  end.setDate(end.getDate() + 7);
-  const startLabel = start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-  const endLabel = end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-  return `${startLabel} - ${endLabel}`;
+function getDeliveryWindow(shipping) {
+  if (shipping?.expectedDeliveryAt && Number.isFinite(Date.parse(shipping.expectedDeliveryAt))) return new Date(shipping.expectedDeliveryAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+  if (shipping?.deliveryEstimate?.label) return shipping.deliveryEstimate.label;
+  return 'The shop will confirm delivery timing for your address';
 }

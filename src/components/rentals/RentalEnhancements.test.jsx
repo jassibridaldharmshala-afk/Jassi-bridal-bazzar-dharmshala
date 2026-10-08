@@ -54,7 +54,7 @@ test('partial return acknowledgement includes only customer-selected unreturned 
 test('uncertain courier writes are disabled while owner reconciliation remains available', async () => {
   api.get.mockResolvedValue([{ direction: 'outbound', status: 'REVIEW', provider: 'bluedart', awb: '12345678901', uncertainOperation: 'pickup' }]);
   render(<RentalCourierPanel booking={booking} base="/admin/rentals" canWrite owner onChange={jest.fn()} />);
-  await screen.findByText('REVIEW');
+  await screen.findByText('Review');
   expect(screen.getByRole('button', { name: 'Request carrier pickup' })).toBeDisabled(); expect(screen.getByRole('button', { name: 'Book connected courier' })).toBeDisabled();
   expect(screen.getByText('Owner-only carrier reconciliation')).toBeInTheDocument(); expect(api.post).not.toHaveBeenCalled();
 });

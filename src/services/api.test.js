@@ -126,3 +126,8 @@ test.each([
   mockDispatch.mockReturnValue({ unwrap: () => Promise.reject({ status: 503, data: { code, message: 'private-provider-data' } }) });
   await expect(api.post('/auth/send-otp', { phone: '9876543210' })).rejects.toMatchObject({ status: 503, code, message });
 });
+
+test('private evidence checks source and aggregate limits before any upload', async () => {
+  await expect(api.upload('/returns/evidence/uploads', [{ name: 'label.png', type: 'image/png', size: 8 * 1024 * 1024 + 1 }], { fieldName: 'files' })).rejects.toMatchObject({ code: 'UPLOAD_EVIDENCE_LIMIT' });
+  await expect(api.upload('/admin/orders/evidence/uploads', [{ name: 'a.mp4', type: 'video/mp4', size: 40 * 1024 * 1024 }, { name: 'b.mp4', type: 'video/mp4', size: 40 * 1024 * 1024 }], { fieldName: 'files' })).rejects.toMatchObject({ code: 'UPLOAD_EVIDENCE_LIMIT' });
+});

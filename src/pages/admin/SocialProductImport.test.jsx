@@ -163,7 +163,7 @@ test('publishing lists missing essentials instead of silently inventing inventor
   render(<SocialProductImport route={'/admin/social-import?id=' + id} />);
   await screen.findByDisplayValue('Wine Cotton Kurti');
   fireEvent.click(screen.getByRole('button', { name: 'Publish product' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Complete before publishing: Category, Stock quantity, Available sizes and measurements.');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Complete before publishing: Category, Stock quantity.');
   expect(api.post).not.toHaveBeenCalled();
 });
 
@@ -180,4 +180,16 @@ test('saved review resumes with later edits and its revision, including addition
   expect(await screen.findByRole('alert')).toHaveTextContent('This draft changed');
   expect(api.post).toHaveBeenCalledWith(`/admin/social-imports/${id}/publish`, expect.objectContaining({ draftUpdatedAt: '2026-09-07T00:00:00Z', imageIds: ['b', 'c'], primaryImageId: 'c' }));
   expect(screen.getByDisplayValue('Manually edited saree')).toBeInTheDocument();
+});
+
+test('an explicitly chosen size requires measured fit while blank sizes remain optional', async () => {
+  render(<SocialProductImport route={'/admin/social-import?id=' + id} />);
+  await screen.findByDisplayValue('Wine Cotton Kurti');
+  expect(screen.getByLabelText('Available sizes (comma separated)')).toHaveValue('');
+  fireEvent.change(screen.getByLabelText('Category'), { target: { value: 'category-1' } });
+  fireEvent.change(screen.getByLabelText('Stock quantity'), { target: { value: '3' } });
+  fireEvent.change(screen.getByLabelText('Available sizes (comma separated)'), { target: { value: 'M' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Publish product' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/measurements/i);
+  expect(api.post).not.toHaveBeenCalled();
 });

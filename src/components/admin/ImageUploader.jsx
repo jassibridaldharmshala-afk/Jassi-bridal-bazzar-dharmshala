@@ -63,11 +63,10 @@ export default function ImageUploader({
             throw new Error('Only JPG, JPEG, PNG, and WEBP images are allowed.');
           }
           if (file.size > maxUploadMb * 1024 * 1024) {
-            throw new Error(`Each image must be under ${maxUploadMb}MB before compression.`);
+            throw new Error(`Each photo can be up to ${maxUploadMb} MB.`);
           }
-          setPhase('compressing');
+          setPhase('preparing');
           const compressedFile = await compressImageFile(file, {
-            maxWidthOrHeight: 1600,
             onProgress: (value) => setProgress(Math.max(0, Math.min(100, Math.round(value || 0)))),
           });
           inspections.push(await inspectProductImage(compressedFile));
@@ -89,6 +88,7 @@ export default function ImageUploader({
       const data = await api.upload(`${uploadPath}?folder=${encodeURIComponent(uploadContext)}`, converted, { fieldName: 'images', idempotencyKey: pendingUpload.current.key });
       const uploadedFiles = Array.isArray(data.files) ? data.files.filter((file) => file?.url) : [];
       if (uploadedFiles.length !== incoming.length) throw new Error('Not all images were confirmed. Retry to finish this upload.');
+      setRecentUploads(uploadStats.map((stat, index) => ({ ...stat, compressedSize: Number(uploadedFiles[index]?.sizeBytes) || stat.compressedSize })));
       const uploaded = uploadedFiles.map((file, index) => ({
         ...file,
         originalName: file.originalName || incoming[index]?.name || converted[index]?.name || '',
@@ -141,17 +141,17 @@ export default function ImageUploader({
         <span>
           <span className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-wine text-lg font-black text-white">+</span>
           <span className="block text-sm font-black text-charcoal">
-            {uploading ? (phase === 'compressing' ? 'Compressing images...' : 'Uploading images...') : label}
+            {uploading ? (phase === 'preparing' ? 'Preparing images...' : 'Uploading images...') : label}
           </span>
           <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{helpText}</span>
-          <span className="block text-xs leading-5 text-slate-500">Photos up to 20 MB · automatically optimized below 100 KB</span>
+          <span className="block text-xs leading-5 text-slate-500">Photos up to {Math.min(maxUploadMb, 20)} MB · 60 MB per batch · original quality preserved</span>
           <span className="mt-3 inline-flex rounded-xl bg-white px-4 py-2 text-xs font-black text-wine shadow-sm">Browse Files</span>
         </span>
       </button>
       {uploading && (
         <div className="rounded-xl bg-white p-3 shadow-sm">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-            <span>{phase === 'compressing' ? 'Compressing' : 'Uploading'}</span>
+            <span>{phase === 'preparing' ? 'Preparing' : 'Uploading'}</span>
             <span>{progress}%</span>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
@@ -164,7 +164,7 @@ export default function ImageUploader({
       {qualityChecks.some((item) => item.warnings.length) && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900" role="status"><strong>Photo quality review</strong>{qualityChecks.filter((item) => item.warnings.length).map((item) => <p key={item.name} className="mt-1"><b>{item.name}:</b> {item.warnings.join(', ')}{item.width && item.height ? ` (${item.width}×${item.height})` : ''}. You may continue, but a clearer portrait photo will look better.</p>)}</div>}
       {recentUploads.length > 0 && (
         <div className="space-y-2 rounded-xl bg-white p-3 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">Compression Summary</p>
+          <p className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">Photo size · original quality preserved</p>
           {recentUploads.map((item) => (
             <div key={`${item.name}-${item.originalSize}`} className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-600">
               <span className="min-w-0 truncate">{item.name}</span>

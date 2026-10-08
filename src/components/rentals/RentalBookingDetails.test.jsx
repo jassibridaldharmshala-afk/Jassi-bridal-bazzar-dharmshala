@@ -10,7 +10,7 @@ import { editableRentalDetails, rentalDetailsPayload, pieceProfilePayload } from
 import api from '../../services/api';
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
 const address = { fullName: 'Buyer', mobile: '9876543210', houseNo: '12', area: 'Main road', landmark: 'Near park', city: 'Jaipur', state: 'Rajasthan', pincode: '302001' };
-const customer = { name: 'Buyer', phone: '9876543210' };
+const customer = { _id: 'buyer', isPhoneVerified: true, name: 'Buyer', phone: '9876543210' };
 const booking = { _id: 'booking1', number: 'R-001', revision: 2, customer, status: 'CONFIRMED', policy: { timezone: 'Asia/Kolkata' }, schedule: { pickupAt: '2030-01-10T04:30:00Z', returnDueAt: '2030-01-12T04:30:00Z' }, quote: { deliveryMode: 'COURIER' }, bookingDetails: { ...editableRentalDetails(null, customer), deliveryAddress: address, collectionAddress: { ...address, fullName: 'Return person', city: 'Delhi', pincode: '110001' }, sameAsDelivery: false, occasion: 'Wedding', pickupContact: { name: 'Sister', phone: '9876543211', relationship: 'Family', authorised: true, authorisedAt: '2030-01-01T10:00:00Z', authorisedBy: 'staff' } } };
 beforeEach(() => { api.get.mockReset().mockResolvedValue([]); api.post.mockReset(); });
 function Fields({ deliveryMode = 'COURIER', initial }) {
@@ -49,8 +49,13 @@ test('booking details are displayed safely for customer/admin, with both address
 test('customer review is blocked for an incomplete delivery address or an unauthorised delegate', async () => {
   render(<RentalBookingForm listings={[{ _id: 'one', title: 'Lehenga', dailyRatePaise: 10000, depositPaise: 20000 }]} configuration={{ policy: { timezone: 'Asia/Kolkata', slotMinutes: 60, deliveryModes: ['COURIER'] } }} user={customer} onBooked={jest.fn()} />);
   fireEvent.click(screen.getByLabelText('Select Lehenga'));
+  fireEvent.change(screen.getByLabelText('Pickup / delivery time'), { target: { value: '2030-01-10T10:00' } });
+  fireEvent.change(screen.getByLabelText('Return deadline'), { target: { value: '2030-01-12T10:00' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Continue to items' }));
+  api.post.mockResolvedValueOnce({ quoteFingerprint: 'price', policyRevision: 1, schedule: {}, quote: {}, terms: 'Terms' });
   fireEvent.click(screen.getByRole('button', { name: 'Check dates & review price' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent(/Complete the delivery/); expect(api.post).not.toHaveBeenCalled();
+  fireEvent.click(await screen.findByRole('button', { name: 'Continue to review & pay' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/Complete the delivery/); expect(api.post).toHaveBeenCalledTimes(1);
 });
 test('complete customer rental requests include occasion, split addresses and authorisation', async () => {
   const listing = { _id: 'one', title: 'Lehenga', dailyRatePaise: 10000, depositPaise: 20000 };
@@ -58,13 +63,17 @@ test('complete customer rental requests include occasion, split addresses and au
   render(<RentalBookingForm listings={[listing]} configuration={{ policy: { timezone: 'Asia/Kolkata', slotMinutes: 60, deliveryModes: ['COURIER'] } }} user={customer} onBooked={jest.fn()} />);
   fireEvent.click(screen.getByLabelText('Select Lehenga'));
   fireEvent.change(screen.getByLabelText('Pickup / delivery time'), { target: { value: '2030-01-10T10:00' } }); fireEvent.change(screen.getByLabelText('Return deadline'), { target: { value: '2030-01-12T10:00' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Continue to items' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Check dates & review price' }));
+  await screen.findByRole('button', { name: 'Continue to review & pay' });
   for (const [key, label] of [['houseNo', 'House / building'], ['area', 'Area / street'], ['city', 'City'], ['state', 'State'], ['pincode', 'PIN code']]) fireEvent.change(screen.getByLabelText(`Delivery address — ${label}`), { target: { value: address[key] } });
   fireEvent.click(screen.getByText('Occasion & special instructions (optional)')); fireEvent.change(screen.getByLabelText('Occasion / event type (optional)'), { target: { value: 'Wedding' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Check dates & review price' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue to review & pay' }));
   fireEvent.click(await screen.findByLabelText(/I accept these rental terms/)); fireEvent.click(screen.getByRole('button', { name: 'Reserve rental' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
   expect(api.post.mock.calls[1][1].bookingDetails).toEqual(expect.objectContaining({ occasion: 'Wedding', sameAsDelivery: true, deliveryAddress: expect.objectContaining({ pincode: '302001' }), collectionAddress: expect.objectContaining({ pincode: '302001' }) }));
-  fireEvent.change(screen.getByLabelText('Occasion / event type (optional)'), { target: { value: 'Engagement' } }); expect(screen.queryByRole('button', { name: 'Reserve rental' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Contact/ }));
+  fireEvent.change(screen.getByLabelText('Occasion / event type (optional)'), { target: { value: 'Engagement' } }); expect(screen.getByRole('button', { name: 'Reserve rental', hidden: true })).toBeDisabled();
 });
 test('owner details editor strips old audit metadata, requires approval/reason and sends revision', async () => {
   const onChange = jest.fn(), run = task => task(); api.post.mockResolvedValue({ ...booking, revision: 3 });

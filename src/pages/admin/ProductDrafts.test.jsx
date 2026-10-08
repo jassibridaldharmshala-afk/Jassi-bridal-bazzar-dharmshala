@@ -41,7 +41,8 @@ const draft = {
 
 test('photo draft editor keeps sale and rental prices separate', async () => {
   render(<ProductDrafts route="/admin/product-drafts" />);
-  fireEvent.click((await screen.findAllByRole('button', { name: 'Review' }))[0]);
+  const review = (await screen.findAllByRole('button', { name: 'Review' }))[0];
+  await act(async () => { fireEvent.click(review); });
   fireEvent.change(screen.getByLabelText('Available for'), { target: { value: 'SALE_AND_RENTAL' } });
   fireEvent.change(screen.getByLabelText('Rental price per day (₹)'), { target: { value: '600' } });
   expect(screen.getByLabelText(/Selling price/)).toHaveValue(1000);
@@ -257,7 +258,7 @@ test.each(['/admin/product-drafts', '/seller/product-drafts'])('adds multiple ph
   fireEvent.click(editor.getAllByRole('button', { name: 'Main' })[1]);
   fireEvent.click(editor.getByRole('button', { name: 'Move image 2 earlier' }));
   fireEvent.click(editor.getAllByRole('button', { name: 'Remove' })[2]);
-  fireEvent.click(editor.getByRole('button', { name: 'Save draft' }));
+  await act(async () => { fireEvent.click(editor.getByRole('button', { name: 'Save draft' })); });
   await waitFor(() => expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({
     id: 'draft-a', apiPrefix: route.startsWith('/seller') ? '/seller' : '/admin',
     body: expect.objectContaining({ image: '/uploads/back.webp', baseRevision: 2, images: [
@@ -304,7 +305,7 @@ test('a failed photo batch can be retried after changing tabs without replacing 
   fireEvent.change(editor.getByLabelText('Add photos to this draft'), { target: { files: [photo] } });
   await editor.findByText('2 / 30 photos');
   expect(api.upload.mock.calls[0][2].idempotencyKey).toBe(api.upload.mock.calls[1][2].idempotencyKey);
-  fireEvent.click(editor.getByRole('button', { name: 'Save draft' }));
+  await act(async () => { fireEvent.click(editor.getByRole('button', { name: 'Save draft' })); });
   await waitFor(() => expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({
     image: '/uploads/a.jpg', images: [
       expect.objectContaining({ url: '/uploads/a.jpg', primary: true }),
@@ -321,7 +322,7 @@ test('draft galleries larger than twelve photos can still receive more photos', 
   const editor = within(screen.getByRole('dialog'));
   fireEvent.change(editor.getByLabelText('Add photos to this draft'), { target: { files: [new File(['photo'], 'extra.webp', { type: 'image/webp' })] } });
   await editor.findByText('16 / 30 photos');
-  fireEvent.click(editor.getByRole('button', { name: 'Save draft' }));
+  await act(async () => { fireEvent.click(editor.getByRole('button', { name: 'Save draft' })); });
   await waitFor(() => expect(mockSave).toHaveBeenCalled());
   expect(mockSave.mock.calls[0][0].body.images).toHaveLength(16);
   expect(mockSave.mock.calls[0][0].body.image).toBe('/uploads/4.jpg');
@@ -330,7 +331,8 @@ test('draft galleries larger than twelve photos can still receive more photos', 
 test('rejects a photo batch beyond the draft limit without dropping any saved photos', async () => {
   mockQuery.data.data = [{ ...draft, images: Array.from({ length: 29 }, (_, index) => ({ url: `/uploads/${index}.jpg`, primary: index === 0 })) }];
   render(<ProductDrafts />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Add photos' }));
+  const open = await screen.findByRole('button', { name: 'Add photos' });
+  await act(async () => { fireEvent.click(open); });
   const editor = within(screen.getByRole('dialog'));
   fireEvent.change(editor.getByLabelText('Add photos to this draft'), { target: { files: [
     new File(['photo'], 'front.webp', { type: 'image/webp' }),
@@ -349,7 +351,7 @@ test('removing all draft photos does not restore a previously saved cover', asyn
   const editor = within(screen.getByRole('dialog'));
   fireEvent.click(editor.getByRole('button', { name: 'Remove' }));
   expect(editor.getByText('0 / 30 photos')).toBeInTheDocument();
-  fireEvent.click(editor.getByRole('button', { name: 'Save draft' }));
+  await act(async () => { fireEvent.click(editor.getByRole('button', { name: 'Save draft' })); });
   await waitFor(() => expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ image: '', images: [] }) })));
 });
 
@@ -371,9 +373,10 @@ test('opens a focused editor, applies reviewed Smart Fill values, and saves with
   fireEvent.change(screen.getByLabelText('Supplier notes or product details'), { target: { value: 'Name: Wine saree\nPrice: 899' } });
   fireEvent.click(screen.getByRole('button', { name: 'Suggest details' }));
   await screen.findByText('Review suggestions');
+  fireEvent.click(screen.getByRole('checkbox', { name: /Selling price/ }));
   fireEvent.click(screen.getByRole('button', { name: /Apply \d+ selected details?/ }));
   expect(screen.getByLabelText(/Product name/)).toHaveValue('Wine saree');
-  fireEvent.click(screen.getByRole('button', { name: /Save draft/i }));
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save draft/i })); });
   await waitFor(() => expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({
     id: 'draft-a', apiPrefix: '/admin', body: expect.objectContaining({ name: 'Wine saree', sellingPrice: 899, baseRevision: 2 }),
   })));
@@ -405,7 +408,7 @@ test('shows a stale-edit recovery action when another tab updated the draft', as
   render(<ProductDrafts />);
   fireEvent.click((await screen.findAllByRole('button', { name: 'Review' }))[0]);
   fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'Changed name' } });
-  fireEvent.click(screen.getByRole('button', { name: /Save draft/i }));
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save draft/i })); });
   expect(await screen.findByRole('button', { name: 'Reload' })).toBeInTheDocument();
   expect(screen.getByRole('alert')).toHaveTextContent('This draft changed');
 });

@@ -16,7 +16,7 @@ export default function SellerProductFormPage({ navigate, route = '' }) {
         apiPrefix="/seller"
         uploadPrefix="/seller/uploads"
         cancelPath="/seller/products"
-        onSaved={() => navigate('/seller/products')}
+        onSaved={saved => navigate(saved?.rentalOffers?.length ? `/seller/rentals?tab=setup&listing=${encodeURIComponent(saved.rentalOffers[0]._id)}` : '/seller/products')}
       />
     </section>
   );

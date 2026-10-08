@@ -1,6 +1,7 @@
+import { responsiveImage } from '../../utils/responsiveImages';
 import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Heart, Maximize2, ScanSearch, Star } from 'lucide-react';
-import { getPrimaryImageIndex, normalizeImageEntries, normalizeImageUrl } from '../../services/normalize';
+import { getPrimaryImageIndex, normalizeImageEntries } from '../../services/normalize';
 import './ProductGallery.css';
 
 export default function ProductGallery({
@@ -44,7 +45,7 @@ export default function ProductGallery({
             {item.type === 'video' ? (
               <video src={item.thumbnail || item.url} className="sc-gallery__thumb-media" muted playsInline />
             ) : (
-              <img src={normalizeImageUrl(item.thumbnail || item.url)} alt="" className="sc-gallery__thumb-media" />
+              <img {...responsiveImage(item, 'thumbnail')} alt="" className="sc-gallery__thumb-media" />
             )}
           </button>
         ))}
@@ -71,7 +72,7 @@ export default function ProductGallery({
             onClick={onOpenFullscreen}
             aria-label={`View ${product?.name || 'product'} image fullscreen`}
           >
-            <img src={normalizeImageUrl(current?.url)} alt={product?.name || 'Product'} className="sc-gallery__media" />
+            <img {...responsiveImage(current, 'detail')} alt={product?.name || 'Product'} className="sc-gallery__media" />
           </button>
         )}
 

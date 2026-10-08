@@ -29,6 +29,7 @@ test('Quick Add Smart Fill keeps supported suggestions editable and persists the
   fireEvent.change(screen.getByLabelText('Supplier notes or product details'), { target: { value: 'Name: Wine saree\nPrice: 899\nFabric: Georgette' } });
   fireEvent.click(screen.getByRole('button', { name: 'Suggest details' }));
   await screen.findByText('Review suggestions');
+  fireEvent.click(screen.getByRole('checkbox', { name: /Selling price/ }));
   fireEvent.click(screen.getByRole('button', { name: /Apply \d+ selected details/ }));
   expect(screen.getByLabelText(/Product name/)).toHaveValue('Rose saree');
   expect(screen.getByLabelText(/Selling price/)).toHaveValue(899);

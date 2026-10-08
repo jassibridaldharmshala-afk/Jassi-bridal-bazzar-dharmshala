@@ -1,3 +1,4 @@
+import useModalFocus from '../../hooks/useModalFocus';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Ruler, X } from 'lucide-react';
 import { getPrimaryImageUrl, normalizeImageUrl } from '../../services/normalize';
@@ -36,21 +37,14 @@ export default function SizeChartModal({
     if (!open) return undefined;
     setUnit(storedUnit);
     setTab('chart');
-    const previousOverflow = document.body.style.overflow;
-    const onKeyDown = (event) => { if (event.key === 'Escape') onClose?.(); };
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [onClose, open, storedUnit]);
+  }, [open, storedUnit]);
+  const dialogRef = useModalFocus(open, onClose);
 
   if (!open) return null;
 
   return (
     <div className="sc-size-modal" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
-      <section className="sc-size-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="product-size-chart-title">
+      <section ref={dialogRef} tabIndex={-1} className="sc-size-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="product-size-chart-title">
         <button type="button" onClick={onClose} className="sc-size-modal__close" aria-label="Close size chart"><X aria-hidden="true" /></button>
 
         <header className="sc-size-modal__product">

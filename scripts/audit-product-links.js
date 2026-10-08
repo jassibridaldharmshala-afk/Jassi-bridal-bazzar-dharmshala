@@ -3,7 +3,7 @@
 const apiBase = String(process.env.SAMIRA_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
 
 async function readJson(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
   let body = null;
   try {
     body = await response.json();
@@ -14,14 +14,20 @@ async function readJson(url) {
 }
 
 async function main() {
-  const catalogResponse = await readJson(`${apiBase}/products`);
-  if (!catalogResponse.ok) {
-    throw new Error(`Catalog request failed with HTTP ${catalogResponse.status}`);
+  const products = [];
+  let totalPages = 1, expectedTotal;
+  for (let page = 1; page <= totalPages; page++) {
+    const response = await readJson(`${apiBase}/products?page=${page}&limit=100`);
+    if (!response.ok) throw new Error(`Catalog page ${page} failed with HTTP ${response.status}`);
+    if (!Array.isArray(response.body?.items) || !Number.isInteger(response.body.totalPages) || response.body.totalPages < 1 || response.body.totalPages > 1000) {
+      throw new Error('The catalog did not provide bounded pagination. No complete-catalog claim can be made.');
+    }
+    totalPages = response.body.totalPages; expectedTotal = response.body.total;
+    products.push(...response.body.items);
   }
-
-  const products = Array.isArray(catalogResponse.body)
-    ? catalogResponse.body
-    : (Array.isArray(catalogResponse.body?.items) ? catalogResponse.body.items : []);
+  if (products.length !== expectedTotal || new Set(products.map(product => String(product._id || product.id))).size !== products.length) {
+    throw new Error('The catalog changed during pagination. Retry before claiming complete link coverage.');
+  }
   const failures = [];
 
   for (const product of products) {

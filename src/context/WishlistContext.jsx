@@ -5,8 +5,9 @@ import { useAuth } from './AuthContext';
 import { createStoragePlan, readScopedJson } from '../utils/userStorage';
 import { trackEvent } from '../utils/analytics';
 
+import { useStorefront } from './StorefrontContext';
+
 export const WishlistContext = createContext(null);
-const GUEST_STORAGE = createStoragePlan('samira_wishlist', null);
 const SYNC_KEY = 'samira_wishlist_sync';
 const itemId = product => String(product?._id || product?.id || product?.slug || '');
 const normalizeItems = values => {
@@ -15,10 +16,10 @@ const normalizeItems = values => {
     const id = itemId(product); if (!id || seen.has(id)) return false; seen.add(id); return true;
   }).map(product => normalizeProduct({ ...product, images: product.images?.length ? product.images : [product.primaryImageUrl || product.primaryImage || product.image].filter(Boolean) }));
 };
-function loadGuest() {
+function loadGuest(GUEST_STORAGE) {
   try { return normalizeItems(readScopedJson(GUEST_STORAGE.storageName, GUEST_STORAGE.legacyStorageNames, [])); } catch { return []; }
 }
-function storeGuest(items) {
+function storeGuest(items, GUEST_STORAGE) {
   try { localStorage.setItem(GUEST_STORAGE.storageName, JSON.stringify(items)); return true; } catch { return false; }
 }
 function normalizeRemoteItems(values) {
@@ -30,7 +31,9 @@ function normalizeRemoteItems(values) {
 
 export function WishlistProvider({ children }) {
   const { user, notify } = useAuth();
-  const account = user ? String(user._id || user.id || user.phone) : 'guest';
+  const { storeSlug } = useStorefront();
+  const GUEST_STORAGE = useMemo(() => createStoragePlan(storeSlug ? `samira_wishlist_store_${storeSlug}` : 'samira_wishlist', null), [storeSlug]);
+  const account = (user ? String(user._id || user.id || user.phone) : 'guest') + (storeSlug ? `:store:${storeSlug}` : '');
   const ownerRef = useRef({ account });
   const alive = useRef(true);
   const queue = useRef(Promise.resolve());
@@ -41,24 +44,24 @@ export function WishlistProvider({ children }) {
     requests.current = new Map();
   }
   const session = ownerRef.current;
-  const [items, setItems] = useState(() => user ? [] : loadGuest());
+  const [items, setItems] = useState(() => user ? [] : loadGuest(GUEST_STORAGE));
   const itemsRef = useRef(items);
   const guestStorageFailed = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pendingIds, setPendingIds] = useState([]);
   const lastRefresh = useRef(0);
-  const authenticated = account !== 'guest';
+  const authenticated = Boolean(user);
   const valid = useCallback(() => alive.current && ownerRef.current === session, [session]);
   const commit = useCallback((values, persist = false) => {
     if (!valid()) return;
     const next = normalizeItems(values); itemsRef.current = next; setItems(next);
     if (persist && !authenticated) {
-      guestStorageFailed.current = !storeGuest(next);
+      guestStorageFailed.current = !storeGuest(next, GUEST_STORAGE);
       if (guestStorageFailed.current) setError('Your browser could not save these items. Keep this tab open or sign in to save them.');
     }
-  }, [authenticated, valid]);
-  const currentGuest = useCallback(() => guestStorageFailed.current ? itemsRef.current : loadGuest(), []);
+  }, [authenticated, valid, GUEST_STORAGE]);
+  const currentGuest = useCallback(() => guestStorageFailed.current ? itemsRef.current : loadGuest(GUEST_STORAGE), [GUEST_STORAGE]);
   const enqueue = useCallback(operation => {
     const next = queue.current.catch(() => {}).then(() => valid() ? operation() : { ok: false, message: 'Your account changed. Please retry.' });
     queue.current = next;
@@ -74,13 +77,13 @@ export function WishlistProvider({ children }) {
         if (!valid()) return { ok: false };
         commit(remote);
         let mergeFailed = false;
-        for (const saved of loadGuest()) {
+        for (const saved of loadGuest(GUEST_STORAGE)) {
           if (!valid()) return { ok: false };
           try {
             if (!remote.some(item => itemId(item) === itemId(saved))) remote = normalizeRemoteItems(await api.post(`/wishlist/${encodeURIComponent(itemId(saved))}`));
             if (!valid()) return { ok: false };
             commit(remote);
-            storeGuest(loadGuest().filter(item => itemId(item) !== itemId(saved)));
+            storeGuest(loadGuest(GUEST_STORAGE).filter(item => itemId(item) !== itemId(saved)), GUEST_STORAGE);
           } catch { mergeFailed = true; }
         }
         if (valid() && mergeFailed) setError('Some items saved before sign-in could not sync. Retry to finish saving them to your account.');
@@ -102,22 +105,22 @@ export function WishlistProvider({ children }) {
       if (valid()) setError(failure.message || 'Could not refresh your wishlist. Your saved items are still here.');
       return { ok: false };
     } finally { if (valid()) setLoading(false); }
-  }), [account, authenticated, commit, currentGuest, enqueue, valid]);
+  }), [account, authenticated, commit, currentGuest, enqueue, valid, GUEST_STORAGE]);
 
   useEffect(() => {
-    alive.current = true; itemsRef.current = authenticated ? [] : loadGuest(); setItems(itemsRef.current);
+    alive.current = true; itemsRef.current = authenticated ? [] : loadGuest(GUEST_STORAGE); setItems(itemsRef.current);
     setPendingIds([]); guestStorageFailed.current = false;
     refresh();
     const onFocus = () => { if (Date.now() - lastRefresh.current > 30000) refresh(); };
     const onStorage = event => {
-      if (!authenticated && (event.key === GUEST_STORAGE.storageName || event.key === null)) { guestStorageFailed.current = false; commit(loadGuest()); }
+      if (!authenticated && (event.key === GUEST_STORAGE.storageName || event.key === null)) { guestStorageFailed.current = false; commit(loadGuest(GUEST_STORAGE)); }
       if (authenticated && event.key === SYNC_KEY) {
         try { if (JSON.parse(event.newValue)?.account === account) refresh(true); } catch { /* unrelated storage */ }
       }
     };
     window.addEventListener('focus', onFocus); window.addEventListener('storage', onStorage);
     return () => { alive.current = false; window.removeEventListener('focus', onFocus); window.removeEventListener('storage', onStorage); };
-  }, [account, authenticated, commit, refresh]);
+  }, [account, authenticated, commit, refresh, GUEST_STORAGE]);
 
   const mutate = useCallback((productOrId, action) => {
     const id = typeof productOrId === 'string' ? productOrId : itemId(productOrId);

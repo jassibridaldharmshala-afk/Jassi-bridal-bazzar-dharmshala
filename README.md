@@ -24,3 +24,41 @@ The default catalog uses **Boutique — Sale & Rental** with 15 product fields a
 ## Security
 
 No existing `.env` file, database record, upload, Git history, build output or dependency is copied from the source platform. The one-time installation credential is newly generated for this client and can be revoked independently. Production builds omit source maps, deployment headers restrict script sources and framing, private API responses are not cached, CORS accepts only configured origins, and sensitive actions are validated by the backend. Browser JavaScript is public by design, so never put secrets or authorization decisions in frontend code.
+
+## Install the combined or separate project
+
+The combined project contains the frontend at this root and its runtime backend in `backend/`.
+The backend deployment source in `backend-deploy/` is also maintained for a separate Render backend service.
+Run `npm ci` at the frontend root and inside the backend directory used by your deployment.
+A frontend-only package needs the separate backend package alongside it; `npm run server` expects the combined `backend/` layout.
+
+Set the frontend API URL to the actual backend service. Set backend public API URL and CORS origin to the actual deployment;
+the Jassi frontend origin is `https://jassi-bridal-bazzar-dharmshalas.onrender.com` (including the final **s**).
+Keep installation credentials, signing keys, SMS/payment/media credentials on the backend.
+Production OTP defaults to real delivery; configure and test the actual SMS provider before accepting logins.
+The source-root client installation identity is not imported into the browser build.
+
+## Audit verification and evidence migration
+
+Use `npm run test:client -- --runInBand` for applicable frontend suites.
+`ClientInstallations.test.jsx` describes a platform-only page absent from this generated client; its source remains preserved.
+Backend `npm test` uses isolated commerce fixtures; licence cache/signature tests retain their signed test responses.
+These tests do not validate a live licence, SMS provider, payment capture, physical inventory or hosted storage.
+
+Private sale/return/packing evidence now uses authenticated retrieval and GridFS instead of public catalogue media.
+Existing public evidence needs a deployment migration. Run from the intended backend directory:
+
+```text
+npm run migrate:evidence -- --limit=100
+npm run migrate:evidence -- --apply --limit=100
+npm run migrate:evidence -- --apply --delete-public --limit=100
+```
+
+The first command is a dry run. Apply rewrites references transactionally and keeps a retryable purge journal.
+Review the dry-run result, backup the database and confirm the target deployment before applying.
+Public objects shared with catalogue/review media are retained and reported for manual classification.
+After deleting old public objects, purge the relevant CDN cache; previously downloaded public files cannot be recalled.
+Private photos allow 8 MB each; catalogue masters allow 20 MB each and 60 MB per upload batch.
+Old downscaled photos need their originals re-uploaded; image processing cannot recreate lost detail.
+
+See `review-notes/audit-fixes.md` for the code status and the live acceptance checks still requiring shop data and providers.

@@ -14,7 +14,7 @@ def png(width=10, height=20):
 
 
 def test_invalid_bytes_and_limits():
-    for data in (b"", b"not-an-image", b"x" * (3 * 1024 * 1024 + 1)):
+    for data in (b"", b"not-an-image", b"x" * (20 * 1024 * 1024 + 1)):
         with pytest.raises(ValueError):
             background.remove_background(data)
     with pytest.raises(ValueError):
@@ -37,9 +37,10 @@ def test_provider_keeps_input_and_returns_alpha_png(monkeypatch):
         return image
     monkeypatch.setitem(sys.modules, "rembg", SimpleNamespace(new_session=lambda *a, **k: calls.append(k) or object(), remove=remove))
     monkeypatch.setattr(background, "_session", None)
-    source = png()
+    source = png(1800, 1700)
     result = Image.open(io.BytesIO(background.remove_background(source)))
     assert result.format == "PNG" and result.mode == "RGBA"
+    assert result.size == (1800, 1700)
     assert result.getpixel((0, 0))[3] == 0
     assert Image.open(io.BytesIO(source)).mode == "RGB"
     background.remove_background(source)

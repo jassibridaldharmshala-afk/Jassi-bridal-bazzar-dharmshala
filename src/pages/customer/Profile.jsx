@@ -31,6 +31,7 @@ import AccountSidebar from '../../components/layout/AccountSidebar';
 import './Profile.css';
 
 const accountLinks = [
+  { title: 'My rentals', subtitle: 'Track bookings, pickup, return and security refunds', icon: Package, action: '/rentals' },
   { title: 'Notifications', subtitle: 'Order, delivery and return updates', icon: Bell, action: '/notifications' },
   { title: 'Orders', subtitle: 'Check your order status', icon: Package, action: '/orders' },
   { title: 'Collections & Wishlist', subtitle: 'All your curated product collections', icon: Heart, action: '/wishlist' },

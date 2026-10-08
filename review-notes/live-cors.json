@@ -1,0 +1,8 @@
+{
+  "http": 204,
+  "requestedOrigin": "https://jassi-bridal-bazzar-dharmshalas.onrender.com",
+  "allowOrigin": "https://jassi-bridal-bazzar-dharmshalas.onrender.com",
+  "allowCredentials": "true",
+  "allowHeaders": "Content-Type,Authorization,x-session-id,x-store-slug,x-store-id,x-request-id,Idempotency-Key",
+  "allowMethods": "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+}

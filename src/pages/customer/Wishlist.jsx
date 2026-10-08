@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStorefront } from '../../context/StorefrontContext';
 import api from '../../services/api';
 import { getPrimaryImageUrl, normalizeProduct } from '../../services/normalize';
-import { productHref } from '../../utils/routing';
+import { rentalProductHref, productHref } from '../../utils/routing';
 import { activeVariants, findProductVariant } from '../../utils/variants';
 import { getSizeChartColumns } from '../../utils/productSizing';
 import { isUnavailable, wishlistId, wishlistOptions, wishlistPrice, wishlistStock } from '../../utils/wishlist';
@@ -76,12 +76,12 @@ export default function Wishlist({ navigate }) {
       </div>}
       {wishlist.loading && !count ? <div className="sc-wishlist__loading" role="status" aria-label="Loading wishlist"><div className="sc-wishlist__grid">{[1, 2, 3, 4].map(value => <div className="sc-wishlist__skeleton" key={value}><div /><span /><span /></div>)}</div><p>Loading your wishlist…</p></div> : !count ? <div className="sc-wishlist__empty"><div className="sc-wishlist__empty-icon"><Heart size={30} strokeWidth={1.5} /></div><h2>Your wishlist is empty</h2><p>Tap the heart on a product to save it here.</p><button className="sc-wishlist__primary" onClick={() => navigate(shop)}>Explore the collection <ArrowRight size={18} /></button></div> : <>
         <p className="sc-wishlist__results">{filtered.length} saved {filtered.length === 1 ? 'style' : 'styles'}{wishlist.loading ? ' · Updating availability…' : ''}</p>
-        {!filtered.length ? <div className="sc-wishlist__empty sc-wishlist__empty--filtered"><Search size={30} /><h2>No matching styles</h2><p>Try a different search or clear your filters.</p><button className="sc-wishlist__outline" onClick={() => { setSearch(''); setCategory(''); setFilter('all'); }}>Clear filters</button></div> : <div className="sc-wishlist__grid">{filtered.slice(0, limit).map(product => <WishlistCard key={wishlistId(product)} product={product} pending={wishlist.pendingIds?.includes(wishlistId(product))} moved={movedIds.includes(wishlistId(product))} onRemove={() => remove(product)} onMove={() => setSelected(product)} onBag={() => navigate('/cart')} onOpen={() => navigate(productHref(product, storeSlug))} />)}</div>}
+        {!filtered.length ? <div className="sc-wishlist__empty sc-wishlist__empty--filtered"><Search size={30} /><h2>No matching styles</h2><p>Try a different search or clear your filters.</p><button className="sc-wishlist__outline" onClick={() => { setSearch(''); setCategory(''); setFilter('all'); }}>Clear filters</button></div> : <div className="sc-wishlist__grid">{filtered.slice(0, limit).map(product => <WishlistCard key={wishlistId(product)} product={product} pending={wishlist.pendingIds?.includes(wishlistId(product))} moved={movedIds.includes(wishlistId(product))} onRemove={() => remove(product)} onMove={() => product.commerceMode === 'RENTAL_ONLY' ? navigate(rentalProductHref(product, storeSlug)) : setSelected(product)} onBag={() => navigate('/cart')} onOpen={() => navigate(productHref(product, storeSlug))} />)}</div>}
         {filtered.length > limit && <button className="sc-wishlist__more sc-wishlist__outline" onClick={() => setLimit(value => value + 40)}>Show more styles</button>}
         <footer className="sc-wishlist__footer"><button onClick={() => navigate(shop)}>Continue shopping <ArrowRight size={16} /></button></footer>
       </>}
     </div>
-    {selected && <MoveToBag product={selected} cart={cart} onClose={() => setSelected(null)} onMoved={moved} onBag={() => navigate('/cart')} onRental={() => navigate(productHref(selected, storeSlug))} />}
+    {selected && <MoveToBag product={selected} cart={cart} onClose={() => setSelected(null)} onMoved={moved} onBag={() => navigate('/cart')} onRental={() => navigate(rentalProductHref(selected, storeSlug))} />}
   </section>;
 }
 

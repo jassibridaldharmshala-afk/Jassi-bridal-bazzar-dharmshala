@@ -21,7 +21,7 @@ beforeEach(() => {
   jest.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); window.scrollTo = jest.fn();
   openRazorpayCheckout.mockReset();
   window.matchMedia = jest.fn(query => ({ matches: query.includes('max-width'), addEventListener: jest.fn(), removeEventListener: jest.fn() }));
-  Object.assign(mockCart, { items: [line], hydrated: true, loading: false, error: '', pendingCount: 0, coupon: null, setCoupon: jest.fn(), completeCheckout: jest.fn(async () => ({ ok: true })), refresh: jest.fn() });
+  Object.assign(mockCart, { items: [line], hydrated: true, loading: false, error: '', pendingCount: 0, coupon: null, setCoupon: jest.fn(), completeCheckout: jest.fn(async () => ({ ok: true })), refresh: jest.fn(async () => ({ ok: true })) });
   api.get.mockImplementation(async path => path === '/user/addresses' ? [address] : { methods: [{ key: 'COD', label: 'Cash on Delivery', enabled: true }] });
   api.post.mockImplementation(async path => path === '/orders/quote' ? quote : path === '/orders/cod' ? { _id: 'new-order' } : { items: [] });
 });
@@ -94,7 +94,7 @@ test('checkout selects the newly saved address from the real array response cont
 
 test('broken attribution data and failed bag cleanup cannot turn a created COD order into a failed order', async () => {
   sessionStorage.setItem('samira_attribution', 'broken json');
-  mockCart.completeCheckout.mockRejectedValue(new Error('Bag cleanup connection lost'));
+  mockCart.refresh.mockRejectedValue(new Error('Bag cleanup connection lost'));
   const navigate = jest.fn(); render(<Checkout navigate={navigate} />);
   fireEvent.click(await screen.findByRole('button', { name: 'Continue to payment' }));
   await waitFor(() => expect(screen.getByRole('button', { name: 'Place COD Order' })).toBeEnabled());
@@ -210,7 +210,8 @@ test('payment confirmation survives checkout remount and an empty bag without ch
   fireEvent.click(screen.getByRole('button', { name: 'Retry confirmation' }));
   await waitFor(() => expect(navigate).toHaveBeenCalledWith('/order-success?id=recovered-order'));
   expect(api.post).toHaveBeenCalledWith('/payments/verify', response);
-  expect(mockCart.completeCheckout).toHaveBeenCalledWith([expect.objectContaining({ productId: 'a', size: 'Free Size' })]);
+  expect(mockCart.refresh).toHaveBeenCalledWith(true);
+  expect(mockCart.completeCheckout).not.toHaveBeenCalled();
   expect(api.post.mock.calls.some(([path]) => path === '/payments/create-order' || path === '/orders/cod')).toBe(false);
   expect(readPendingPayment(key)).toBeNull();
 });
@@ -231,8 +232,9 @@ test('recovering a payment preserves bag quantities changed after the purchase',
   const navigate = jest.fn(); render(<Checkout navigate={navigate} />);
   fireEvent.click(await screen.findByRole('button', { name: 'Retry confirmation' }));
   await waitFor(() => expect(navigate).toHaveBeenCalledWith('/order-success?id=recovered-order'));
-  expect(mockCart.completeCheckout).toHaveBeenCalledWith([]);
-  expect(mockToast).toHaveBeenCalledWith(expect.stringContaining('review the remaining quantities'));
+  expect(mockCart.refresh).toHaveBeenCalledWith(true);
+  expect(mockCart.completeCheckout).not.toHaveBeenCalled();
+  expect(mockToast).toHaveBeenCalledWith('Payment successful');
 });
 
 test('desktop checkout displays the selected address even when more than four are saved', async () => {

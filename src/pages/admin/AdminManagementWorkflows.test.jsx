@@ -33,6 +33,8 @@ test.each(['/admin', '/seller'])('Smart Fill uses %s permissions and saves revie
   fireEvent.click(screen.getByRole('button', { name: 'Suggest details' }));
   await screen.findByText('Review suggestions');
   expect(api.post).toHaveBeenCalledWith(prefix + '/products/smart-fill', expect.objectContaining({ imageUrls: ['https://media.example/photo.jpg'] }), expect.objectContaining({ silent: true }));
+  fireEvent.click(screen.getByRole('checkbox', { name: /Selling price/ }));
+  fireEvent.click(screen.getByRole('checkbox', { name: /Original price/ }));
   fireEvent.click(screen.getByRole('button', { name: /Apply \d+ selected details/ }));
   expect(screen.getByLabelText(/Product name/)).toHaveValue('Wine embroidered saree');
   expect(screen.getByLabelText(/^Material/)).toHaveValue('Georgette');

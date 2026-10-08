@@ -209,3 +209,15 @@ function otpInputs() {
     screen.getByRole('textbox', { name: `OTP digit ${index + 1}` })
   ));
 }
+
+test('boutique sign-in keeps OTP navigation and the account return inside the same boutique', async () => {
+  window.history.replaceState(null, '', '/store/bridal/login');
+  mockAuth.sendOtp.mockResolvedValueOnce({ otpMode: 'production' });
+  render(<Login route="/store/bridal/login?redirect=%2Fwishlist" />);
+  fireEvent.change(screen.getByPlaceholderText('Mobile Number*'), { target: { value: '9876543210' } });
+  fireEvent.click(screen.getByRole('checkbox'));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  await screen.findByRole('button', { name: 'Verify OTP' });
+  expect(window.location.pathname).toBe('/store/bridal/login');
+  expect(new URLSearchParams(window.location.search).get('redirect')).toBe('/store/bridal/wishlist');
+});

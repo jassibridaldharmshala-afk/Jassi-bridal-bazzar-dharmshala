@@ -1,5 +1,6 @@
+import { responsiveImage } from '../../utils/responsiveImages';
 import { useState } from 'react';
-import { getPrimaryImageUrl, isUsableImageUrl, normalizeImageUrl } from '../../services/normalize';
+import { getPrimaryImageUrl, isUsableImageUrl } from '../../services/normalize';
 
 const swatches = {
   Wine: '#6d1f34',
@@ -19,7 +20,7 @@ export function ProductVisual({ product, compact = false, showMeta = true }) {
   if (image && !imageFailed) {
     return (
       <div className={`relative overflow-hidden bg-[#f6efe8] ${frameClass}`}>
-        <img loading="lazy" decoding="async" src={normalizeImageUrl(image)} alt={product.name} onError={() => setImageFailed(true)} className="h-full w-full object-cover object-center" />
+        <img loading="lazy" decoding="async" {...responsiveImage(product.images?.find(item => item.url === image) || { url: image })} alt={product.name} onError={() => setImageFailed(true)} className="h-full w-full object-cover object-center" />
       </div>
     );
   }

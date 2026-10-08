@@ -6,6 +6,8 @@ import { displaySmartValue, fieldValue, sameValue, selectedSmartPatch, smartPhot
 import './ProductSmartFill.css';
 import { automaticSizing } from '../../utils/productSizing';
 
+const financial = key => ['sellingPrice', 'price', 'originalPrice'].includes(key) || key.startsWith('rentalPricing.');
+
 export default function ProductSmartFill({ form, categories, structure, onApply, apiPrefix = '/admin', priceField = 'price', seo = true, disabled = false }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
@@ -45,8 +47,8 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
       const result = await api.post(`${apiPrefix}/products/smart-fill`, smartRequest(baseline, notes, chosen), { silent: true, signal: controller.signal });
       if (controller.signal.aborted) return;
       const rows = suggestionRows(result, baseline, { categories, structure, priceField, seo });
-      setPreview({ rows, warnings: result.warnings || [], mode: result.mode, inputs });
-      setSelected(rows.filter(row => row.empty).map(row => row.key));
+      setPreview({ rows, similarProducts: result.similarProducts || [], warnings: result.warnings || [], mode: result.mode, inputs });
+      setSelected(rows.filter(row => row.empty && !financial(row.key)).map(row => row.key));
       if (!rows.length && !result.warnings?.length) setNotice('No additional fields to fill from these inputs. Your existing details are unchanged.');
     } catch (failure) {
       if (!controller.signal.aborted) setError(failure.message || 'Smart Fill could not complete. Please try again.');
@@ -80,7 +82,7 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
       </div>}
       <label className="product-smart-fill__label" htmlFor={uid + '-notes'}>Supplier notes or product details</label>
       <textarea id={uid + '-notes'} rows={4} maxLength={7000} value={notes} disabled={busy || disabled} onChange={event => setNotes(event.target.value)} placeholder={'Paste details in English, Hindi or Hinglish. For example:\nName: Wine embroidered saree\nFabric: Georgette\nSelling price: Rs 1299\nMRP: Rs 1999'} />
-      <p className="product-smart-fill__hint">{status?.enabled === false ? 'Photo AI is not configured. You can still fill explicitly stated details from notes.' : 'Fills category, design, colours, specifications, descriptions, highlights, tags and SEO from your photos and notes.'} Stock stays manual; prices, materials and care need stated details. {!automaticSizing(structure) ? 'Sizes and measurements are not filled for adjustable bridal items.' : 'Available sizes need stated details.'}</p>
+      <p className="product-smart-fill__hint">{status?.enabled === false ? 'Photo AI is not configured. You can still fill explicitly stated details from notes.' : 'Fills category, design, colours, specifications, descriptions, highlights, tags and SEO from your photos and notes.'} Stock stays manual; prices, materials and care need stated details. {!automaticSizing(structure) ? 'Photo AI never guesses measurements. Use the optional owner-measured fitting templates in Rental pricing. Labelled notes can suggest daily rent, deposit, advance, fitting instructions and exact included items; review every value.' : 'Available sizes need stated details.'}</p>
       <div className="product-smart-fill__actions">
         <button type="button" className="admin-btn" disabled={busy || disabled} onClick={analyze}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}{busy ? 'Reading product details…' : 'Suggest details'}</button>
         {busy && <button type="button" className="admin-btn-ghost" onClick={() => { request.current?.abort(); request.current = null; setBusy(false); setNotice('Analysis cancelled.'); }}>Cancel</button>}
@@ -89,11 +91,11 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
       {error && <p role="alert" className="product-smart-fill__warning">{error}</p>}
       {notice && <p role="status" className="product-smart-fill__notice">{notice}</p>}
       {preview && <div className="product-smart-fill__review">
-        <div className="product-smart-fill__review-heading"><strong>Review suggestions</strong><span>{preview.mode === 'ai' ? 'Photos & context' : 'From your notes'}</span></div>
-        {preview.warnings.map(warning => <p key={warning} role="status" className="product-smart-fill__warning">{warning}</p>)}
+        <div className="product-smart-fill__review-heading"><strong>Review suggestions</strong><p>Check the source evidence and explicitly select any sale price, MRP or owner-stated rental terms before applying.</p><span>{preview.mode === 'ai' ? 'Photos & context' : 'From your notes'}</span></div>
+        {preview.similarProducts?.length > 0 && <section><strong>Similar products to review</strong><p>Choose whether this is a separate design or edit an existing product. Nothing is merged automatically.</p>{preview.similarProducts.map(product => <p key={product._id}><a href={`${apiPrefix}/products?edit=${encodeURIComponent(product._id)}`} target="_blank" rel="noopener noreferrer">{product.name} · {product.sku}</a> — {product.reason}</p>)}</section>}{preview.warnings.map(warning => <p key={warning} role="status" className="product-smart-fill__warning">{warning}</p>)}
         {stale && <p role="status" className="product-smart-fill__warning">Your photos or notes changed. Suggest details again before applying.</p>}
         {!!preview.rows.length && <>
-          <label className="product-smart-fill__choice"><input type="checkbox" checked={replace} disabled={disabled || stale} onChange={event => { setReplace(event.target.checked); if (!event.target.checked) setSelected(preview.rows.filter(row => row.empty).map(row => row.key)); }} />Allow replacing selected existing details</label>
+          <label className="product-smart-fill__choice"><input type="checkbox" checked={replace} disabled={disabled || stale} onChange={event => { setReplace(event.target.checked); if (!event.target.checked) setSelected(preview.rows.filter(row => row.empty && !financial(row.key)).map(row => row.key)); }} />Allow replacing selected existing details</label>
           <div className="product-smart-fill__fields">{preview.rows.map(row => {
             const changed = !sameValue(fieldValue(form, row.key), row.before);
             const locked = disabled || stale || changed || (!row.empty && !replace);

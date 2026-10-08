@@ -7,7 +7,7 @@ test('uses the stored invoice number and issue date, not the print date', () => 
   expect(view.number).toBe('SC-SAMPLE01');
   expect(view.date).toBe('01 Sept 2026');
   expect(view.orderDate).toBe('31 Aug 2026');
-  expect(view.filename).toBe('Jassi-Collection-Invoice-SC-SAMPLE01.pdf');
+  expect(view.filename).toBe('Jassi-General-Store-Invoice-SC-SAMPLE01.pdf');
 });
 test('matches the order snapshot without double-counting inclusive tax', () => {
   const receipt = { ...sample, couponDiscount: 100, prepaidDiscount: 50, platformFee: 23, deliveryCharge: 49, finalAmount: 2719, taxAmount: 129.48, taxRate: 5 };

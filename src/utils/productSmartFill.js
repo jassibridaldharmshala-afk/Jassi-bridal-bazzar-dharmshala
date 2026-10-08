@@ -16,7 +16,7 @@ function generatedProductCode() {
   // product endpoint still checks SKU uniqueness when the user saves.
   return 'SC-' + suffix.toUpperCase();
 }
-export const fieldValue = (form, key) => key.startsWith('attributeValues.') ? form.attributeValues?.[key.split('.')[1]] : key === 'category' ? id(form.category) : form[key];
+export const fieldValue = (form, key) => key === 'category' ? id(form.category) : key.split('.').reduce((value, part) => value?.[part], form);
 const empty = (value, key) => value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length)
   || (typeof value === 'string' && !value.trim()) || (key === 'sizingMode' && value === 'auto')
   || (['price', 'sellingPrice', 'originalPrice'].includes(key) && Number(value) === 0);
@@ -28,7 +28,7 @@ export function smartPhotos(form) {
 
 export function smartRequest(form, notes, imageUrls) {
   const fields = ['name', 'category', 'subCategory', 'fabric', 'colors', 'occasion', 'description', 'shortDescription', 'highlights', 'careInstructions', 'attributeValues'];
-  return { notes, imageUrls, existing: Object.fromEntries(fields.map(key => [key, key === 'category' ? id(form.category) : form[key]])) };
+  return { notes, imageUrls, existing: { productId: form.publishedProductId || (!form.status ? form._id : '') || '', ...Object.fromEntries(fields.map(key => [key, key === 'category' ? id(form.category) : form[key]])) } };
 }
 
 export function suggestionRows(result, baseline, { categories = [], structure, priceField = 'price', seo = true } = {}) {
@@ -72,6 +72,12 @@ export function suggestionRows(result, baseline, { categories = [], structure, p
     const before = fieldValue(baseline, key);
     if (!sameValue(value, before)) rows.push({ key, field: key, label: attribute.label, value, before, empty: empty(before, key), evidence: result.fieldSources?.['attribute.' + attribute.key], categoryBefore: id(baseline.category), categoryTarget: categoryId, categoryDependent: !(structure?.attributes || []).some(item => item.key === attribute.key) || [...(definition?.attributes || []), ...(category?.attributeOverrides || [])].some(item => item?.key === attribute.key) });
   }
+  if (baseline.commerceMode !== 'SALE_ONLY' && data.rentalPricing) {
+    for (const [path, label] of [['dailyRatePaise', 'Daily rent (owner stated)'], ['depositPaise', 'Refundable security (owner stated)'], ['advanceMode', 'Rental advance method'], ['advancePercent', 'Rental advance percentage'], ['fitting.instructions', 'Rental fitting instructions'], ['fitting.includedItems', 'Exact set contents']]) {
+      const key = 'rentalPricing.' + path, value = path.split('.').reduce((v, p) => v?.[p], data.rentalPricing), before = fieldValue(baseline, key), evidence = result.fieldSources?.[key];
+      if (value !== undefined && evidence?.source === 'caption' && !sameValue(value, before)) rows.push({ key, field: key, label, value, before, empty: empty(before, key) || (key.endsWith('advanceMode') && before === 'STORE'), evidence });
+    }
+  }
   return rows;
 }
 
@@ -102,12 +108,14 @@ export function applySmartPatch(form, patch, undo = false) {
     if (!sameValue(fieldValue(next, row.key), expected)) continue;
     const value = undo ? row.before : row.value;
     if (row.key.startsWith('attributeValues.')) next.attributeValues = { ...next.attributeValues, [row.key.split('.')[1]]: value ?? '' };
+    else if (row.key.startsWith('rentalPricing.')) { const parts = row.key.split('.').slice(1); next.rentalPricing = { ...(next.rentalPricing || {}) }; if (parts.length === 2) next.rentalPricing[parts[0]] = { ...next.rentalPricing[parts[0]], [parts[1]]: value ?? '' }; else next.rentalPricing[parts[0]] = value ?? ''; }
     else next[row.key] = value ?? '';
   }
   return next;
 }
 
 export function displaySmartValue(value, key, categories = []) {
+  if (key.endsWith('Paise')) return '\u20b9' + (Number(value || 0) / 100).toLocaleString('en-IN');
   if (key === 'category') return categories.find(category => String(category._id) === String(id(value)))?.name || String(id(value));
   if (key === 'sizingMode') return value === 'free-size' ? 'No size selection / free size' : value === 'sized' ? 'Selectable sizes' : 'Automatic';
   if (['price', 'sellingPrice', 'originalPrice'].includes(key)) return Number(value) > 0 ? '\u20b9' + Number(value).toLocaleString('en-IN') : 'Not added';

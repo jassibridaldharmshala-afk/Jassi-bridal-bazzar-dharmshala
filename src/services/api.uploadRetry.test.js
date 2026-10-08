@@ -1,5 +1,5 @@
 import api from './api';
-import { compressImageFile, isSupportedImageFile } from './imageCompression';
+import { preparePhotoUploads } from './imageCompression';
 import { waitFor } from '@testing-library/react';
 import { confirmUploadedReferences } from './uploadRetry';
 const mockInitiate = jest.fn(value => value);
@@ -8,25 +8,22 @@ let mockAuth;
 jest.mock('../store/apiSlice', () => ({ samiraApi: { endpoints: { upload: { initiate: value => mockInitiate(value) }, mutate: { initiate: value => mockInitiate(value) } } } }));
 jest.mock('../store/store', () => ({ store: { dispatch: value => mockDispatch(value), getState: () => ({ auth: mockAuth }) } }));
 jest.mock('../utils/mobileLoader', () => ({ startMobileLoader: jest.fn(), stopMobileLoader: jest.fn() }));
-jest.mock('./imageCompression', () => ({ compressImageFile: jest.fn(), isSupportedImageFile: jest.fn() }));
+jest.mock('./imageCompression', () => ({ preparePhotoUploads: jest.fn() }));
 beforeEach(() => {
   jest.clearAllMocks(); sessionStorage.clear(); localStorage.clear();
   mockAuth = { user: { _id: 'owner', activeMode: 'admin' }, token: 'one' };
-  isSupportedImageFile.mockReturnValue(true); compressImageFile.mockImplementation(file => Promise.resolve(file));
+  preparePhotoUploads.mockImplementation(files => Promise.resolve(files));
   mockDispatch.mockImplementation(() => ({ unwrap: async () => ({ files: [{ url: '/uploads/saved.webp' }] }), reset: jest.fn(), abort: jest.fn() }));
 });
 function file() { return new File(['photo'], 'photo.webp', { type: 'image/webp' }); }
 
-test('mixed evidence photos are compressed before dispatch while videos remain unchanged', async () => {
+test('mixed evidence uses shared photo preparation and keeps original quality before dispatch', async () => {
   const photo = new File([new Uint8Array(3 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
-  const compressed = new File(['optimized'], 'large.webp', { type: 'image/webp' });
   const video = new File(['video'], 'packing.mp4', { type: 'video/mp4' });
-  isSupportedImageFile.mockImplementation(file => file.type.startsWith('image/'));
-  compressImageFile.mockResolvedValue(compressed);
   mockDispatch.mockImplementation(() => ({ unwrap: async () => ({ files: [{ url: '/uploads/evidence.webp' }, { url: '/uploads/packing.mp4' }] }), reset: jest.fn() }));
   await api.upload('/admin/orders/evidence/uploads', [photo, video], { fieldName: 'files' });
-  expect(mockInitiate.mock.calls[0][0].files).toEqual([compressed, video]);
-  expect(compressImageFile).toHaveBeenCalledTimes(1);
+  expect(mockInitiate.mock.calls[0][0].files).toEqual([photo, video]);
+  expect(preparePhotoUploads).toHaveBeenCalledWith([photo, video], { imagesOnly: false });
 });
 
 test('already-uploaded evidence is reused when the following form save fails', async () => {
@@ -51,7 +48,7 @@ test('concurrent uploads share preparation and the network request', async () =>
   const first = api.upload('/admin/uploads', photos);
   const second = api.upload('/admin/uploads', photos);
   await waitFor(() => expect(mockDispatch).toHaveBeenCalledTimes(1));
-  expect(mockDispatch).toHaveBeenCalledTimes(1); expect(compressImageFile).toHaveBeenCalledTimes(1);
+  expect(mockDispatch).toHaveBeenCalledTimes(1); expect(preparePhotoUploads).toHaveBeenCalledTimes(1);
   finish({ files: [{ url: '/uploads/one.webp' }] });
   expect(await first).toEqual(await second);
 });
@@ -77,10 +74,10 @@ test('proof writes and background processing do not reuse business responses', a
 });
 test('cancellation during preparation prevents the network upload', async () => {
   let prepared; let control;
-  const photo = file(); compressImageFile.mockImplementation(() => new Promise(resolve => { prepared = resolve; }));
+  const photo = file(); preparePhotoUploads.mockImplementation(() => new Promise(resolve => { prepared = resolve; }));
   const pending = api.upload('/admin/uploads', [photo], { onRequest: value => { control = value; } });
   await waitFor(() => expect(prepared).toEqual(expect.any(Function)));
-  control.cancel(); prepared(photo);
+  control.cancel(); prepared([photo]);
   await expect(pending).rejects.toThrow('Upload cancelled'); expect(mockDispatch).not.toHaveBeenCalled();
 });
 
@@ -91,7 +88,7 @@ test('a retry resumes an uploaded receipt without sending or compressing the pho
   await api.upload('/admin/uploads?folder=products', photos);
   expect(mockInitiate.mock.calls[1][0]).toMatchObject({ body: { resumeUpload: true }, idempotencyKey: mockInitiate.mock.calls[0][0].idempotencyKey });
   expect(mockInitiate.mock.calls[1][0].files).toBeUndefined();
-  expect(compressImageFile).toHaveBeenCalledTimes(1);
+  expect(preparePhotoUploads).toHaveBeenCalledTimes(1);
 });
 
 test('an incomplete receipt falls back to the same-key multipart upload', async () => {
@@ -121,7 +118,7 @@ test('a confirmed upload followed by a failed form save survives refresh without
   let reloaded; jest.isolateModules(() => { reloaded = require('./api').default; });
   await reloaded.upload('/admin/uploads?folder=products', [file()]);
   expect(mockInitiate.mock.calls[2][0]).toMatchObject({ idempotencyKey: key, body: { resumeUpload: true } });
-  expect(mockInitiate.mock.calls[2][0].files).toBeUndefined(); expect(compressImageFile).toHaveBeenCalledTimes(1);
+  expect(mockInitiate.mock.calls[2][0].files).toBeUndefined(); expect(preparePhotoUploads).toHaveBeenCalledTimes(1);
 });
 
 test('new draft/banner/post create requests reuse their key after failure, but a confirmed new save gets a new key', async () => {

@@ -1,3 +1,4 @@
+import RentalFaq from '../../components/rentals/RentalFaq';
 import { useEffect, useRef, useState } from 'react';
 import { Clock3, Headphones, Mail, MapPin, MessageCircle, Send } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui';
@@ -25,7 +26,7 @@ const pageCopy = {
   '/shipping-policy': {
     title: 'Shipping Policy',
     key: 'shippingPolicy',
-    fallback: 'Orders are packed and handed to the courier after confirmation. Delivery timelines depend on your pincode and usually take 5-7 working days after dispatch. You will receive tracking details once the shipment is created.',
+    fallback: 'Orders are packed and handed to the courier after confirmation. Delivery timelines depend on your destination and the courier. The shop will confirm dispatch timing. You will receive tracking details once the shipment is created.',
   },
   '/cancellation-policy': {
     title: 'Cancellation Policy',
@@ -78,7 +79,7 @@ export default function Contact({ route = '/contact' }) {
     return () => { active = false; };
   }, [attempt, storeSlug]);
 
-  const routePath = route.split('?')[0];
+  const routePath = route.split('?')[0].replace(/^\/store\/[^/]+/, '') || '/';
   const policy = pageCopy[routePath];
 
   if (loading) {
@@ -103,6 +104,7 @@ export default function Contact({ route = '/contact' }) {
           </p>
           </CardContent>
         </Card>
+        {routePath === '/faqs' || routePath === '/terms' || routePath === '/return-policy' || routePath === '/cancellation-policy' ? <RentalFaq storeSlug={storeSlug} /> : null}
       </section>
     );
   }
@@ -218,6 +220,7 @@ export default function Contact({ route = '/contact' }) {
           </form>
         </div>
       </div>
+      <RentalFaq storeSlug={storeSlug} />
     </section>
   );
 }

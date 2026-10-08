@@ -82,7 +82,7 @@ export default function Home({ navigate, storeSlug = '', industry = 'fashion', i
   // backend deployment catches up with the combined mobile-home endpoint.
   // Do not multiply traffic when a server is slow/offline or rate-limiting us.
   const mobileFallbackProductsQuery = useGetProductsQuery(
-    { store: storeSlug, silent: true },
+    { store: storeSlug, page: 1, limit: 60, silent: true },
     { skip: !useLegacyMobileFeed },
   );
   const mobileFallbackCategoriesQuery = useGetCategoriesQuery(
@@ -93,13 +93,13 @@ export default function Home({ navigate, storeSlug = '', industry = 'fashion', i
     { store: storeSlug, silent: true },
     { skip: !useLegacyMobileFeed },
   );
-  const desktopProductsQuery = useGetProductsQuery({ store: storeSlug }, { skip: !isDesktop });
+  const desktopProductsQuery = useGetProductsQuery({ store: storeSlug, page: 1, limit: 60 }, { skip: !isDesktop });
   const desktopCategoriesQuery = useGetCategoriesQuery({ store: storeSlug }, { skip: !isDesktop });
   const desktopBannersQuery = useGetBannersQuery({ store: storeSlug }, { skip: !isDesktop });
   const mobileFeed = mobileFeedQuery.currentData || {};
   const productData = isDesktop
-    ? (desktopProductsQuery.data || emptyList)
-    : useLegacyMobileFeed ? (mobileFallbackProductsQuery.data || emptyList) : (mobileFeed.products || emptyList);
+    ? (desktopProductsQuery.data?.items || desktopProductsQuery.data || emptyList)
+    : useLegacyMobileFeed ? (mobileFallbackProductsQuery.data?.items || mobileFallbackProductsQuery.data || emptyList) : (mobileFeed.products || emptyList);
   const categories = isDesktop
     ? (desktopCategoriesQuery.data || emptyList)
     : useLegacyMobileFeed ? (mobileFallbackCategoriesQuery.data || emptyList) : (mobileFeed.categories || emptyList);

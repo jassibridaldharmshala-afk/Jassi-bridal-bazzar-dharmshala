@@ -1,13 +1,35 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImagePlus, Upload, X } from 'lucide-react';
-import { isSupportedImageFile, PHOTO_SOURCE_MAX_BYTES } from '../../services/imageCompression';
+import { isSupportedImageFile, PHOTO_SOURCE_MAX_BYTES, PHOTO_BATCH_MAX_BYTES } from '../../services/imageCompression';
+
+import api from '../../services/api';
 
 const MAX_PHOTOS = 30;
 const groupTitle = (group, index) => group.name.trim() || `Product ${index + 1}`;
 const retainPhotos = (group, photos) => ({ ...group, photos, cover: photos.includes(group.cover) ? group.cover : photos[0] });
 
-export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setGroupMode, groups, setGroups, groupingSupported, uploading, onUpload, onClose }) {
+export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setGroupMode, groups, setGroups, groupingSupported, uploading, onUpload, onClose, apiPrefix = '/admin' }) {
   const [selected, setSelected] = useState([]);
+  const [proposal, setProposal] = useState(null), [analysing, setAnalysing] = useState(false);
+  const analysis = useRef(null), snapshot = useRef(files); snapshot.current = files;
+  useEffect(() => { setProposal(null); return () => analysis.current?.cancel?.(); }, [files]);
+  const suggest = async () => {
+    const originals = files; setAnalysing(true); setError(''); setProposal(null);
+    try {
+      const result = await api.upload(apiPrefix + '/products/photo-grouping', originals, { silent: true, onRequest: request => { analysis.current = request; } });
+      if (snapshot.current !== originals) return;
+      const used = new Set();
+      if (result.photoCount !== originals.length || !Array.isArray(result.groups) || result.groups.some(group => !Array.isArray(group.indices) || !group.indices.length || group.indices.some(index => !Number.isInteger(index) || index < 0 || index >= originals.length || used.has(index) || !used.add(index))) || used.size !== originals.length) throw new Error('The grouping proposal did not preserve every photo. Group them manually or retry.');
+      setProposal({ ...result, originals });
+    } catch (err) { if (snapshot.current === originals) setError(err.data?.message || err.message || 'Photo grouping could not complete. Your photos and manual groups are unchanged.'); }
+    finally { setAnalysing(false); analysis.current = null; }
+  };
+  const acceptProposal = () => {
+    if (proposal?.originals !== files) return;
+    setGroups(proposal.groups.map((group, index) => ({ id: 'ai-group-' + index + '-' + Date.now(), name: group.name || '', photos: group.indices.map(i => files[i]), cover: files[group.indices[0]] })));
+    setGroupMode('grouped'); setSelected([]); setProposal(null);
+  };
+  const busy = uploading || analysing;
   const [error, setError] = useState('');
   const previews = useMemo(() => files.map((file) => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach((item) => URL.revokeObjectURL(item.url)), [previews]);
@@ -22,7 +44,8 @@ export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setG
     if (!added.length) return;
     if (files.length + added.length > MAX_PHOTOS) return setError('Choose up to 30 photos per upload. Remove some photos or upload the remaining products in another batch.');
     if (added.some((file) => !isSupportedImageFile(file))) return setError('Choose JPG, PNG or WEBP photos only.');
-    if (added.some((file) => file.size > PHOTO_SOURCE_MAX_BYTES)) return setError('Each source photo can be up to 20 MB before automatic compression.');
+    if (added.some((file) => file.size > PHOTO_SOURCE_MAX_BYTES)) return setError('Each photo can be up to 20 MB.');
+    if ([...files, ...added.filter(file => !files.includes(file))].reduce((total, file) => total + file.size, 0) > PHOTO_BATCH_MAX_BYTES) return setError('Choose up to 60 MB of photos per upload. Upload the remaining photos in another batch.');
     setError('');
     setFiles((current) => [...current, ...added.filter((file) => !current.includes(file))]);
   };
@@ -55,17 +78,19 @@ export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setG
   };
 
   return <section className="admin-card draft-upload-panel" aria-label="Create drafts from photos">
-    <div className="draft-panel-heading"><div><p>FAST CATALOG SETUP</p><h2>Create drafts from product photos</h2><span>Photos stay editable before anything is published.</span></div><button type="button" disabled={uploading} onClick={onClose} aria-label="Close upload panel"><X /></button></div>
+    <div className="draft-panel-heading"><div><p>FAST CATALOG SETUP</p><h2>Create drafts from product photos</h2><span>Photos stay editable before anything is published.</span></div><button type="button" disabled={busy} onClick={onClose} aria-label="Close upload panel"><X /></button></div>
     <div className="draft-upload-options">
       <label className={groupMode === 'single' ? 'is-selected' : ''}><input type="radio" disabled={uploading} name="draft-group" checked={groupMode === 'single'} onChange={() => setGroupMode('single')} /><strong>One product, multiple photos</strong><span>Use when every photo shows the same item.</span></label>
       <label className={groupMode === 'separate' ? 'is-selected' : ''}><input type="radio" disabled={uploading} name="draft-group" checked={groupMode === 'separate'} onChange={() => setGroupMode('separate')} /><strong>One draft per photo</strong><span>Use when each photo is a different item.</span></label>
-      <label className={`${grouped ? 'is-selected' : ''}${!groupingSupported ? ' is-disabled' : ''}`}><input type="radio" disabled={uploading || !groupingSupported} name="draft-group" checked={grouped} onChange={() => setGroupMode('grouped')} /><strong>Several products, grouped photos</strong><span>{groupingSupported ? 'Give each product its own set of photos: 2, 4, 6 or any number.' : 'Grouped uploads are currently unavailable.'}</span></label>
+      <label className={`${grouped ? 'is-selected' : ''}${!groupingSupported ? ' is-disabled' : ''}`}><input type="radio" disabled={busy || !groupingSupported} name="draft-group" checked={grouped} onChange={() => setGroupMode('grouped')} /><strong>Several products, grouped photos</strong><span>{groupingSupported ? 'Give each product its own set of photos: 2, 4, 6 or any number.' : 'Grouped uploads are currently unavailable.'}</span></label>
     </div>
-    <label className="draft-dropzone"><Upload size={24} /><strong>Choose up to 30 product photos</strong><span>JPG, PNG or WEBP, up to 20 MB each. Automatically optimized below 100 KB before upload.</span><input aria-label="Choose product photos" type="file" disabled={uploading} multiple accept="image/jpeg,image/jpg,image/png,image/webp" onChange={(event) => { add(event.target.files); event.target.value = ''; }} /></label>
+    <label className="draft-dropzone"><Upload size={24} /><strong>Choose up to 30 product photos</strong><span>JPG, PNG or WEBP, up to 20 MB each and 60 MB per batch. Original quality preserved; lossless optimization where possible.</span><input aria-label="Choose product photos" type="file" disabled={uploading} multiple accept="image/jpeg,image/jpg,image/png,image/webp" onChange={(event) => { add(event.target.files); event.target.value = ''; }} /></label>
+    {groupingSupported && files.length > 1 && <div className="draft-group-tools"><button type="button" className="admin-btn" disabled={busy} onClick={suggest}>{analysing ? 'Proposing groups…' : 'Suggest photo groups with AI'}</button><p>AI proposes which views belong together. Review every group before applying; original photos stay intact.</p></div>}
+    {proposal && <section className="draft-photo-groups" aria-label="Review AI photo groups">{proposal.groups.map((group, i) => <div key={i}><h3>{group.name || `Product ${i + 1}`}</h3><p>{group.confidence < 0.8 ? 'Uncertain — check these views carefully' : 'Suggested group — confirm the same physical product'}</p><div className="flex gap-2">{group.indices.map(index => <figure key={index}><img className="h-24 w-24 object-contain" src={previews[index].url} alt={`View ${index + 1}`} /><figcaption>Photo {index + 1}</figcaption></figure>)}</div></div>)}<button type="button" className="admin-btn" disabled={busy} onClick={acceptProposal}>Apply reviewed groups</button><button type="button" className="admin-btn-ghost" onClick={() => setProposal(null)}>Keep manual groups</button></section>}
     {error && <p role="alert" className="draft-alert is-error">{error}</p>}
     {grouped && files.length > 0 && <div className="draft-group-tools">
       <p>Select all views of one product, then create its group. Repeat for the next product. Photos can be moved between groups before uploading.</p>
-      <div><strong>{selected.length} selected</strong><button type="button" className="admin-btn" disabled={!selected.length || uploading} onClick={createGroup}><ImagePlus size={16} />Create product group</button>
+      <div><strong>{selected.length} selected</strong><button type="button" className="admin-btn" disabled={!selected.length || busy} onClick={createGroup}><ImagePlus size={16} />Create product group</button>
         <select aria-label="Move selected photos to product group" disabled={!selected.length || !groups.length || uploading} value="" onChange={(event) => assignPhotos(selected, event.target.value)}><option value="" disabled>Move selected to…</option>{groups.map((group, index) => <option key={group.id} value={group.id}>{groupTitle(group, index)}</option>)}<option value="unassigned">Unassigned photos</option></select>
         <button type="button" className="admin-btn-ghost" disabled={!unassigned.length || uploading} onClick={() => setSelected(unassigned)}>Select unassigned</button><button type="button" className="admin-btn-ghost" disabled={!selected.length || uploading} onClick={() => setSelected([])}>Clear selection</button>
       </div>

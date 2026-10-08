@@ -289,19 +289,16 @@ export default function QuickAddProduct() {
 
   return (
     <section className="space-y-5">
-      <PageHeader title="Quick Add Product" note="Upload a photo. The system looks at the garment and fills name, category, colors and details. You add price and stock.">
+      <PageHeader title="Quick Add Product" note="Create a sale listing from up to six views. Review suggestions and enter the actual sale price and stock. For rental or both, use the full editor or product drafts.">
         <a href="/admin/social-import" className="admin-btn-ghost">Import Instagram / Facebook link</a>
-        <a href="/admin/products/add" className="admin-btn-ghost">Open Advanced Add Product</a>
+        <a href="/admin/products/add" className="admin-btn-ghost">Open Sale / Rental / Both editor</a>
       </PageHeader>
 
       {visionEnabled === false && (
         <div className="admin-quick-add__banner" role="status">
           <strong>Photo AI is off</strong>
           <p>
-            Quick Add can only use the file name until a free Gemini key is on the server.
-            Add <code>GEMINI_API_KEY</code> in <code>backend/.env</code> from{' '}
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a>,
-            then restart the backend.
+            Photo analysis is unavailable for this store. You can enter details manually or ask the owner to configure the AI service.
           </p>
         </div>
       )}

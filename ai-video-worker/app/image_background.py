@@ -9,8 +9,8 @@ _session = None
 
 
 def remove_background(data: bytes) -> bytes:
-    if not data or len(data) > 3 * 1024 * 1024:
-        raise ValueError("Choose an image under 3 MB.")
+    if not data or len(data) > 20 * 1024 * 1024:
+        raise ValueError("Choose an image under 20 MB.")
     # Bound decoding as well as inference; never block the async HTTP event loop.
     if not _lock.acquire(blocking=False):
         raise RuntimeError("Background processor busy. Please retry.")
@@ -23,7 +23,6 @@ def remove_background(data: bytes) -> bytes:
                 image = ImageOps.exif_transpose(source).convert("RGBA")
         except (UnidentifiedImageError, Image.DecompressionBombError) as error:
             raise ValueError("Invalid image.") from error
-        image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
         from rembg import new_session, remove
         global _session
         if _session is None:
@@ -32,7 +31,9 @@ def remove_background(data: bytes) -> bytes:
         if not result.getchannel("A").getbbox():
             raise ValueError("No foreground found. Keep the original or try another photo.")
         output = io.BytesIO()
-        result.save(output, format="PNG")
+        result.save(output, format="PNG", compress_level=9)
+        if output.tell() > 20 * 1024 * 1024:
+            raise ValueError("The edited photo exceeds 20 MB. Keep the original or edit a closer view.")
         return output.getvalue()
     finally:
         _lock.release()
@@ -41,4 +42,4 @@ def remove_background(data: bytes) -> bytes:
 if __name__ == "__main__":
     import sys
     # The API may run the same provider locally without starting another server.
-    sys.stdout.buffer.write(remove_background(sys.stdin.buffer.read(3 * 1024 * 1024 + 1)))
+    sys.stdout.buffer.write(remove_background(sys.stdin.buffer.read(20 * 1024 * 1024 + 1)))

@@ -1,6 +1,6 @@
-export const pendingPaymentKey = user => {
+export const pendingPaymentKey = (user, storeSlug = '') => {
   const id = user?._id || user?.id;
-  return id ? `samira_pending_payment:${id}` : '';
+  return id ? `samira_pending_payment:${id}${storeSlug ? `:store:${storeSlug}` : ''}` : '';
 };
 
 export function readPendingPayment(key) {

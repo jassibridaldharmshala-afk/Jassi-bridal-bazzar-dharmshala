@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronDown, Copy, FileText, Sparkles, Undo2, X } from 'lucide-react';
 import api from '../../services/api';
-import { compressImageFile, isSupportedImageFile } from '../../services/imageCompression';
+import { prepareAnalysisImageFile, isSupportedImageFile } from '../../services/imageCompression';
 import { applySmartReview, reviewSmartSuggestions, smartCurrent, smartEndpoint, smartRowUnchanged } from '../../utils/workflowSmartFill';
 import './WorkflowSmartFill.css';
 
@@ -82,7 +82,7 @@ export default function WorkflowSmartFill({ workflow, form, onChange, apiBase, c
     if (!file) return;
     let prepared;
     try {
-      if (isSupportedImageFile(file)) prepared = await compressImageFile(file);
+      if (isSupportedImageFile(file)) prepared = await prepareAnalysisImageFile(file);
       else if (file.type === 'application/pdf' && file.size <= 512 * 1024) prepared = file;
       else throw new Error('Choose a photo up to 20 MB or a PDF under 512 KB, or paste its text.');
     } catch (failure) { if (alive.current && fileRevision.current === revision) setError(failure.message); return; }

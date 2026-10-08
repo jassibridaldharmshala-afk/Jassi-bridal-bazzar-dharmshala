@@ -19,7 +19,7 @@ async def image_background(request: Request, authorization: str = Header(default
     data = bytearray()
     async for chunk in request.stream():
         data.extend(chunk)
-        if len(data) > 3 * 1024 * 1024:
+        if len(data) > 20 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="Image too large.")
     try:
         from .image_background import remove_background

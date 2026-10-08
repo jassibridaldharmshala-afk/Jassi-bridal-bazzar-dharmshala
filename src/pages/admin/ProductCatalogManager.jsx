@@ -22,7 +22,7 @@ import '../../components/admin/AdminShell.css';
 
 const DEFAULT_SUMMARY = { total: 0, active: 0, low: 0, out: 0, archived: 0, retailValue: 0, costValue: 0 };
 
-export default function ProductCatalogManager({ route = '/admin/products', apiPrefix }) {
+export default function ProductCatalogManager({ route = '/admin/products', apiPrefix, navigate }) {
   const prefix = apiPrefix || (route.startsWith('/seller') ? '/seller' : '/admin');
   const productsPath = `${prefix}/products`;
   const isAdmin = prefix === '/admin';
@@ -53,6 +53,7 @@ export default function ProductCatalogManager({ route = '/admin/products', apiPr
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editor, setEditor] = useState(null);
+  useEffect(() => { const id = new URLSearchParams(route.split('?')[1] || '').get('edit'); if (/^[a-f\d]{24}$/i.test(id || '')) setEditor({ mode: 'Edit', id }); }, [route]);
   const [settings, setSettings] = useState(null);
   const [posterProduct, setPosterProduct] = useState(null);
   const [captionProduct, setCaptionProduct] = useState(null);
@@ -261,7 +262,7 @@ export default function ProductCatalogManager({ route = '/admin/products', apiPr
         <div className="flex items-center gap-2"><button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)} className="admin-btn-ghost min-h-9 px-3 disabled:opacity-40">Previous</button><span className="min-w-16 text-center font-bold">{page} / {pageCount}</span><button type="button" disabled={page >= pageCount || loading} onClick={() => setPage((value) => value + 1)} className="admin-btn-ghost min-h-9 px-3 disabled:opacity-40">Next</button></div>
       </div>
 
-      {editor && <div className="fixed inset-0 z-[90] bg-black/45 p-2 sm:p-4 lg:p-6"><div className="mx-auto flex h-full w-full max-w-[1180px] flex-col overflow-hidden rounded-[24px] bg-[#fbf7f3] shadow-2xl"><div className="flex items-center justify-between border-b border-theme-border bg-white px-4 py-3 lg:px-6"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-wine/60">Catalog editor</p><h2 className="text-xl font-black">{editor.mode === 'Add' ? 'Add product' : 'Edit product'}</h2></div><button type="button" onClick={closeEditor} className="grid h-10 w-10 place-items-center rounded-full border border-theme-border" aria-label="Close product editor"><X className="h-5 w-5" /></button></div><div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6"><ProductForm mode={editor.mode} productId={editor.id} apiPrefix={prefix} uploadPrefix={`${prefix}/uploads`} cancelPath={`${prefix}/products`} onCancel={closeEditor} onSaved={() => { closeEditor(); reload(); }} /></div></div></div>}
+      {editor && <div className="fixed inset-0 z-[90] bg-black/45 p-2 sm:p-4 lg:p-6"><div className="mx-auto flex h-full w-full max-w-[1180px] flex-col overflow-hidden rounded-[24px] bg-[#fbf7f3] shadow-2xl"><div className="flex items-center justify-between border-b border-theme-border bg-white px-4 py-3 lg:px-6"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-wine/60">Catalog editor</p><h2 className="text-xl font-black">{editor.mode === 'Add' ? 'Add product' : 'Edit product'}</h2></div><button type="button" onClick={closeEditor} className="grid h-10 w-10 place-items-center rounded-full border border-theme-border" aria-label="Close product editor"><X className="h-5 w-5" /></button></div><div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6"><ProductForm mode={editor.mode} productId={editor.id} apiPrefix={prefix} uploadPrefix={`${prefix}/uploads`} cancelPath={`${prefix}/products`} onCancel={closeEditor} onSaved={saved => { closeEditor(); reload(); if (saved?.rentalOffers?.length) navigate?.(`${prefix}/rentals?tab=setup&listing=${encodeURIComponent(saved.rentalOffers[0]._id)}${routeStoreId ? `&storeId=${encodeURIComponent(routeStoreId)}` : ''}`); }} /></div></div></div>}
 
       <ConfirmModal open={!!confirmTarget} title={confirmTarget?.title} message={confirmTarget?.message} confirmLabel={confirmTarget?.label} onClose={() => setConfirmTarget(null)} onConfirm={async () => { await confirmTarget?.run(); setConfirmTarget(null); }} />
       {deleteTarget && <ProductDeleteDialog product={deleteTarget} productsPath={productsPath} onClose={() => setDeleteTarget(null)} onArchived={reload} onDeleted={id => {
@@ -283,7 +284,7 @@ function DesktopRow({ product, inventoryPath, selected, busy, onSelect, onEdit, 
     <td className="admin-catalog-product"><ProductIdentity product={product} score={score} /></td>
     <td><p className="admin-catalog-sku" title={product.sku || ''}>{product.sku || 'No SKU'}</p><p className="mt-1 whitespace-nowrap text-xs text-slate-500">{product.category?.name || 'Unassigned'}</p></td>
     <td><p className="whitespace-nowrap text-[15px] font-black">Rs. {formatNumber(product.price)}</p>{Number(product.originalPrice) > Number(product.price) && <p className="text-xs text-slate-400 line-through">Rs. {formatNumber(product.originalPrice)}</p>}{Number(product.costPrice) > 0 && <p className="mt-1 text-[10px] font-bold text-emerald-700">{marginLabel(product)}</p>}</td>
-    <td>{product.isArchived ? <span className="text-xs text-slate-400">Archived</span> : product.variants?.length ? <a href={inventoryPath} className="admin-table-action-link" title="Update each variant in inventory">{product.stock} · Variants</a> : <StockInput value={product.stock} disabled={!!busy} onSave={(value) => onStock(product, value)} className="h-9 w-[76px] rounded-lg border border-theme-border bg-white px-2.5 text-sm font-semibold" aria-label={`${product.name} stock`} />}</td>
+    <td>{product.commerceMode === 'RENTAL_ONLY' ? <span className="text-xs text-slate-500">Rental pieces → setup</span> : product.isArchived ? <span className="text-xs text-slate-400">Archived</span> : product.variants?.length ? <a href={inventoryPath} className="admin-table-action-link" title="Update each variant in inventory">{product.stock} · Variants</a> : <StockInput value={product.stock} disabled={!!busy} onSave={(value) => onStock(product, value)} className="h-9 w-[76px] rounded-lg border border-theme-border bg-white px-2.5 text-sm font-semibold" aria-label={`${product.name} stock`} />}</td>
     <td><button type="button" disabled={!!busy || product.isArchived} onClick={() => onStatus(product)} aria-label={`Toggle ${product.name} status`} className="disabled:cursor-not-allowed disabled:opacity-60"><StatusBadge value={state.label} /></button><p className={`mt-1 text-[10px] font-bold ${state.tone}`}>{state.note}</p></td>
     <td><div className="flex items-center gap-1.5"><ProductActions product={product} busy={busy} onEdit={onEdit} onPoster={onPoster} onCaption={onCaption} onOut={onOut} onArchive={onArchive} onRestore={onRestore} onDuplicate={onDuplicate} /><button type="button" disabled={!!busy} onClick={() => onDelete(product)} className="admin-catalog-action text-rose-700" aria-label={`Delete ${product.name} permanently`} title="Delete permanently"><Trash2 className="h-4 w-4" /></button></div></td>
   </tr>;
@@ -293,16 +294,22 @@ function MobileProductCard({ product, selected, busy, onSelect, onEdit, onStatus
   const state = productState(product);
   const score = completenessScore(product);
   return <article className={`p-4 ${selected ? 'bg-[#fff4f6]' : 'bg-white'}`}>
-    <div className="flex gap-3"><button type="button" onClick={() => onSelect(product._id)} className={`mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md border ${selected ? 'border-wine bg-wine text-white' : 'border-[#d9cec3]'}`} aria-label={`Select ${product.name}`}>{selected && <Check className="h-3.5 w-3.5" />}</button><div className="h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-[#fbf2eb]"><img src={getPrimaryImageUrl(product.images) || '/uploads/placeholder.jpg'} alt="" className="h-full w-full object-cover" /></div><div className="min-w-0 flex-1"><h3 className="truncate text-sm font-black" title={product.name}>{product.name}</h3><p className="mt-1 truncate text-xs text-slate-500">{product.sku || 'No SKU'} · {product.category?.name || 'Unassigned'}</p><div className="mt-2 flex flex-wrap items-center gap-2"><strong>Rs. {formatNumber(product.price)}</strong><StatusBadge value={state.label} /><span className={`rounded-full px-2 py-1 text-[10px] font-black ${score === 100 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{score}% complete</span></div><p className="mt-2 text-xs font-bold text-slate-500">{Number(product.stock || 0)} units · Alert at {product.lowStockAlert ?? 5}</p></div></div>
+    <div className="flex gap-3"><button type="button" onClick={() => onSelect(product._id)} className={`mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md border ${selected ? 'border-wine bg-wine text-white' : 'border-[#d9cec3]'}`} aria-label={`Select ${product.name}`}>{selected && <Check className="h-3.5 w-3.5" />}</button><div className="h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-[#fbf2eb]"><img src={getPrimaryImageUrl(product.images) || '/uploads/placeholder.jpg'} alt="" className="h-full w-full object-cover" /></div><div className="min-w-0 flex-1"><h3 className="truncate text-sm font-black" title={product.name}>{product.name}</h3><RentalInventoryBadge product={product} /><p className="mt-1 truncate text-xs text-slate-500">{product.sku || 'No SKU'} · {product.category?.name || 'Unassigned'}</p><div className="mt-2 flex flex-wrap items-center gap-2"><strong>Rs. {formatNumber(product.price)}</strong><StatusBadge value={state.label} /><span className={`rounded-full px-2 py-1 text-[10px] font-black ${score === 100 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{score}% complete</span></div><p className="mt-2 text-xs font-bold text-slate-500">{product.commerceMode === 'RENTAL_ONLY' ? 'Rental inventory is tracked separately' : `Sale: ${Number(product.stock || 0)} units · Alert at ${product.lowStockAlert ?? 5}`}</p></div></div>
     <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => onEdit(product)} className="admin-btn"><PencilLine className="h-4 w-4" />Edit</button><a href={`/product?id=${encodeURIComponent(product._id)}`} target="_blank" rel="noreferrer" className="admin-btn-ghost"><Eye className="h-4 w-4" />Preview</a></div>
     <div className="mt-2 flex flex-wrap gap-2">{product.isArchived ? <button type="button" disabled={!!busy} onClick={() => onRestore(product)} className="admin-table-action-link"><RotateCcw className="mr-1 h-3.5 w-3.5" />Restore</button> : <><button type="button" disabled={!!busy} onClick={() => onStatus(product)} className="admin-table-action-link">{product.isActive ? 'Hide' : 'Make active'}</button><button type="button" disabled={!!busy} onClick={() => onDuplicate(product)} className="admin-table-action-link">Duplicate</button>{Number(product.stock || 0) > 0 && <button type="button" disabled={!!busy} onClick={() => onOut(product)} className="admin-table-action-link">Out of stock</button>}<button type="button" disabled={!!busy} onClick={() => onArchive(product)} className="admin-table-action-link is-danger">Archive</button></>}</div>
     <button type="button" disabled={!!busy} onClick={() => onDelete(product)} className="admin-table-action-link is-danger mt-2 inline-flex min-h-11 items-center gap-1" aria-label={`Delete ${product.name} permanently`}><Trash2 className="h-3.5 w-3.5" />Delete permanently</button>
   </article>;
 }
 
+function RentalInventoryBadge({ product }) {
+  if (!['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode)) return null;
+  const status = product.rentalStatus, p = status?.pieces;
+  return <p className="mt-1 text-xs font-semibold text-wine">Catalogue: {product.isArchived ? 'Archived' : !product.isActive ? 'Hidden' : product.publishAt && +new Date(product.publishAt) > Date.now() ? 'Scheduled' : 'Published'} · Rental: {status?.label || 'Setup pending'}{p && ` · ${p.ready} ready condition · ${p.reserved || 0} reserved by date · ${p.booked} with customers · ${p.cleaning} cleaning / repair`}</p>;
+}
+
 function ProductIdentity({ product, score }) {
   const description = product.shortDescription || product.description || '';
-  return <div className="flex items-center gap-3"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#fbf2eb]"><img src={getPrimaryImageUrl(product.images) || '/uploads/placeholder.jpg'} alt="" className="h-full w-full object-cover" /></div><div className="min-w-0"><p className="truncate text-sm font-black" title={product.name}>{product.name}</p>{description && <p className="mt-1 truncate text-xs text-slate-500" title={description}>{description}</p>}<div className="mt-1.5 flex flex-wrap gap-1">{product.isNewArrival && <Tag label="New" />}{product.isBestSeller && <Tag label="Best seller" />}{product.isFeatured && <Tag label="Featured" />}<span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${score === 100 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`} title="Product information completeness">{score}%</span></div></div></div>;
+  return <div className="flex items-center gap-3"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#fbf2eb]"><img src={getPrimaryImageUrl(product.images) || '/uploads/placeholder.jpg'} alt="" className="h-full w-full object-cover" /></div><div className="min-w-0"><p className="truncate text-sm font-black" title={product.name}>{product.name}</p><RentalInventoryBadge product={product} />{description && <p className="mt-1 truncate text-xs text-slate-500" title={description}>{description}</p>}<div className="mt-1.5 flex flex-wrap gap-1">{product.isNewArrival && <Tag label="New" />}{product.isBestSeller && <Tag label="Best seller" />}{product.isFeatured && <Tag label="Featured" />}<span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${score === 100 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`} title="Product information completeness">{score}%</span></div></div></div>;
 }
 
 function ProductActions({ product, busy, onEdit, onPoster, onCaption, onOut, onArchive, onRestore, onDuplicate }) {
@@ -335,8 +342,8 @@ function summarize(items) {
     result.total += item.isArchived ? 0 : 1;
     result.archived += item.isArchived ? 1 : 0;
     result.active += !item.isArchived && item.isActive ? 1 : 0;
-    result.low += !item.isArchived && Number(item.stock || 0) > 0 && Number(item.stock || 0) <= Number(item.lowStockAlert ?? 5) ? 1 : 0;
-    result.out += !item.isArchived && Number(item.stock || 0) <= 0 ? 1 : 0;
+    result.low += !item.isArchived && item.commerceMode !== 'RENTAL_ONLY' && Number(item.stock || 0) > 0 && Number(item.stock || 0) <= Number(item.lowStockAlert ?? 5) ? 1 : 0;
+    result.out += !item.isArchived && item.commerceMode !== 'RENTAL_ONLY' && Number(item.stock || 0) <= 0 ? 1 : 0;
     result.retailValue += !item.isArchived ? Number(item.price || 0) * Number(item.stock || 0) : 0;
     result.costValue += !item.isArchived ? Number(item.costPrice || 0) * Number(item.stock || 0) : 0;
     return result;
@@ -347,7 +354,8 @@ function productState(product) {
   if (product.isArchived) return { label: 'Archived', note: 'Recoverable', tone: 'text-slate-500' };
   if (!product.isActive) return { label: 'Inactive', note: 'Hidden from store', tone: 'text-slate-500' };
   if (product.publishAt && new Date(product.publishAt) > new Date()) return { label: 'Scheduled', note: `Publishes ${formatDate(product.publishAt)}`, tone: 'text-violet-700' };
-  if (Number(product.stock || 0) <= 0) return { label: 'Out of Stock', note: 'Visible, unavailable', tone: 'text-rose-700' };
+  if (product.commerceMode === 'RENTAL_ONLY') return { label: 'Active', note: 'Published · rental inventory tracked separately', tone: 'text-emerald-700' };
+  if (Number(product.stock || 0) <= 0) return { label: 'Active', note: 'Published · sale unavailable', tone: 'text-rose-700' };
   return { label: 'Active', note: 'Visible on store', tone: 'text-emerald-700' };
 }
 

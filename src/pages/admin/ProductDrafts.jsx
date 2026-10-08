@@ -1,3 +1,4 @@
+import DraftCommercialGrid from '../../components/admin/DraftCommercialGrid';
 import { sizeAttribute, usesGarmentSizing } from '../../utils/productSizing';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -41,9 +42,11 @@ import './ProductDrafts.css';
 const PAGE_SIZE = 24;
 const MAX_DRAFT_PHOTOS = 30;
 
-export default function ProductDrafts({ route = '/admin/product-drafts' }) {
+export default function ProductDrafts({ route = '/admin/product-drafts', navigate }) {
   const focusedDraftId = new URLSearchParams(route.split('?')[1] || '').get('draftId') || '';
   const apiPrefix = route.startsWith('/seller/') ? '/seller' : '/admin';
+  const [commercialDrafts, setCommercialDrafts] = useState(null);
+  const [rentalSetupProducts, setRentalSetupProducts] = useState([]);
   const auth = useAuth() || {};
   const selectionScope = `${apiPrefix}:${uploadScope(auth)}:${new URLSearchParams(window.location.search).get('store') || ''}`;
   const draftCache = useRef(new Map());
@@ -119,7 +122,7 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
   }, [meta.totalPages, page]);
 
   useEffect(() => {
-    draftCache.current.clear(); setSelected([]); setBatchDrafts(null);
+    draftCache.current.clear(); setSelected([]); setBatchDrafts(null); setCommercialDrafts(null);
   }, [selectionScope]);
   useEffect(() => {
     drafts.forEach(draft => draftCache.current.set(draftId(draft), draft));
@@ -220,6 +223,7 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
     try {
       const response = await publishSelectedDrafts({ ids, apiPrefix }).unwrap();
       const results = response?.data?.results || [];
+      setRentalSetupProducts((response?.data?.products || []).filter(product => product.commerceMode && product.commerceMode !== 'SALE_ONLY'));
       const failed = results.filter((item) => item.status === 'failed');
       setSelected(failed.map((item) => item.id));
       showFeedback(response?.message || 'Selected drafts published.', failed.length ? 'warning' : 'success');
@@ -235,7 +239,15 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
   const publishFromEditor = async (form) => {
     const saved = await saveDraft(form, { silent: true });
     const response = await publishIds([draftId(form)]);
-    if (!response?.data?.results?.some((item) => item.status === 'failed')) setEditorDraft(null);
+    if (!response?.data?.results?.some((item) => item.status === 'failed')) {
+      setEditorDraft(null);
+      const product = response?.data?.products?.[0];
+      if (product?.commerceMode && product.commerceMode !== 'SALE_ONLY' && navigate) {
+        const params = new URLSearchParams({ tab: 'setup', ...(product.rentalOffers?.[0]?._id ? { listing: product.rentalOffers[0]._id } : { productId: product._id }) });
+        if (product.storeId) params.set('storeId', product.storeId);
+        navigate(apiPrefix + '/rentals?' + params);
+      }
+    }
     return saved;
   };
 
@@ -277,11 +289,14 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
       <a href={`${apiPrefix}/social-import`} className="admin-btn-ghost">Import social link</a>
       <button type="button" className="admin-btn" disabled={uploading || actionBusy || publishing || !!batchDrafts} onClick={() => setUploadOpen((value) => !value)}><ImagePlus size={16} />Create from photos</button>
     </PageHeader>
+    <section className="admin-card p-4"><h2>Photos to a bookable catalog</h2><ol className="grid gap-3 md:grid-cols-3"><li>1. Upload and group views of each actual product.</li><li>2. Run Smart Fill for selected drafts and review suggestions.</li><li>3. Check real prices and stock, publish, then register rental pieces and activate the offer.</li></ol><details><summary>Rental launch checklist</summary><p>Review shop rental mode, published products, actual rates and advance/security policy, matching physical codes and set components, fitting/adjustability, pickup and return slots, preparation/cleaning buffers, cancellation and delivery terms, online payments and staff settlement/reminder responsibilities.</p></details></section>
+    {commercialDrafts && <DraftCommercialGrid key={selectionScope} drafts={commercialDrafts} onSave={saveDraft} onClose={() => setCommercialDrafts(null)} />}
     {focusedDraftId && <p className="admin-note">Opened from an import. <a className="text-wine underline" href={`${apiPrefix}/product-drafts`}>Return to all drafts</a></p>}
     {(structureError || categoryError) && <div role="alert" className="draft-alert is-error"><span>{structureError || categoryError}</span><button type="button" onClick={() => { loadStructure(); loadCategories(); }}>Retry</button></div>}
     {listError && <div role="alert" className="draft-alert is-error"><span>{listError.data?.message || listError.message || 'Drafts could not be loaded.'}</span><button type="button" onClick={refetch}>Retry</button></div>}
     {message && <p role="status" className="draft-alert">{message}</p>}
-    {uploadOpen && <DraftPhotoUploadPanel files={files} setFiles={setFiles} groupMode={groupMode} setGroupMode={setGroupMode} groups={photoGroups} setGroups={setPhotoGroups} groupingSupported={meta.photoGrouping?.version >= 1} uploading={uploading} onUpload={onUpload} onClose={() => { setUploadOpen(false); setFiles([]); setPhotoGroups([]); }} />}
+    {rentalSetupProducts.length > 0 && <section className="draft-alert"><strong>Rental setup pending for published products</strong><p>Register the actual pieces, review payment readiness and activate each offer.</p>{rentalSetupProducts.map(product => <button type="button" key={product._id} className="admin-btn-ghost" onClick={() => { const params = new URLSearchParams({ tab: 'setup', ...(product.rentalOffers?.[0]?._id ? { listing: product.rentalOffers[0]._id } : { productId: product._id }) }); if (product.storeId) params.set('storeId', product.storeId); navigate?.(apiPrefix + '/rentals?' + params); }}>Complete rental setup: {product.name}</button>)}</section>}
+    {uploadOpen && <DraftPhotoUploadPanel apiPrefix={apiPrefix} files={files} setFiles={setFiles} groupMode={groupMode} setGroupMode={setGroupMode} groups={photoGroups} setGroups={setPhotoGroups} groupingSupported={meta.photoGrouping?.version >= 1} uploading={uploading} onUpload={onUpload} onClose={() => { setUploadOpen(false); setFiles([]); setPhotoGroups([]); }} />}
 
     <div className="draft-summary-grid" aria-label="Draft summary">
       <SummaryButton label="Draft queue" value={Number(summary.draft || 0)} active={status === 'active' && !readiness} onClick={() => chooseSummary('', 'active')} />
@@ -297,7 +312,7 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
       <div className="draft-filters"><Filter size={16} /><Select value={sourceType} onChange={(event) => { setSourceType(event.target.value); setPage(1); }} aria-label="Filter by draft source"><option value="">All sources</option><option value="manual">Manual / upload</option><option value="social-import">Social import</option><option value="reel-import">Reel import</option></Select><Select value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }} aria-label="Filter by category"><option value="">All categories</option>{categories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select><Select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} aria-label="Sort drafts"><option value="updated">Recently updated</option><option value="oldest">Oldest first</option><option value="name">Product name</option></Select><button type="button" onClick={refetch} className="admin-btn-ghost" disabled={isFetching}><RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />Refresh</button></div>
     </div>
 
-    {!!selected.length && <div className="draft-bulk-bar"><strong>{selected.length} selected</strong><button type="button" className="admin-btn" disabled={actionBusy || publishing || uploading || uploadOpen || !!batchDrafts || !structure || !categoriesReady} onClick={openBatch}><Sparkles size={16} />Smart Fill selected</button><div><Select value={bulkCategory} onChange={(event) => setBulkCategory(event.target.value)} aria-label="Category for selected drafts"><option value="">Assign category...</option>{categories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select><button type="button" className="admin-btn-ghost" disabled={!bulkCategory || actionBusy || publishing || !!batchDrafts} onClick={applyBulkCategory}><Check size={15} />Apply</button></div><button type="button" className="admin-btn-ghost" disabled={actionBusy || publishing || !!batchDrafts} onClick={archiveSelected}><Archive size={15} />Archive</button><button type="button" className="admin-btn" disabled={publishing || actionBusy || !!batchDrafts || !structure} onClick={() => publishIds(selected)}><CopyPlus size={16} />{publishing ? 'Publishing...' : 'Publish selected'}</button></div>}
+    {!!selected.length && <div className="draft-bulk-bar"><strong>{selected.length} selected</strong><button type="button" className="admin-btn-ghost" disabled={actionBusy || publishing || !!batchDrafts || !structure} onClick={() => setCommercialDrafts(selected.map(id => draftCache.current.get(id)).filter(draft => draft?.status === 'draft'))}>Review prices & stock</button><button type="button" className="admin-btn" disabled={actionBusy || publishing || uploading || uploadOpen || !!batchDrafts || !structure || !categoriesReady} onClick={openBatch}><Sparkles size={16} />Smart Fill selected</button><div><Select value={bulkCategory} onChange={(event) => setBulkCategory(event.target.value)} aria-label="Category for selected drafts"><option value="">Assign category...</option>{categories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select><button type="button" className="admin-btn-ghost" disabled={!bulkCategory || actionBusy || publishing || !!batchDrafts} onClick={applyBulkCategory}><Check size={15} />Apply</button></div><button type="button" className="admin-btn-ghost" disabled={actionBusy || publishing || !!batchDrafts} onClick={archiveSelected}><Archive size={15} />Archive</button><button type="button" className="admin-btn" disabled={publishing || actionBusy || !!batchDrafts || !structure} onClick={() => publishIds(selected)}><CopyPlus size={16} />{publishing ? 'Publishing...' : 'Publish selected'}</button></div>}
 
     {batchDrafts && <DraftBatchSmartFill key={`${selectionScope}:${batchDrafts.map(draftId).join(',')}`} drafts={batchDrafts} categories={categories} structure={categoriesReady ? structure : null} apiPrefix={apiPrefix} onSave={saveDraft} onBusyChange={setActionBusy} onClose={() => setBatchDrafts(null)} onSaved={count => { refetch(); showFeedback(`${count} product drafts updated with reviewed Smart Fill details.`, 'success'); }} />}
 

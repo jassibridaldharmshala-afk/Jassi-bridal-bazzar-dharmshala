@@ -1,0 +1,27 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "guestBrowse": true,
+      "combinedQuote": true,
+      "privateContactsAbsent": true,
+      "separateFinancialLabels": true,
+      "overflow": false,
+      "scopedSignIn": true,
+      "pageErrors": [],
+      "api": "isolated fixture"
+    },
+    {
+      "width": 1440,
+      "guestBrowse": true,
+      "combinedQuote": true,
+      "privateContactsAbsent": true,
+      "separateFinancialLabels": true,
+      "overflow": false,
+      "scopedSignIn": true,
+      "pageErrors": [],
+      "api": "isolated fixture"
+    }
+  ],
+  "providersTested": false
+}

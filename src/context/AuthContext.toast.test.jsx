@@ -11,9 +11,10 @@ jest.mock('../store/apiSlice', () => ({ samiraApi: { util: { resetApiState: () =
 const owner = { id: 'owner', name: 'Owner', role: 'admin', activeMode: 'admin', availableModes: ['customer', 'admin', 'seller'] };
 
 function Actions() {
-  const { switchMode, setToast, notify } = useAuth();
+  const { switchMode, setToast, notify, logout } = useAuth();
   return <>
     {['customer', 'admin', 'seller'].map(mode => <button key={mode} onClick={() => switchMode(mode)}>{mode}</button>)}
+    <button onClick={logout}>Log out</button>
     <button onClick={() => setToast('Saved successfully')}>Legacy notice</button>
     <button onClick={() => notify('Please review the details', 'warning', 'Review needed')}>Titled notice</button>
   </>;
@@ -26,7 +27,7 @@ function setup() {
   render(<Provider store={store}><AuthProvider navigate={navigate}><Actions /></AuthProvider></Provider>);
   return { store, navigate };
 }
-beforeEach(() => { localStorage.clear(); jest.resetAllMocks(); });
+beforeEach(() => { localStorage.clear(); sessionStorage.clear(); jest.resetAllMocks(); });
 afterEach(() => { cleanup(); jest.useRealTimers(); });
 
 test.each([['customer', '/', 'Customer'], ['admin', '/admin', 'Admin'], ['seller', '/seller', 'Seller']])('the %s switch keeps authentication/navigation and shows a compact success confirmation', async (mode, destination, label) => {
@@ -77,4 +78,21 @@ test('auto-dismiss stays at 3.5 seconds and a replacement message gets a fresh t
   expect(screen.getByRole('status')).toBeInTheDocument();
   act(() => jest.advanceTimersByTime(1));
   await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+});
+
+
+test('logout removes private rental details for this account across boutiques', async () => {
+  const { store, navigate } = setup();
+  await act(async () => {});
+  sessionStorage.setItem('rental-contact:bridal:owner', 'private');
+  sessionStorage.setItem('rental-contact:other:owner', 'private');
+  sessionStorage.setItem('rental-contact:bridal:other-user', 'other');
+  sessionStorage.setItem('rental-plan:bridal:', 'public planning');
+  fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+  expect(sessionStorage.getItem('rental-contact:bridal:owner')).toBeNull();
+  expect(sessionStorage.getItem('rental-contact:other:owner')).toBeNull();
+  expect(sessionStorage.getItem('rental-contact:bridal:other-user')).toBe('other');
+  expect(sessionStorage.getItem('rental-plan:bridal:')).toBe('public planning');
+  expect(store.getState().auth.user).toBeNull();
+  expect(navigate).toHaveBeenCalledWith('/');
 });

@@ -54,7 +54,7 @@ class StorageClient:
             raise StorageError("The stored reel could not be downloaded.") from exc
         return destination
 
-    def upload_candidate(self, image_path: Path, job_id: str, group_number: int, timestamp: float) -> dict:
+    def _upload_candidate_master(self, image_path: Path, job_id: str, group_number: int, timestamp: float, extension="jpg", content_type="image/jpeg") -> dict:
         # Job isolation plus a content version: retries reuse an immutable frame,
         # while a different job or genuinely changed frame cannot overwrite it.
         digest = hashlib.sha256()
@@ -62,7 +62,7 @@ class StorageClient:
             for chunk in iter(lambda: image.read(1024 * 1024), b""):
                 digest.update(chunk)
         identity = hashlib.sha256(f"{job_id}:{int(timestamp * 1000)}:{digest.hexdigest()}".encode()).hexdigest()
-        key = f"reel-imports/candidates/retry-{identity}.jpg"
+        key = f"reel-imports/candidates/retry-{identity}.{extension}"
         if self.provider == "r2":
             try:
                 exists = False
@@ -77,7 +77,7 @@ class StorageClient:
                         str(image_path),
                         os.environ["R2_BUCKET_NAME"],
                         key,
-                        ExtraArgs={"ContentType": "image/jpeg", "CacheControl": "private, max-age=86400"},
+                        ExtraArgs={"ContentType": content_type, "CacheControl": "private, max-age=86400"},
                     )
             except Exception as exc:
                 raise StorageError("A candidate frame could not be uploaded to R2.") from exc
@@ -87,6 +87,25 @@ class StorageClient:
                 "url": f"{os.environ['R2_PUBLIC_URL'].rstrip('/')}/{key}",
             }
         return self._upload_cloudinary(image_path, key)
+
+    def upload_candidate(self, image_path: Path, job_id: str, group_number: int, timestamp: float) -> dict:
+        from PIL import Image, ImageOps
+        import tempfile
+        master = self._upload_candidate_master(image_path, job_id, group_number, timestamp)
+        variants = []
+        with Image.open(image_path) as source:
+            image = ImageOps.exif_transpose(source)
+            image.load()
+            widths = sorted({min(image.width, width) for width in (320, 640, 1200, 2000)})
+            with tempfile.TemporaryDirectory(prefix="display-versions-") as directory:
+                for width in widths:
+                    height = max(1, round(image.height * width / image.width))
+                    display = image.resize((width, height), Image.Resampling.LANCZOS)
+                    target = Path(directory) / f"{width}.webp"
+                    display.save(target, "WEBP", lossless=True, method=4)
+                    stored = self._upload_candidate_master(target, job_id, group_number, timestamp, "webp", "image/webp")
+                    variants.append({**stored, "publicId": stored["storageKey"], "width": width, "height": height, "mimeType": "image/webp", "sizeBytes": target.stat().st_size})
+        return {**master, "variants": variants}
 
     def _upload_cloudinary(self, image_path: Path, key: str) -> dict:
         timestamp = int(time.time())
@@ -116,7 +135,7 @@ class StorageClient:
                     **parameters,
                     "signature": signature,
                 },
-                files={"file": ("candidate.jpg", image, "image/jpeg")},
+                files={"file": (image_path.name, image, "image/webp" if image_path.suffix == ".webp" else "image/jpeg")},
                 timeout=120,
             )
         if not response.ok:

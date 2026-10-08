@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useDispatch, useSelector } from 'react-redux';
 import AppToast from '../components/ui/AppToast';
 import api from '../services/api';
+import { clearRentalContactSessions } from '../utils/rentalContactDraft';
 import { samiraApi } from '../store/apiSlice';
 import { logout as logoutAction, selectUser, setCredentials, setUser as setUserAction } from '../store/authSlice';
 
@@ -146,6 +147,7 @@ export function AuthProvider({ children, navigate }) {
 
   const deleteProfile = useCallback(async () => {
     const response = await api.delete('/auth/profile');
+    clearRentalContactSessions(user?._id || user?.id);
     sessionRevision.current += 1;
     dispatch(logoutAction());
     dispatch(samiraApi.util.resetApiState());
@@ -157,9 +159,10 @@ export function AuthProvider({ children, navigate }) {
     setToast(response?.message || 'Account deleted successfully');
     navigate('/');
     return response;
-  }, [dispatch, navigate, setToast]);
+  }, [dispatch, navigate, setToast, user]);
 
   const logout = useCallback(() => {
+    clearRentalContactSessions(user?._id || user?.id);
     try { Promise.resolve(api.post('/auth/logout', {}, { silent: true })).catch(() => null); } catch { /* local logout must always complete */ }
     sessionRevision.current += 1;
     dispatch(logoutAction());
@@ -170,7 +173,7 @@ export function AuthProvider({ children, navigate }) {
       // Ignore storage failures.
     }
     navigate('/');
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, user]);
 
   const value = useMemo(() => ({
     user,

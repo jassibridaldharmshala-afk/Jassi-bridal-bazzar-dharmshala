@@ -15,7 +15,7 @@ import { WebsiteCustomizationProvider, useWebsiteCustomization } from './context
 import { isWebsitePreview, websiteDataAttributes } from './config/websiteDesigner';
 import { buildWebsiteCssVariables } from './config/websiteCustomization';
 import { reelProductImportEnabled } from './config/features';
-import { clearLoginPromptDismissed, isLoginPromptDismissed, markLoginPromptDismissed } from './utils/loginPromptStorage';
+import { markLoginPromptDismissed } from './utils/loginPromptStorage';
 import MobileOverlayLoader from './components/ui/MobileOverlayLoader';
 import StorefrontSkeleton from './components/ui/StorefrontSkeleton';
 import TrafficTracking from './components/analytics/TrafficTracking';
@@ -23,7 +23,8 @@ import MobileAppCompanion from './components/pwa/MobileAppCompanion';
 import { useAuth } from './context/AuthContext';
 import { getMobileLoaderSnapshot, subscribeMobileLoader } from './utils/mobileLoader';
 import { createStoragePlan } from './utils/userStorage';
-import { boutiquePath, consumeLegacyHash, pushAppRoute, readAppRoute, ROUTE_CHANGE_EVENT } from './utils/routing';
+import { parseStoreSlug } from './utils/attribution';
+import { storefrontPath, boutiquePath, consumeLegacyHash, pushAppRoute, readAppRoute, ROUTE_CHANGE_EVENT } from './utils/routing';
 
 const AdminRoute = lazy(() => import('./components/layout/AdminRoute'));
 const SellerRoute = lazy(() => import('./components/layout/SellerRoute'));
@@ -213,7 +214,7 @@ function useAppRoute() {
       const href = anchor.getAttribute('href') || '';
       if (!href.startsWith('/') || href.startsWith('//') || href.startsWith('/api') || href.startsWith('/uploads')) return;
       event.preventDefault();
-      pushAppRoute(href);
+      pushAppRoute(storefrontPath(href, parseStoreSlug(window.location.pathname)));
       setRoute(readAppRoute());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -258,10 +259,12 @@ export default function App() {
 function AppShell({ route, navigate }) {
   const routePath = route.split('?')[0];
   const logicalPath = boutiquePath(routePath);
-  const routeGuardPath = /^\/store\/[^/]+\/(rentals|rental-book)$/.test(logicalPath) ? `/${logicalPath.split('/').at(-1)}` : routePath;  const isAdmin = routePath.startsWith('/admin');
+  const routeGuardPath = logicalPath.replace(/^\/store\/[^/]+(?=\/|$)/, '') || '/';
+  const isAdmin = routePath.startsWith('/admin');
   const isSeller = routePath.startsWith('/seller');
   const { user } = useAuth();
-  const { isHostStore } = useStorefront();
+  const { isHostStore, storeSlug } = useStorefront();
+  const customerNavigate = useCallback(path => navigate(storefrontPath(path, storeSlug)), [navigate, storeSlug]);
   const { config: websiteConfig } = useWebsiteCustomization();
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
@@ -275,7 +278,6 @@ function AppShell({ route, navigate }) {
     '/profile/addresses/edit',
     '/orders',
     '/rentals',
-    '/rental-book',
     '/checkout',
     '/order-detail',
     '/order-success',
@@ -286,8 +288,8 @@ function AppShell({ route, navigate }) {
   const hideMobileBottomNavRoutes = ['/checkout', '/profile/details'];
   const standaloneAuthRoutes = ['/login', '/register'];
   const immersiveRoutes = ['/profile/addresses/new', '/profile/addresses/edit'];
-  const cartStoragePlan = useMemo(() => createStoragePlan('samira_cart', user), [user]);
-  const wishlistStoragePlan = useMemo(() => createStoragePlan('samira_wishlist', user), [user]);
+  const cartStoragePlan = useMemo(() => createStoragePlan(storeSlug ? 'samira_cart:' + storeSlug : 'samira_cart', user), [user, storeSlug]);
+  const wishlistStoragePlan = useMemo(() => createStoragePlan(storeSlug ? 'samira_wishlist:' + storeSlug : 'samira_wishlist', user), [user, storeSlug]);
   const isProductPage = routePath === '/product'
     || routePath.startsWith('/product/')
     || /^\/store\/[^/]+\/product$/.test(logicalPath)
@@ -301,7 +303,8 @@ function AppShell({ route, navigate }) {
   );
   const Page = useMemo(() => {
     // Legacy admin-login links use the same mobile + OTP flow as every account.
-    if (routePath === '/admin/login') return AdminLogin;    if (isAdmin) return adminRoutes[routePath] || Dashboard;
+    if (routePath === '/admin/login') return AdminLogin;
+    if (isAdmin) return adminRoutes[routePath] || Dashboard;
     if (isSeller) return sellerRoutes[routePath] || SellerDashboard;
     if (logicalPath.startsWith('/store/')) {
       const parts = logicalPath.split('/').filter(Boolean);
@@ -310,7 +313,7 @@ function AppShell({ route, navigate }) {
       if (parts[2] === 'products' || parts[2] === 'search' || parts[2] === 'category') return Products;
       if (parts[2] === 'rentals') return MyRentals;
       if (parts[2] === 'rental-book') return RentalCheckout;
-      return StoreHome;
+      return customerRoutes['/' + parts.slice(2).join('/')] || StoreHome;
     }
     if (routePath === '/product' || routePath.startsWith('/product/')) return ProductDetail;
     if (routePath.startsWith('/products/') && routePath.split('/').filter(Boolean).length >= 2) return ProductDetail;
@@ -319,40 +322,11 @@ function AppShell({ route, navigate }) {
   }, [isAdmin, isHostStore, isSeller, logicalPath, routePath]);
   const page = (
     <LazyBoundary resetKey={route}><Suspense fallback={<RouteFallback />}>
-      <Page navigate={navigate} route={route} />
+      <Page navigate={isAdmin || isSeller ? navigate : customerNavigate} route={route} />
     </Suspense></LazyBoundary>
   );
 
-  useEffect(() => {
-    if (isAdmin || isSeller || user) {
-      setShowLoginPrompt(false);
-      return;
-    }
-
-    if (routePath === '/login' || routePath === '/register' || routePath === '/admin/login') {
-      setShowLoginPrompt(false);
-      return;
-    }
-
-    if (routePath === '/profile') {
-      clearLoginPromptDismissed();
-      setShowLoginPrompt(false);
-      return;
-    }
-
-    if (routePath === '/cart') {
-      setShowLoginPrompt(false);
-      return;
-    }
-
-    if (isLoginPromptDismissed()) {
-      setShowLoginPrompt(false);
-      return;
-    }
-
-    const timer = window.setTimeout(() => setShowLoginPrompt(true), 250);
-    return () => window.clearTimeout(timer);
-  }, [isAdmin, isSeller, routePath, user]);
+  useEffect(() => { setShowLoginPrompt(false); }, [routePath, user]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 767px)');
@@ -381,9 +355,9 @@ function AppShell({ route, navigate }) {
     markLoginPromptDismissed();
     setShowLoginPrompt(false);
   };
-  const desktopProfileLogin = routePath === '/profile' && !user && !isMobile;
+  const desktopProfileLogin = routeGuardPath === '/profile' && !user && !isMobile;
   const shouldShowStandaloneAuth =
-    standaloneAuthRoutes.includes(routePath) ||
+    standaloneAuthRoutes.includes(routeGuardPath) ||
     ((protectedRoutes.includes(routeGuardPath) && !user) && !desktopProfileLogin);
   const authContent = protectedRoutes.includes(routeGuardPath) && !user ? loginFallback : page;
   const showShell = !(isMobile && immersiveRoutes.includes(routePath));

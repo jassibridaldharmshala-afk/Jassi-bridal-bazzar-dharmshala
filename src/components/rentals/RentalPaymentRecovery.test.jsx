@@ -20,6 +20,6 @@ test('financial staff can recheck a provider attempt without starting another ch
 test('an explicitly rejected setup shows its result without offering another provider recheck', async () => {
   api.get.mockResolvedValue([{ ...payment, state: 'FAILED', setupFailure: 'REJECTED' }]);
   render(<RentalPaymentRecovery base="/admin/rentals" booking={booking} run={work => work()} onRecovered={jest.fn()} />);
-  expect(await screen.findByText('FAILED')).toBeInTheDocument();
+  expect(await screen.findByText('Could not be completed')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Recheck provider' })).not.toBeInTheDocument();
 });

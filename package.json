@@ -34,6 +34,7 @@
     "server": "node backend/server.js",
     "audit:product-links": "node scripts/audit-product-links.js",
     "test": "react-scripts test",
+    "test:client": "react-scripts test --watch=false --testPathIgnorePatterns=ClientInstallations.test.jsx",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

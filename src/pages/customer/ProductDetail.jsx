@@ -1,9 +1,12 @@
+import { useMediaQuery } from '@mantine/hooks';
+import { responsiveImage } from '../../utils/responsiveImages';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, MapPin, RotateCcw, Ruler, Share2, ShieldCheck, Star, Truck, X } from 'lucide-react';
 import LazyBoundary from '../../components/ui/LazyBoundary';
 import { ProductVisual } from '../../components/product/ProductCard';
 import ProductDetailPage from '../../components/product/ProductDetailPage';
+import RentalModeSelector from '../../components/rentals/RentalModeSelector';
 import RentalOffer from '../../components/rentals/RentalOffer';
 import CompleteLook from '../../components/product/CompleteLook';
 import PublicReviewCard from '../../components/product/PublicReviewCard';
@@ -31,6 +34,7 @@ const ReviewModal = lazy(() => import('../../components/product/ReviewModal'));
 export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   const productKey = parseProductKey(route);
   const { storeSlug } = useStorefront();
+  const isDesktop = useMediaQuery('(min-width: 1024px)', false, { getInitialValueInEffect: false });
   const navigate = useCallback(path => navigateRoute(storefrontPath(path, storeSlug)), [navigateRoute, storeSlug]);
   const cart = useCart();
   const wishlist = useWishlist();
@@ -189,10 +193,10 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
     : null;
   const mediaItems = useMemo(() => {
     const variantImageItems = selectedVariant?.images?.length
-      ? selectedVariant.images.map((image) => ({ type: 'image', url: normalizeImageUrl(image.url), thumbnail: normalizeImageUrl(image.url) }))
+      ? selectedVariant.images.map((image) => ({ ...image, type: 'image', url: normalizeImageUrl(image.url), thumbnail: normalizeImageUrl(image.url) }))
       : [];
     const productImageItems = product?.images?.length
-      ? product.images.map((image) => ({ type: 'image', url: normalizeImageUrl(image.url), thumbnail: normalizeImageUrl(image.url) }))
+      ? product.images.map((image) => ({ ...image, type: 'image', url: normalizeImageUrl(image.url), thumbnail: normalizeImageUrl(image.url) }))
       : [];
     const videoItems = product?.videos?.length
       ? product.videos.map((video) => ({ type: 'video', url: normalizeImageUrl(video.url), thumbnail: normalizeImageUrl(video.thumbnail || video.url) }))
@@ -222,7 +226,12 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   const selectedStock = hasManagedVariants(product || {}) && selectionIncomplete
     ? null
     : variantStock(product || {}, { size, color, variantId: selectedVariant?._id });
-  const rentalOnly = settingsData?.commerceMode === 'RENTAL_ONLY' || product?.commerceMode === 'RENTAL_ONLY';
+  const [purchaseMode, setPurchaseMode] = useState(() => new URLSearchParams(route.split('?')[1] || '').get('mode') === 'rent' ? 'rent' : 'buy');
+  const supportsRental = ['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product?.commerceMode);
+  const purchaseEnabled = product?.purchaseEnabled !== false && settingsData?.commerceMode !== 'RENTAL_ONLY' && product?.commerceMode !== 'RENTAL_ONLY';
+  const rentalOnly = !purchaseEnabled || (supportsRental && purchaseMode === 'rent');
+  const selectedMode = rentalOnly ? 'rent' : 'buy';
+  const chooseRentalDates = () => navigate('/rental-book?' + new URLSearchParams({ product: productId, ...(product?.rentalPreview?.listingId ? { listing: product.rentalPreview.listingId } : {}) }));
   const isOutOfStock = rentalOnly || (selectedStock !== null && Number(selectedStock) <= 0);
   const sizeStock = (item) => {
     if (!hasManagedVariants(product || {})) return null;
@@ -628,9 +637,12 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   return (
     <>
       <SeoHead route={route} product={product} />
-      <div className="hidden lg:block">
+      {isDesktop && <div className="hidden lg:block">
         <ProductDetailPage
           product={product}
+          purchaseMode={selectedMode}
+          onPurchaseMode={setPurchaseMode}
+          purchaseEnabled={purchaseEnabled}
           navigate={navigate}
           route={route}
           mediaItems={mediaItems}
@@ -696,8 +708,8 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
           onShare={handleShare}
           onWriteReview={() => openReviewForm()}
         />
-      </div>
-      <div className="lg:hidden">
+      </div>}
+      {!isDesktop && <div className="lg:hidden">
         <section className="bg-ivory pb-40 md:bg-ivory md:pb-10 md:pt-8">
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-3 md:hidden">
         <div className="flex min-w-0 items-center gap-2">
@@ -728,7 +740,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
                 />
               ) : (
                 <button type="button" onClick={() => setOpenGallery(true)} className="block w-full cursor-zoom-in bg-[#f6efe8]" aria-label={`View ${product.name} image fullscreen`}>
-                  <img src={selectedMedia.url} alt={product.name} className="h-[min(118vw,520px)] min-h-[420px] w-full bg-[#f6efe8] object-contain md:h-[620px]" />
+                  <img {...responsiveImage(selectedMedia, 'detail')} alt={product.name} className="h-[min(118vw,520px)] min-h-[420px] w-full bg-[#f6efe8] object-contain md:h-[620px]" />
                 </button>
               )
             ) : (
@@ -778,6 +790,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
               <Icon name="heart" className="h-4.5 w-4.5 md:h-5 md:w-5" />
             </button>
             </div>
+            {supportsRental && <RentalModeSelector product={product} value={selectedMode} onChange={setPurchaseMode} purchaseEnabled={purchaseEnabled} />}
             {!rentalOnly && <><div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <span className="text-[20px] font-bold text-charcoal md:text-2xl">{formatRupees(dealPrice)}</span>
               {originalPrice > dealPrice && <span className="text-[13px] text-slate-400">MRP <span className="line-through">{formatRupees(originalPrice)}</span></span>}
@@ -928,7 +941,8 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
 
           {actionMessage && <p className="rounded-[14px] bg-[#fff4f7] px-4 py-3 text-[12px] font-semibold leading-5 text-rose md:rounded-2xl" role="status">{actionMessage}</p>}
 
-          <RentalOffer productId={productId} navigate={navigate} />
+          {!supportsRental && !purchaseEnabled && <section className="rental-card"><h2>Rental setup is not available for this item</h2><p>The store is currently rental-only. Choose a ready rental from the collection or contact the store.</p><button type="button" className="rental-button" onClick={() => navigate('/products?mode=rent')}>Browse rental collection</button><button type="button" className="rental-text-button" onClick={() => navigate('/contact')}>Contact store</button></section>}
+          {supportsRental && rentalOnly && <RentalOffer productId={productId} commerceMode={product.commerceMode} navigate={navigate} />}
 
           <section className="rounded-[14px] bg-white p-4 md:space-y-2 md:rounded-none md:bg-transparent md:p-0 md:pt-2">
             <div className="flex items-center gap-2">
@@ -1011,6 +1025,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
         <p className="small-text mt-8 text-slate-500">Product Code: {product.sku || productId}</p>
       </div>
 
+      {supportsRental && rentalOnly && <div className="rental-sticky-action md:hidden"><button type="button" className="rental-button" onClick={chooseRentalDates}>Choose rental dates</button><button type="button" className="rental-text-button" onClick={() => navigate('/contact')}>Ask the store</button></div>}
       {!rentalOnly && <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2.5 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
         <div className={`grid gap-2 ${storeWhatsappNumber ? 'grid-cols-[.9fr_1.2fr_.9fr]' : 'grid-cols-2'}`}>
           <button disabled={isOutOfStock || cartBusy || cart.loading} onClick={buyNow} className="h-12 rounded-[10px] border border-wine bg-white px-2 text-[12px] font-bold text-wine disabled:border-slate-200 disabled:text-slate-400">
@@ -1027,7 +1042,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
       </div>}
 
         </section>
-      </div>
+      </div>}
 
       <CompleteLook key={`${storeSlug}:${productId}`} productId={productId} storeSlug={storeSlug} navigate={navigate} />
 
@@ -1098,7 +1113,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
                       {item.type === 'video' ? (
                         <video src={item.thumbnail || item.url} className="h-full w-full object-cover" muted />
                       ) : (
-                        <img src={item.url} alt={`${product.name} thumbnail ${index + 1}`} className="h-full w-full object-cover" />
+                        <img {...responsiveImage(item, 'thumbnail')} alt={`${product.name} thumbnail ${index + 1}`} className="h-full w-full object-cover" />
                       )}
                     </button>
                   ))}

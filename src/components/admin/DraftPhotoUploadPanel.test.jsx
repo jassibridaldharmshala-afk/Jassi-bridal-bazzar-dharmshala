@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom';
 import { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+jest.mock('../../services/api', () => ({ upload: jest.fn() }));
+import api from '../../services/api';
 import DraftPhotoUploadPanel from './DraftPhotoUploadPanel';
 
 beforeEach(() => {
@@ -19,7 +21,7 @@ test('draft selection accepts a photo larger than 2 MB for automatic compression
   fireEvent.change(screen.getByLabelText('Choose product photos'), { target: { files: [photo] } });
   expect(screen.getByTestId('photo-count')).toHaveTextContent('1');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  expect(screen.getByText(/optimized below 100 KB/)).toBeInTheDocument();
+  expect(screen.getByText(/Original quality preserved/)).toBeInTheDocument();
 });
 
 test('excessive sources are rejected with the source limit instead of the old 2 MB restriction', () => {
@@ -28,4 +30,18 @@ test('excessive sources are rejected with the source limit instead of the old 2 
   fireEvent.change(screen.getByLabelText('Choose product photos'), { target: { files: [photo] } });
   expect(screen.getByTestId('photo-count')).toHaveTextContent('0');
   expect(screen.getByRole('alert')).toHaveTextContent('20 MB');
+});
+
+test('AI group suggestions require review and applying keeps all original photos', async () => {
+  api.upload.mockResolvedValue({ photoCount: 3, groups: [{ indices: [0, 2], name: 'Lehenga', confidence: 0.9 }, { indices: [1], name: 'Necklace', confidence: 0.4 }], reviewRequired: true });
+  render(<Panel />);
+  const files = [0, 1, 2].map(i => new File(['source-' + i], 'photo-' + i + '.jpg', { type: 'image/jpeg' }));
+  fireEvent.change(screen.getByLabelText('Choose product photos'), { target: { files } });
+  fireEvent.click(screen.getByRole('button', { name: 'Suggest photo groups with AI' }));
+  await screen.findByRole('button', { name: 'Apply reviewed groups' });
+  expect(screen.queryByLabelText('Product photo groups')).not.toBeInTheDocument();
+  expect(api.upload).toHaveBeenCalledWith('/admin/products/photo-grouping', files, expect.objectContaining({ silent: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Apply reviewed groups' }));
+  expect(screen.getByText('Product 1 · 2 photos')).toBeInTheDocument(); expect(screen.getByText('Product 2 · 1 photos')).toBeInTheDocument();
+  expect(screen.getByTestId('photo-count')).toHaveTextContent('3');
 });

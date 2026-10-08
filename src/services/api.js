@@ -1,6 +1,6 @@
 import { samiraApi } from '../store/apiSlice';
 import { store } from '../store/store';
-import { compressImageFile, isSupportedImageFile } from './imageCompression';
+import { preparePhotoUploads } from './imageCompression';
 import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
 import { getApiBaseUrl } from '../store/apiBaseUrl';
 import { finishUploadRetryKey, forgetUploadRetryKey, getDurableUploadRetryKey, getRecordRetryKey, hasUploadAttempt, isMediaUpload, isRetrySafeCreation, markUploadAttempt, retainUploadedReceipt, uploadScope } from './uploadRetry';
@@ -92,15 +92,7 @@ async function request(path, options = {}) {
 }
 
 async function prepareUploadFiles(files, fieldName) {
-  const prepared = [];
-  for (const file of Array.from(files || [])) {
-    if (!file) continue;
-    if (isSupportedImageFile(file)) prepared.push(await compressImageFile(file));
-    else if (fieldName === 'images' || fieldName === 'image' || String(file.type || '').startsWith('image/')) {
-      throw Object.assign(new Error('Only JPG, JPEG, PNG, and WEBP images are allowed.'), { status: 400 });
-    } else prepared.push(file);
-  }
-  return prepared;
+  return preparePhotoUploads(files, { imagesOnly: fieldName === 'images' || fieldName === 'image' });
 }
 
 async function download(path, body) {
@@ -132,11 +124,23 @@ const api = {
   patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: (path, body) => request(path, { method: 'DELETE', ...(body ? { body: JSON.stringify(body) } : {}) }),
   download,
+  file: async (path, { signal } = {}) => {
+    if (!/^\/evidence\/[a-f0-9]{24}$/i.test(path)) throw new Error('Choose an authorized private evidence file.');
+    const token = store.getState().auth.token || localStorage.getItem('samira_token');
+    const response = await fetch(`${getApiBaseUrl()}${path}`, { signal, credentials: 'include', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+    if (!response.ok) throw toCustomerError({ status: response.status, message: 'Private evidence could not be loaded. Sign in with an authorized account and retry.' }, path);
+    return response.blob();
+  },
   upload: async (path, files, { fieldName = 'images', fields, onRequest, silent = false, idempotencyKey } = {}) => {
     if (!silent) startMobileLoader();
     const control = { cancelled: false, entry: null };
     onRequest?.({ cancel: () => { control.cancelled = true; control.entry?.cancel(); } });
     try {
+      if (/\/(?:orders|returns)\/evidence\/uploads(?:\?|$)/.test(path)) {
+        const selected = Array.from(files || []);
+        const invalid = selected.length > 8 || selected.some(file => !file.size || (String(file.type).startsWith('image/') ? file.size > 8 * 1024 * 1024 : !['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type) || file.size > 50 * 1024 * 1024)) || selected.reduce((sum, file) => sum + file.size, 0) > 60 * 1024 * 1024;
+        if (invalid) throw { status: 400, data: { code: 'UPLOAD_EVIDENCE_LIMIT', message: 'Choose up to 8 private files: photos up to 8 MB each, videos up to 50 MB each, and 60 MB total. Original photo detail is preserved.' } }; // eslint-disable-line no-throw-literal
+      }
       const media = isMediaUpload(path);
       const scope = uploadScope(store.getState().auth);
       const key = media ? await getDurableUploadRetryKey({ path, files, fields, fieldName, scope, idempotencyKey }) : '';

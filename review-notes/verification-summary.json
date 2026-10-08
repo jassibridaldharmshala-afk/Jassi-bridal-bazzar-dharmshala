@@ -1,0 +1,262 @@
+{
+  "asOf": "2026-10-08 13:42:49 UTC",
+  "scope": "Source fixes from Jassi-Store-Audit.pdf, the 198-row tracker and the user's attached 119-point findings. The last follow-up changed frontend rental draft/date recovery and async tests only. Live provider/business checks remain distinct.",
+  "node": "20.20.2",
+  "frontend": {
+    "applicableSuites": 141,
+    "tests": 1032,
+    "passed": 1032,
+    "failed": 0,
+    "actWarnings": 0,
+    "excluded": [
+      "src/pages/admin/ClientInstallations.test.jsx: absent platform-owned implementation; suite retained"
+    ],
+    "log": ".tmp/rental-findings-frontend-complete.log",
+    "finalAffectedFollowup": {
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "overlapsFullRun": true,
+      "log": ".tmp/rental-date-draft-tests.log",
+      "reason": "Final date-only plan restoration was checked after the complete frontend run; counts are not added."
+    }
+  },
+  "backend": {
+    "fullRunTests": 917,
+    "passed": 917,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "log": ".tmp/pdf-audit-backend-verified.log",
+    "finalAffectedFollowup": {
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "overlapsFullRun": true,
+      "log": ".tmp/pdf-audit-migration-final.log",
+      "reason": "Final migration store backfill, exact reference cohorts and unknown-scope fail-closed changes were checked in the privacy/migration/grouping/readiness API suite after the complete backend run."
+    },
+    "sourceUnchangedIn119PointFollowup": true,
+    "fullRunRecordedAt": "2026-10-08 13:00:37 UTC"
+  },
+  "build": {
+    "ci": true,
+    "production": "passed",
+    "log": ".tmp/rental-findings-production-build.log",
+    "sourceMaps": false,
+    "qaApiOverrideInFinalBundle": false
+  },
+  "browser": {
+    "engine": "Headless installed Chrome with temporary Playwright Core",
+    "widths": [
+      390,
+      1440
+    ],
+    "checks": [
+      "Guest null-user browsing",
+      "Two-item outfit/jewellery quote",
+      "Distinct rent/deposit/advance/due-now/pickup balance",
+      "Guest contacts absent",
+      "No horizontal overflow",
+      "No page errors",
+      "Same-boutique sign-in and return",
+      "Date-only plan reload before item selection",
+      "Exact linked offer/date opens Items directly",
+      "Authenticated private contact/fitting details restored on reload",
+      "Fresh quote and acceptance required after reload",
+      "Clear saved details resets optional contact state"
+    ],
+    "providers": "isolated fixture",
+    "evidence": "review-notes/rental-recovery-visual-qa.json",
+    "computerUseFallback": "Native browser-control kernel failed twice with Windows sandbox initialization errors; the headless checks succeeded.",
+    "priorEvidence": "review-notes/visual-qa.json",
+    "screenshots": [
+      "review-notes/rental-recovery-phone.png",
+      "review-notes/rental-recovery-desktop.png"
+    ]
+  },
+  "backendMirror": {
+    "taskPaths": 92,
+    "sha256Matched": true,
+    "productionDatabaseWritten": false
+  },
+  "liveReadOnly": {
+    "health": "HTTP 200; ready/database/tenant indexes reported healthy; this is not transaction/provider certification",
+    "cors": "HTTP 204 preflight accepts the exact frontend Origin https://jassi-bridal-bazzar-dharmshalas.onrender.com, credentials and requested authorization/x-store-slug headers",
+    "newSourceDeployed": false,
+    "secretValidationPerformed": false,
+    "externalMessagesSent": false,
+    "chargesOrRefundsPerformed": false,
+    "recordedAt": "2026-10-08 13:00:37 UTC"
+  },
+  "tracker": {
+    "rows": 198,
+    "uniqueIds": 198,
+    "statusCounts": {
+      "Implemented / source verified": 125,
+      "Production verification required": 22,
+      "Safeguard retained and checked": 44,
+      "Conditional next phase": 3,
+      "Historical measurement: not re-certified": 3,
+      "Platform-owned: explicitly excluded": 1
+    },
+    "file": "review-notes/audit-closure.csv",
+    "allRowsMarkedFixed": false
+  },
+  "remaining": [
+    {
+      "id": "CORE-05",
+      "status": "Production verification required",
+      "notes": "Persisted production DB, SMS, payment, storage and licence acceptance require the intended deployment."
+    },
+    {
+      "id": "CORE-10",
+      "status": "Production verification required",
+      "notes": "Blueprint URLs are explicit placeholders; set the actual API/frontend deployment values."
+    },
+    {
+      "id": "CUS-N1",
+      "status": "Production verification required",
+      "notes": "Enter real prices, pieces, mode, fitting and policy for the shop."
+    },
+    {
+      "id": "CUS-N2",
+      "status": "Production verification required",
+      "notes": "Run controlled provider payment/OTP and actual pickup/return/refund acceptance."
+    },
+    {
+      "id": "ADM-15",
+      "status": "Production verification required",
+      "notes": "Configure and activate real offers/pieces on transaction-capable MongoDB."
+    },
+    {
+      "id": "ADM-16",
+      "status": "Production verification required",
+      "notes": "Staff must verify fitting/measurements and operational slots/cleaning buffers."
+    },
+    {
+      "id": "ADM-17",
+      "status": "Production verification required",
+      "notes": "Configure provider/reminder delivery and perform a real shop lifecycle."
+    },
+    {
+      "id": "AI-08",
+      "status": "Production verification required",
+      "notes": "Configure the backend Gemini key and permitted plan; real provider/quota acceptance remains."
+    },
+    {
+      "id": "BE-SETUP-02",
+      "status": "Production verification required",
+      "notes": "Real rates, deposits and matching physical pieces must be entered by staff."
+    },
+    {
+      "id": "BE-SETUP-03",
+      "status": "Production verification required",
+      "notes": "Verify intended payment mode, keys, webhooks and real recovery/refund."
+    },
+    {
+      "id": "BE-SETUP-04",
+      "status": "Production verification required",
+      "notes": "Keep actual managed licence credentials and transaction-capable database active."
+    },
+    {
+      "id": "BE-SETUP-09",
+      "status": "Conditional next phase",
+      "notes": "Catalogue/query bounds and serialized image work are retained. A caching policy and a measured large-catalogue query/latency budget require representative production data; not implemented as a blind cache."
+    },
+    {
+      "id": "BE-SETUP-10",
+      "status": "Production verification required",
+      "notes": "Assign staff ownership for payments, expiry, overdue returns, inspection and settlement."
+    },
+    {
+      "id": "IMG-N02",
+      "status": "Production verification required",
+      "notes": "Previously downscaled photos need original re-upload; source cannot recover missing detail."
+    },
+    {
+      "id": "IMG-N03",
+      "status": "Production verification required",
+      "notes": "50 MP guard, serial photo optimization and bounded staging are implemented; benchmark real shop batches on hosting RAM/CPU."
+    },
+    {
+      "id": "IMG-N07",
+      "status": "Conditional next phase",
+      "notes": "JPG/PNG/WebP are validated and supported. HEIC conversion is not added without a tested decoder/browser compatibility requirement."
+    },
+    {
+      "id": "IMG-N08",
+      "status": "Conditional next phase",
+      "notes": "Original browser bytes are preserved and API uploads are bounded. Direct signed object-storage uploads remain an optional infrastructure change requiring the target provider and signed upload policy."
+    },
+    {
+      "id": "IMG-N10",
+      "status": "Production verification required",
+      "notes": "10–20 actual bridal/jewellery originals and target hosting metrics were not supplied."
+    },
+    {
+      "id": "LIVE-01",
+      "status": "Production verification required",
+      "notes": "Verify actual production SMS delivery, resend, expiry and staff access."
+    },
+    {
+      "id": "LIVE-02",
+      "status": "Production verification required",
+      "notes": "Configure and verify a real managed installation without disabling licensing."
+    },
+    {
+      "id": "LIVE-03",
+      "status": "Production verification required",
+      "notes": "Inspect hosted replica-set/sharded transactions and tenant indexes."
+    },
+    {
+      "id": "LIVE-04",
+      "status": "Production verification required",
+      "notes": "Verify persistent media after service restart; execute reviewed legacy private-evidence migration if needed."
+    },
+    {
+      "id": "LIVE-05",
+      "status": "Production verification required",
+      "notes": "Exercise real capture, failure, duplicate webhook, reconciliation and refund in intended payment mode."
+    },
+    {
+      "id": "LIVE-06",
+      "status": "Production verification required",
+      "notes": "Run a real physical-piece lifecycle with responsible staff."
+    },
+    {
+      "id": "LIVE-07",
+      "status": "Production verification required",
+      "notes": "Enter and approve actual merchant policies/contact/fitting/refund terms."
+    }
+  ],
+  "additionalCheck": {
+    "productLinkAudit": "Now requires bounded pagination and detects changing/incomplete catalogues. Syntax checked. Its initial default localhost run had no backend on port 5000 and failed to connect; not counted as passing deployed link coverage."
+  },
+  "findings119": {
+    "rows": 119,
+    "uniqueNumbers": 119,
+    "statusCounts": {
+      "Implemented / source verified": 91,
+      "Implemented; merchant policy review required": 1,
+      "Production verification required": 16,
+      "Capability boundary retained": 1,
+      "Safeguard retained and checked": 3,
+      "Conditional benchmark / infrastructure": 1,
+      "Conditional format expansion": 1,
+      "Conditional next phase": 1,
+      "Implemented; production migration required": 1,
+      "Client boundary verified": 1,
+      "Platform-owned: explicitly excluded": 1,
+      "Verification environment resolved": 1
+    },
+    "report": "review-notes/rental-findings-119.md",
+    "machineReadable": "review-notes/rental-findings-119.json",
+    "allRowsMarkedProductionFixed": false
+  },
+  "lint": {
+    "maxWarnings": 0,
+    "passed": true,
+    "log": ".tmp/rental-findings-lint-final.log"
+  }
+}

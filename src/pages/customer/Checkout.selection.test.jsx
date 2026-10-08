@@ -85,7 +85,7 @@ test('tablet checkout renders the address step and mobile COD submits only selec
   await waitFor(() => expect(button).toBeEnabled());
   fireEvent.click(button);
   await waitFor(() => expect(navigate).toHaveBeenCalledWith('/order-success?id=order-1'));
-  expect(mockCart.completeCheckout).toHaveBeenCalledWith([expect.objectContaining({ price: 1199 })]);
+  expect(mockCart.refresh).toHaveBeenCalledWith(true); expect(mockCart.completeCheckout).not.toHaveBeenCalled();
 });
 
 test('mobile address changes are retained when returning from payment', async () => {
@@ -131,7 +131,7 @@ test('order quotes, COD orders and completion use only checked bag items', async
   await waitFor(() => expect(button).toBeEnabled()); fireEvent.click(button);
   await waitFor(() => expect(navigate).toHaveBeenCalledWith('/order-success?id=order-1'));
   expect(api.post).toHaveBeenCalledWith('/orders/cod', expect.objectContaining({ orderItems: [expect.objectContaining({ product: 'a' })] }));
-  expect(mockCart.completeCheckout).toHaveBeenCalledWith([selected]); expect(mockCart.clearCart).not.toHaveBeenCalled();
+  expect(mockCart.refresh).toHaveBeenCalledWith(true); expect(mockCart.completeCheckout).not.toHaveBeenCalled(); expect(mockCart.clearCart).not.toHaveBeenCalled();
 });
 
 test('Buy Now checks out only its exact cart line and refreshes the remaining bag', async () => {

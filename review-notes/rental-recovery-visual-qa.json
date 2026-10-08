@@ -1,0 +1,31 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "guestDateOnlyReload": true,
+      "combinedQuote": true,
+      "scopedSignIn": true,
+      "linkedDatesOpenItems": true,
+      "exactOfferSelected": true,
+      "authenticatedDetailsRestored": true,
+      "freshQuoteAndAcceptanceRequired": true,
+      "clearSavedDetails": true,
+      "pageErrors": [],
+      "horizontalOverflow": false
+    },
+    {
+      "width": 1440,
+      "guestDateOnlyReload": true,
+      "combinedQuote": true,
+      "scopedSignIn": true,
+      "linkedDatesOpenItems": true,
+      "exactOfferSelected": true,
+      "authenticatedDetailsRestored": true,
+      "freshQuoteAndAcceptanceRequired": true,
+      "clearSavedDetails": true,
+      "pageErrors": [],
+      "horizontalOverflow": false
+    }
+  ],
+  "providers": "isolated fixture; no real SMS, payments, AI or booking"
+}

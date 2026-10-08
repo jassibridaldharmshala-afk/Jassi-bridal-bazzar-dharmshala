@@ -83,7 +83,7 @@ export function productHref(product, storeSlug = '') {
 }
 
 export function storefrontPath(path, storeSlug = '') {
-  if (!storeSlug || !/^\/(?:$|\?|products(?:[/?]|$)|product(?:[/?]|$)|search(?:[/?]|$)|category(?:[/?]|$)|rentals(?:[/?]|$)|rental-book(?:[/?]|$))/.test(String(path || ''))) return path;
+  if (!storeSlug || !/^\/(?:$|\?|products(?:[/?]|$)|product(?:[/?]|$)|search(?:[/?]|$)|category(?:[/?]|$)|rentals(?:[/?]|$)|rental-book(?:[/?]|$)|contact(?:[/?]|$)|cart(?:[/?]|$)|wishlist(?:[/?]|$)|checkout(?:[/?]|$)|profile(?:[/?]|$)|orders(?:[/?]|$)|order-detail(?:[/?]|$)|order-success(?:[/?]|$)|returns(?:[/?]|$)|notifications(?:[/?]|$)|payment-failed(?:[/?]|$)|login(?:[/?]|$)|register(?:[/?]|$)|faqs(?:[/?]|$)|terms(?:[/?]|$)|shipping-policy(?:[/?]|$)|return-policy(?:[/?]|$)|cancellation-policy(?:[/?]|$)|privacy-policy(?:[/?]|$))/.test(String(path || ''))) return path;
   return `/store/${encodeURIComponent(storeSlug)}${path === '/' ? '' : path}`;
 }
 
@@ -98,4 +98,9 @@ function decodeRoutePart(value) {
 export function currentPath() {
   if (typeof window === 'undefined') return '/';
   return `${window.location.pathname}${window.location.search}` || '/';
+}
+
+export function rentalProductHref(product, storeSlug = '') {
+  const key = String(product?._id || product?.id || '').trim();
+  return storefrontPath(key ? '/rental-book?product=' + encodeURIComponent(key) : '/rental-book', storeSlug);
 }
