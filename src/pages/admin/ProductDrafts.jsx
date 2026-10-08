@@ -2,7 +2,7 @@ import { usesGarmentSizing } from '../../utils/productSizing';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Archive, ArchiveRestore, Check, ChevronLeft, ChevronRight, CopyPlus, Eye,
-  FilePenLine, Filter, ImagePlus, PackageCheck, RefreshCw, Search, Trash2, X,
+  FilePenLine, Filter, ImagePlus, PackageCheck, RefreshCw, Search, Sparkles, Trash2, X,
 } from 'lucide-react';
 import api from '../../services/api';
 import { Select, TextArea, TextInput } from '../../components/ui/Field';
@@ -10,6 +10,9 @@ import PageHeader from '../../components/admin/PageHeader';
 import EmptyState from '../../components/admin/EmptyState';
 import Loader from '../../components/admin/Loader';
 import ProductSmartFill from '../../components/admin/ProductSmartFill';
+import DraftBatchSmartFill from '../../components/admin/DraftBatchSmartFill';
+import { useAuth } from '../../context/AuthContext';
+import { uploadScope } from '../../services/uploadRetry';
 import ProductRentalPricing, { rentalPricingError } from '../../components/admin/ProductRentalPricing';
 import ProductPreviewModal from '../../components/admin/ProductPreviewModal';
 import ImageUploader from '../../components/admin/ImageUploader';
@@ -41,12 +44,17 @@ const MAX_DRAFT_PHOTOS = 30;
 export default function ProductDrafts({ route = '/admin/product-drafts' }) {
   const focusedDraftId = new URLSearchParams(route.split('?')[1] || '').get('draftId') || '';
   const apiPrefix = route.startsWith('/seller/') ? '/seller' : '/admin';
+  const auth = useAuth() || {};
+  const selectionScope = `${apiPrefix}:${uploadScope(auth)}:${new URLSearchParams(window.location.search).get('store') || ''}`;
+  const draftCache = useRef(new Map());
   const [categories, setCategories] = useState([]);
+  const [categoriesReady, setCategoriesReady] = useState(false);
   const [categoryError, setCategoryError] = useState('');
   const [structure, setStructure] = useState(null);
   const [structureError, setStructureError] = useState('');
   const [message, setMessage] = useState('');
   const [selected, setSelected] = useState([]);
+  const [batchDrafts, setBatchDrafts] = useState(null);
   const [files, setFiles] = useState([]);
   const [groupMode, setGroupMode] = useState('single');
   const [photoGroups, setPhotoGroups] = useState([]);
@@ -72,13 +80,19 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
   const uploadingRef = useRef(false);
   const { notify } = useDesktopFeedback();
 
-  const loadStructure = useCallback(() => api.get('/catalog-configuration')
-    .then((value) => { setStructure(value); setStructureError(''); })
-    .catch((error) => setStructureError(error.message || 'Product configuration could not be loaded.')), []);
-  const loadCategories = useCallback(() => fetchCategories(api, apiPrefix)
-    .then((value) => { setCategories(value.filter((item) => !item.isArchived)); setCategoryError(''); })
-    .catch((error) => { setCategories([]); setCategoryError(error.message || 'Categories could not be loaded.'); }), [apiPrefix]);
-  useEffect(() => { loadStructure(); loadCategories(); }, [loadCategories, loadStructure]);
+  const loadStructure = useCallback(() => {
+    setStructure(null);
+    return api.get('/catalog-configuration')
+      .then((value) => { setStructure(value); setStructureError(''); })
+      .catch((error) => setStructureError(error.message || 'Product configuration could not be loaded.'));
+  }, []);
+  const loadCategories = useCallback(() => {
+    setCategoriesReady(false);
+    return fetchCategories(api, apiPrefix)
+      .then((value) => { setCategories(value.filter((item) => !item.isArchived)); setCategoryError(''); setCategoriesReady(true); })
+      .catch((error) => { setCategories([]); setCategoryError(error.message || 'Categories could not be loaded.'); });
+  }, [apiPrefix]);
+  useEffect(() => { loadStructure(); loadCategories(); }, [loadCategories, loadStructure, selectionScope]);
   useEffect(() => {
     const timer = window.setTimeout(() => { setQuery(searchValue.trim()); setPage(1); }, 300);
     return () => window.clearTimeout(timer);
@@ -105,8 +119,13 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
   }, [meta.totalPages, page]);
 
   useEffect(() => {
-    setSelected((current) => current.filter((id) => drafts.some((draft) => draftId(draft) === id && draft.status === 'draft')));
-  }, [drafts]);
+    draftCache.current.clear(); setSelected([]); setBatchDrafts(null);
+  }, [selectionScope]);
+  useEffect(() => {
+    drafts.forEach(draft => draftCache.current.set(draftId(draft), draft));
+    // A different page must not discard selections from earlier pages.
+    setSelected(current => current.filter(id => !drafts.some(draft => draftId(draft) === id && draft.status !== 'draft')));
+  }, [drafts, selectionScope]);
   useEffect(() => {
     if (!focusedDraftId || editorDraft) return;
     const visible = drafts.find((draft) => draftId(draft) === focusedDraftId);
@@ -136,6 +155,11 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
       const result = await bulkUploadProductDrafts({ files, groupMode, ...(groups ? { photoGroups: groups } : {}), apiPrefix }).unwrap();
       const created = result?.data?.drafts?.length || (groupMode === 'single' ? 1 : groupMode === 'grouped' ? groups.length : files.length);
       setFiles([]); setPhotoGroups([]); setUploadOpen(false); setPage(1);
+      const createdDrafts = (result?.data?.drafts || []).filter(draft => draftId(draft) && draft.status === 'draft');
+      if (createdDrafts.length) {
+        createdDrafts.forEach(draft => draftCache.current.set(draftId(draft), draft));
+        setSelected(createdDrafts.map(draftId)); setBatchDrafts(createdDrafts);
+      }
       showFeedback(`${created} product draft${created === 1 ? '' : 's'} created.`, 'success');
     } catch (error) { showFeedback(error.data?.message || error.message || 'Draft upload failed. Your selected photos are kept; retry to continue.', 'error'); }
     finally { uploadingRef.current = false; }
@@ -219,8 +243,8 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
     if (!bulkCategory || !selected.length || actionBusy) return;
     setActionBusy(true); let failures = 0;
     for (const id of selected) {
-      const draft = drafts.find((item) => draftId(item) === id);
-      if (!draft) continue;
+      const draft = draftCache.current.get(id);
+      if (!draft) { failures += 1; continue; }
       try { await saveDraft({ ...draft, category: bulkCategory }, { silent: true }); } catch { failures += 1; }
     }
     setActionBusy(false);
@@ -242,11 +266,16 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
   const openEditor = (draft, initialTab = 'basic') => { setEditorTab(initialTab); setEditorDraft(draft); };
   const selectable = drafts.filter((draft) => draft.status === 'draft').map(draftId);
   const allSelected = selectable.length > 0 && selectable.every((id) => selected.includes(id));
+  const openBatch = () => {
+    const chosen = selected.map(id => draftCache.current.get(id)).filter(draft => draft?.status === 'draft');
+    if (!chosen.length) return showFeedback('Select active drafts to run Smart Fill.', 'warning');
+    setBatchDrafts(chosen);
+  };
 
   return <section className="product-drafts-page">
     <PageHeader title="Product Drafts" note="Prepare, review and publish catalog products from one focused workspace.">
       <a href={`${apiPrefix}/social-import`} className="admin-btn-ghost">Import social link</a>
-      <button type="button" className="admin-btn" disabled={uploading} onClick={() => setUploadOpen((value) => !value)}><ImagePlus size={16} />Create from photos</button>
+      <button type="button" className="admin-btn" disabled={uploading || actionBusy || publishing || !!batchDrafts} onClick={() => setUploadOpen((value) => !value)}><ImagePlus size={16} />Create from photos</button>
     </PageHeader>
     {focusedDraftId && <p className="admin-note">Opened from an import. <a className="text-wine underline" href={`${apiPrefix}/product-drafts`}>Return to all drafts</a></p>}
     {(structureError || categoryError) && <div role="alert" className="draft-alert is-error"><span>{structureError || categoryError}</span><button type="button" onClick={() => { loadStructure(); loadCategories(); }}>Retry</button></div>}
@@ -268,9 +297,11 @@ export default function ProductDrafts({ route = '/admin/product-drafts' }) {
       <div className="draft-filters"><Filter size={16} /><Select value={sourceType} onChange={(event) => { setSourceType(event.target.value); setPage(1); }} aria-label="Filter by draft source"><option value="">All sources</option><option value="manual">Manual / upload</option><option value="social-import">Social import</option><option value="reel-import">Reel import</option></Select><Select value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }} aria-label="Filter by category"><option value="">All categories</option>{categories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select><Select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} aria-label="Sort drafts"><option value="updated">Recently updated</option><option value="oldest">Oldest first</option><option value="name">Product name</option></Select><button type="button" onClick={refetch} className="admin-btn-ghost" disabled={isFetching}><RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />Refresh</button></div>
     </div>
 
-    {!!selected.length && <div className="draft-bulk-bar"><strong>{selected.length} selected</strong><div><Select value={bulkCategory} onChange={(event) => setBulkCategory(event.target.value)} aria-label="Category for selected drafts"><option value="">Assign category...</option>{categories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select><button type="button" className="admin-btn-ghost" disabled={!bulkCategory || actionBusy} onClick={applyBulkCategory}><Check size={15} />Apply</button></div><button type="button" className="admin-btn-ghost" disabled={actionBusy} onClick={archiveSelected}><Archive size={15} />Archive</button><button type="button" className="admin-btn" disabled={publishing || actionBusy || !structure} onClick={() => publishIds(selected)}><CopyPlus size={16} />{publishing ? 'Publishing...' : 'Publish selected'}</button></div>}
+    {!!selected.length && <div className="draft-bulk-bar"><strong>{selected.length} selected</strong><button type="button" className="admin-btn" disabled={actionBusy || publishing || uploading || uploadOpen || !!batchDrafts || !structure || !categoriesReady} onClick={openBatch}><Sparkles size={16} />Smart Fill selected</button><div><Select value={bulkCategory} onChange={(event) => setBulkCategory(event.target.value)} aria-label="Category for selected drafts"><option value="">Assign category...</option>{categories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</Select><button type="button" className="admin-btn-ghost" disabled={!bulkCategory || actionBusy || publishing || !!batchDrafts} onClick={applyBulkCategory}><Check size={15} />Apply</button></div><button type="button" className="admin-btn-ghost" disabled={actionBusy || publishing || !!batchDrafts} onClick={archiveSelected}><Archive size={15} />Archive</button><button type="button" className="admin-btn" disabled={publishing || actionBusy || !!batchDrafts || !structure} onClick={() => publishIds(selected)}><CopyPlus size={16} />{publishing ? 'Publishing...' : 'Publish selected'}</button></div>}
 
-    <div className="admin-card draft-queue"><div className="draft-queue__heading"><label><input type="checkbox" checked={allSelected} disabled={!selectable.length} onChange={() => setSelected(allSelected ? [] : selectable)} />Select page</label><span>{meta.total || 0} result{Number(meta.total) === 1 ? '' : 's'}</span></div>{isLoading ? <Loader label="Loading product drafts..." /> : !drafts.length ? <EmptyState title={status === 'archived' ? 'No archived drafts' : 'No product drafts found'} note={query ? 'Try a different search or clear the filters.' : 'Create drafts from photos or import a social product link.'} /> : <div className="draft-card-grid">{drafts.map((draft) => <DraftQueueCard key={draftId(draft)} draft={draft} selected={selected.includes(draftId(draft))} busy={actionBusy || publishing} onSelect={() => setSelected((current) => current.includes(draftId(draft)) ? current.filter((id) => id !== draftId(draft)) : [...current, draftId(draft)])} onEdit={() => openEditor(draft)} onAddPhotos={() => openEditor(draft, 'media')} onPreview={() => setPreviewDraft(draft)} onArchive={() => archiveOne(draft)} onRestore={() => restoreOne(draft)} onDelete={() => { setPendingDelete(draft); setDeleteConfirmation(''); }} />)}</div>}{Number(meta.totalPages || 1) > 1 && <div className="draft-pagination"><button type="button" disabled={page <= 1 || isFetching} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft size={16} />Previous</button><span>Page {meta.page || page} of {meta.totalPages}</span><button type="button" disabled={page >= meta.totalPages || isFetching} onClick={() => setPage((value) => value + 1)}>Next<ChevronRight size={16} /></button></div>}</div>
+    {batchDrafts && <DraftBatchSmartFill key={`${selectionScope}:${batchDrafts.map(draftId).join(',')}`} drafts={batchDrafts} categories={categories} structure={categoriesReady ? structure : null} apiPrefix={apiPrefix} onSave={saveDraft} onBusyChange={setActionBusy} onClose={() => setBatchDrafts(null)} onSaved={count => { refetch(); showFeedback(`${count} product drafts updated with reviewed Smart Fill details.`, 'success'); }} />}
+
+    <div className="admin-card draft-queue"><div className="draft-queue__heading"><label><input type="checkbox" checked={allSelected} disabled={!selectable.length || actionBusy || publishing || !!batchDrafts} onChange={() => setSelected(current => allSelected ? current.filter(id => !selectable.includes(id)) : [...new Set([...current, ...selectable])])} />Select page</label><span>{meta.total || 0} result{Number(meta.total) === 1 ? '' : 's'}</span></div>{isLoading ? <Loader label="Loading product drafts..." /> : !drafts.length ? <EmptyState title={status === 'archived' ? 'No archived drafts' : 'No product drafts found'} note={query ? 'Try a different search or clear the filters.' : 'Create drafts from photos or import a social product link.'} /> : <div className="draft-card-grid">{drafts.map((draft) => <DraftQueueCard key={draftId(draft)} draft={draft} selected={selected.includes(draftId(draft))} busy={actionBusy || publishing || !!batchDrafts} onSelect={() => setSelected((current) => current.includes(draftId(draft)) ? current.filter((id) => id !== draftId(draft)) : [...current, draftId(draft)])} onEdit={() => openEditor(draft)} onAddPhotos={() => openEditor(draft, 'media')} onPreview={() => setPreviewDraft(draft)} onArchive={() => archiveOne(draft)} onRestore={() => restoreOne(draft)} onDelete={() => { setPendingDelete(draft); setDeleteConfirmation(''); }} />)}</div>}{Number(meta.totalPages || 1) > 1 && <div className="draft-pagination"><button type="button" disabled={page <= 1 || isFetching} onClick={() => setPage((value) => Math.max(1, value - 1))}><ChevronLeft size={16} />Previous</button><span>Page {meta.page || page} of {meta.totalPages}</span><button type="button" disabled={page >= meta.totalPages || isFetching} onClick={() => setPage((value) => value + 1)}>Next<ChevronRight size={16} /></button></div>}</div>
 
     {editorDraft && <DraftEditor key={draftId(editorDraft)} draft={editorDraft} initialTab={editorTab} categories={categories} structure={structure} apiPrefix={apiPrefix} onClose={() => setEditorDraft(null)} onSave={saveDraft} onPublish={publishFromEditor} onPreview={setPreviewDraft} />}
     {previewDraft && <ProductPreviewModal product={normalizeDraftBody(previewDraft, categories, structure)} onClose={() => setPreviewDraft(null)} />}

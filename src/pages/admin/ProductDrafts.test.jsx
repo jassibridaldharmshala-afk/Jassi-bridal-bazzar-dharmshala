@@ -67,6 +67,79 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
+test.each(['/admin/product-drafts', '/seller/product-drafts'])('selected draft Smart Fill runs and saves the whole batch on %s', async route => {
+  const prefix = route.startsWith('/seller') ? '/seller' : '/admin';
+  const all = mockQuery.data.data;
+  api.get.mockImplementation(async path => path.endsWith('/smart-fill/status') ? { enabled: true, maxPhotos: 6, requestIntervalMs: 0 }
+    : path.includes('/product-drafts/') ? { data: all.find(item => path.endsWith(item._id)) } : { industry: 'boutique', features: { sizing: false }, attributes: [] });
+  api.post.mockResolvedValue({ suggestion: { name: 'Suggested product name', description: 'Visible embroidery' }, analysisStatus: 'completed', warnings: [] });
+  render(<ProductDrafts route={route} />);
+  fireEvent.click(await screen.findByRole('checkbox', { name: 'Select page' }));
+  const open = screen.getByRole('button', { name: 'Smart Fill selected' });
+  await waitFor(() => expect(open).toBeEnabled()); fireEvent.click(open);
+  const run = screen.getByRole('button', { name: 'Run Smart Fill for 2 drafts' });
+  await waitFor(() => expect(run).toBeEnabled()); fireEvent.click(run);
+  await screen.findByText('2/2 products analysed · 0 saved');
+  expect(mockSave).not.toHaveBeenCalled();
+  expect(api.post.mock.calls.map(call => call[0])).toEqual([`${prefix}/products/smart-fill`, `${prefix}/products/smart-fill`]);
+  expect(screen.getByRole('button', { name: 'Publish selected' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Save selected details for 2 drafts' }));
+  await screen.findByText('2/2 products analysed · 2 saved');
+  expect(mockSave.mock.calls.map(call => call[0].id)).toEqual(['draft-a', 'draft-b']);
+  expect(mockSave.mock.calls[0][0]).toMatchObject({ apiPrefix: prefix, body: { name: 'Rose saree', sellingPrice: 1000, baseRevision: 2, saveMode: 'auto', description: 'Visible embroidery' } });
+  expect(mockQuery.refetch).toHaveBeenCalled();
+});
+
+test('selection across pages supports more than 24 drafts and deselecting a page preserves other pages', async () => {
+  const all = Array.from({ length: 30 }, (_, index) => ({ ...draft, _id: `page-draft-${index}`, name: `Page product ${index}` }));
+  mockQuery.data = { data: all.slice(0, 24), meta: { page: 1, total: 30, totalPages: 2 } };
+  const view = render(<ProductDrafts />);
+  fireEvent.click(await screen.findByRole('checkbox', { name: 'Select page' }));
+  expect(screen.getByText('24 selected')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  mockQuery = { ...mockQuery, data: { data: all.slice(24), meta: { page: 2, total: 30, totalPages: 2 } } };
+  view.rerender(<ProductDrafts />);
+  expect(screen.getByText('24 selected')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select page' }));
+  expect(screen.getByText('30 selected')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select page' }));
+  expect(screen.getByText('24 selected')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select page' }));
+  const open = screen.getByRole('button', { name: 'Smart Fill selected' });
+  await waitFor(() => expect(open).toBeEnabled()); fireEvent.click(open);
+  expect(screen.getAllByRole('article', { name: /Smart Fill product/ })).toHaveLength(30);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Run Smart Fill for 30 drafts' })).toBeEnabled());
+});
+
+test('category assignment includes selected drafts from earlier pages', async () => {
+  const first = mockQuery.data.data;
+  const view = render(<ProductDrafts />);
+  fireEvent.click(await screen.findByRole('checkbox', { name: 'Select page' }));
+  mockQuery = { ...mockQuery, data: { data: [{ ...draft, _id: 'draft-c', name: 'Another product' }], meta: { page: 1, total: 3, totalPages: 2 } } };
+  view.rerender(<ProductDrafts />);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select page' }));
+  fireEvent.change(screen.getByLabelText('Category for selected drafts'), { target: { value: 'cat' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(3));
+  expect(mockSave.mock.calls.map(call => call[0].id)).toEqual([...first.map(item => item._id), 'draft-c']);
+});
+
+test('30 newly uploaded product drafts are offered as one batch even when the list shows only the first page', async () => {
+  URL.createObjectURL = jest.fn(() => 'blob:batch-preview'); URL.revokeObjectURL = jest.fn();
+  const created = Array.from({ length: 30 }, (_, index) => ({ ...draft, _id: `new-${index}`, name: `Uploaded product ${index}` }));
+  mockUpload.mockImplementation(() => ({ unwrap: async () => ({ data: { drafts: created } }) }));
+  render(<ProductDrafts />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Create from photos' }));
+  fireEvent.click(screen.getByRole('radio', { name: /One draft per photo/ }));
+  fireEvent.change(screen.getByLabelText('Choose product photos'), { target: { files: Array.from({ length: 30 }, (_, index) => new File(['photo'], `item-${index}.webp`, { type: 'image/webp' })) } });
+  fireEvent.click(screen.getByRole('button', { name: 'Create 30 drafts' }));
+  const run = await screen.findByRole('button', { name: 'Run Smart Fill for 30 drafts' });
+  await waitFor(() => expect(run).toBeEnabled());
+  expect(screen.getByText('30 selected')).toBeInTheDocument();
+  expect(screen.getAllByRole('article', { name: /Smart Fill product/ })).toHaveLength(30);
+  expect(api.post).not.toHaveBeenCalled();
+});
+
 test('creates three drafts from product photo groups with 4, 6 and 2 views', async () => {
   URL.createObjectURL = jest.fn(() => 'blob:photo-preview');
   URL.revokeObjectURL = jest.fn();
