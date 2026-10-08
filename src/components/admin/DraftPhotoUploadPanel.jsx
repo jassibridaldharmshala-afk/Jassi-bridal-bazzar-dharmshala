@@ -3,12 +3,13 @@ import { ImagePlus, Upload, X } from 'lucide-react';
 import { isSupportedImageFile, PHOTO_SOURCE_MAX_BYTES, PHOTO_BATCH_MAX_BYTES } from '../../services/imageCompression';
 
 import api from '../../services/api';
+import { draftUploadMessage } from '../../services/draftUploadProgress';
 
 const MAX_PHOTOS = 30;
 const groupTitle = (group, index) => group.name.trim() || `Product ${index + 1}`;
 const retainPhotos = (group, photos) => ({ ...group, photos, cover: photos.includes(group.cover) ? group.cover : photos[0] });
 
-export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setGroupMode, groups, setGroups, groupingSupported, uploading, onUpload, onClose, apiPrefix = '/admin' }) {
+export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setGroupMode, groups, setGroups, groupingSupported, uploading, uploadProgress, onStopWaiting, onUpload, onClose, apiPrefix = '/admin' }) {
   const [selected, setSelected] = useState([]);
   const [proposal, setProposal] = useState(null), [analysing, setAnalysing] = useState(false);
   const analysis = useRef(null), snapshot = useRef(files); snapshot.current = files;
@@ -112,6 +113,13 @@ export default function DraftPhotoUploadPanel({ files, setFiles, groupMode, setG
       <label><span>Product name (optional)</span><input aria-label={`Product name for group ${index + 1}`} maxLength={160} disabled={uploading} placeholder="Add the name now or in the draft" value={group.name} onChange={(event) => setGroups((current) => current.map((item) => item.id === group.id ? { ...item, name: event.target.value } : item))} /></label>
     </section>)}</div>}
     {grouped && files.length > 0 && <p className="draft-group-progress" role="status">{groups.length} product groups · {files.length} photos · {unassigned.length} unassigned{unassigned.length > 0 ? '. Assign every photo before creating drafts.' : '. Ready to create one draft per product.'}</p>}
-    <div className="draft-upload-actions"><span>{files.length ? `${files.length} photo${files.length === 1 ? '' : 's'} selected` : 'No photos selected'}</span><button type="button" className="admin-btn-ghost" disabled={!files.length || uploading} onClick={clear}>Clear</button><button type="button" className="admin-btn" disabled={!ready || uploading} onClick={onUpload}>{uploading ? 'Creating drafts...' : draftCount === 1 ? 'Create one draft' : `Create ${draftCount} drafts`}</button></div>
+    {uploadProgress && <div className="draft-upload-status" role={uploadProgress.phase === 'retry' ? 'alert' : 'status'} aria-live={uploadProgress.phase === 'retry' ? 'assertive' : 'polite'}>
+      <strong>{draftUploadMessage(uploadProgress)}</strong>
+      {uploading && <><p>{uploadProgress.completedFiles || 0} of {uploadProgress.fileCount || files.length} photos fully saved · {(files.reduce((total, file) => total + file.size, 0) / 1024 / 1024).toFixed(1)} MB selected</p>
+        <p>Original detail is preserved. Smart Fill starts separately after draft creation.</p>
+        {onStopWaiting && <button type="button" className="admin-btn-ghost" onClick={onStopWaiting}>Stop waiting</button>}
+        <small>Stopping the wait keeps your selection; processing already accepted by the server continues. Retry checks that upload first.</small></>}
+    </div>}
+    <div className="draft-upload-actions"><span>{files.length ? `${files.length} photo${files.length === 1 ? '' : 's'} selected` : 'No photos selected'}</span><button type="button" className="admin-btn-ghost" disabled={!files.length || uploading} onClick={clear}>Clear</button><button type="button" className="admin-btn" disabled={!ready || uploading} onClick={onUpload}>{uploading ? 'Creating drafts...' : uploadProgress?.phase === 'retry' ? 'Retry / check status' : draftCount === 1 ? 'Create one draft' : `Create ${draftCount} drafts`}</button></div>
   </section>;
 }

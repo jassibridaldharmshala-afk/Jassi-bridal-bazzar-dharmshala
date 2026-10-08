@@ -1,3 +1,5 @@
+import { useRentalBag } from '../../context/RentalBagContext';
+import { rentalShoppingRoute } from '../../utils/rentalShopping';
 import NotificationBell from '../notifications/NotificationBell';
 import { useNotifications } from '../../context/NotificationContext';
 import { useEffect, useState } from 'react';
@@ -43,6 +45,8 @@ export default function MobileHeader({ navigate, route = '/' }) {
   const brand = useBrandIdentity();
   const { config: websiteConfig } = useWebsiteCustomization();
   const cart = useCart();
+  const rentalBag = useRentalBag();
+  const rentalShopping = rentalShoppingRoute(route);
   const wishlist = useWishlist();
   const { user, switchMode } = useAuth();
   const { unreadCount } = useNotifications();
@@ -106,7 +110,7 @@ export default function MobileHeader({ navigate, route = '/' }) {
             <button onClick={() => setSearchOpen(true)} className="grid h-11 w-10 place-items-center text-slate-700" aria-label="Search products">
               <Search className="h-5.5 w-5.5" strokeWidth={1.9} />
             </button>
-            <button onClick={() => navigate('/wishlist')} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open wishlist">
+            <button onClick={() => go(rentalShopping ? '/wishlist?mode=rent' : '/wishlist')} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open wishlist">
               <Icon name="heart" className="h-5.5 w-5.5" />
               {wishlist.items.length > 0 && (
                 <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-wine px-1 text-[9px] font-black leading-none text-white">
@@ -114,18 +118,18 @@ export default function MobileHeader({ navigate, route = '/' }) {
                 </span>
               )}
             </button>
-            <button onClick={() => navigate('/cart')} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open cart">
+            <button onClick={() => go(rentalShopping ? '/rental-cart' : '/cart')} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open cart">
               <Icon name="bag" className="h-5.5 w-5.5" />
-              {cart.itemCount > 0 && (
+              {(rentalShopping ? rentalBag.itemCount : cart.itemCount) > 0 && (
                 <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-wine px-1 text-[9px] font-black leading-none text-white">
-                  {cart.itemCount}
+                  {(rentalShopping ? rentalBag.itemCount : cart.itemCount)}
                 </span>
               )}
             </button>
           </div>
         </div>
       </header>
-      {searchOpen && <MobileSearchOverlay initialValue={searchValue} navigate={go} storeSlug={parseStoreSlug(route)} onClose={() => setSearchOpen(false)} />}
+      {searchOpen && <MobileSearchOverlay shoppingMode={rentalShopping ? 'rental' : 'buy'} initialValue={searchValue} navigate={go} storeSlug={parseStoreSlug(route)} onClose={() => setSearchOpen(false)} />}
       <div
         className={`fixed inset-0 z-[75] transition-[visibility] duration-0 lg:hidden ${open ? 'visible pointer-events-auto delay-0' : 'invisible pointer-events-none delay-300'}`}
         aria-hidden={!open}
@@ -186,8 +190,8 @@ export default function MobileHeader({ navigate, route = '/' }) {
               <DrawerSection title="My account">
                 <DrawerLink icon={Package} label="My Orders" onClick={() => go('/orders')} />
                 <DrawerLink icon={Bell} label="Notifications" badge={unreadCount > 99 ? '99+' : unreadCount || ''} onClick={() => go('/notifications')} />
-                <DrawerLink icon={Heart} label="Wishlist" badge={wishlist.items.length || ''} onClick={() => go('/wishlist')} />
-                <DrawerLink icon={ShoppingBag} label="My Cart" badge={cart.itemCount || ''} onClick={() => go('/cart')} />
+                <DrawerLink icon={Heart} label="Wishlist" badge={wishlist.items.length || ''} onClick={() => go(rentalShopping ? '/wishlist?mode=rent' : '/wishlist')} />
+                <DrawerLink icon={ShoppingBag} label="My Cart" badge={(rentalShopping ? rentalBag.itemCount : cart.itemCount) || ''} onClick={() => go(rentalShopping ? '/rental-cart' : '/cart')} />
                 <DrawerLink icon={MapPin} label="Saved Addresses" onClick={() => go('/profile/addresses')} />
                 <DrawerLink icon={Tag} label="Coupons" onClick={() => go('/profile')} />
               </DrawerSection>

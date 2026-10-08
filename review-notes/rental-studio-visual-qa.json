@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "bookingCards": 3,
+      "extraTools": true,
+      "settingsSave": true,
+      "pieceEditor": true,
+      "guidedPricePiecesActivation": true,
+      "ownerCountedRegistration": 2,
+      "managedBookingFocused": true,
+      "pageErrors": [],
+      "horizontalPageOverflow": false
+    },
+    {
+      "width": 820,
+      "bookingCards": 3,
+      "extraTools": true,
+      "settingsSave": true,
+      "pieceEditor": true,
+      "guidedPricePiecesActivation": true,
+      "ownerCountedRegistration": 2,
+      "managedBookingFocused": true,
+      "pageErrors": [],
+      "horizontalPageOverflow": false
+    },
+    {
+      "width": 1440,
+      "bookingCards": 3,
+      "extraTools": true,
+      "settingsSave": true,
+      "pieceEditor": true,
+      "guidedPricePiecesActivation": true,
+      "ownerCountedRegistration": 2,
+      "managedBookingFocused": true,
+      "pageErrors": [],
+      "horizontalPageOverflow": false
+    }
+  ],
+  "api": "isolated fixtures",
+  "realProvidersCalled": false
+}

@@ -62,6 +62,9 @@ export default function ProductDrafts({ route = '/admin/product-drafts', navigat
   const [groupMode, setGroupMode] = useState('single');
   const [photoGroups, setPhotoGroups] = useState([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const uploadRequest = useRef(null);
+  useEffect(() => () => { uploadRequest.current?.abort?.(); }, [selectionScope]);
   const [query, setQuery] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [status, setStatus] = useState('active');
@@ -155,17 +158,26 @@ export default function ProductDrafts({ route = '/admin/product-drafts', navigat
     }
     uploadingRef.current = true;
     try {
-      const result = await bulkUploadProductDrafts({ files, groupMode, ...(groups ? { photoGroups: groups } : {}), apiPrefix }).unwrap();
+      setUploadProgress({ phase: 'preparing', fileCount: files.length, completedFiles: 0 });
+      const operation = bulkUploadProductDrafts({ files, groupMode, ...(groups ? { photoGroups: groups } : {}), apiPrefix, onProgress: setUploadProgress });
+      uploadRequest.current = operation;
+      const result = await operation.unwrap();
       const created = result?.data?.drafts?.length || (groupMode === 'single' ? 1 : groupMode === 'grouped' ? groups.length : files.length);
-      setFiles([]); setPhotoGroups([]); setUploadOpen(false); setPage(1);
+      setFiles([]); setPhotoGroups([]); setUploadProgress(null); setUploadOpen(false); setPage(1);
       const createdDrafts = (result?.data?.drafts || []).filter(draft => draftId(draft) && draft.status === 'draft');
       if (createdDrafts.length) {
         createdDrafts.forEach(draft => draftCache.current.set(draftId(draft), draft));
         setSelected(createdDrafts.map(draftId)); setBatchDrafts(createdDrafts);
       }
       showFeedback(`${created} product draft${created === 1 ? '' : 's'} created.`, 'success');
-    } catch (error) { showFeedback(error.data?.message || error.message || 'Draft upload failed. Your selected photos are kept; retry to continue.', 'error'); }
-    finally { uploadingRef.current = false; }
+    } catch (error) {
+      const text = error.name === 'AbortError'
+        ? 'Waiting stopped. Processing already accepted by the server continues. Your photos are kept; check status with the same selection.'
+        : error.data?.message || error.message || 'Draft upload failed. Your selected photos are kept; retry to continue.';
+      setUploadProgress(current => ({ ...current, phase: 'retry', message: text }));
+      setMessage('');
+    }
+    finally { uploadingRef.current = false; uploadRequest.current = null; }
   };
 
   const saveDraft = useCallback(async (form, { silent = false } = {}) => {
@@ -296,7 +308,7 @@ export default function ProductDrafts({ route = '/admin/product-drafts', navigat
     {listError && <div role="alert" className="draft-alert is-error"><span>{listError.data?.message || listError.message || 'Drafts could not be loaded.'}</span><button type="button" onClick={refetch}>Retry</button></div>}
     {message && <p role="status" className="draft-alert">{message}</p>}
     {rentalSetupProducts.length > 0 && <section className="draft-alert"><strong>Rental setup pending for published products</strong><p>Register the actual pieces, review payment readiness and activate each offer.</p>{rentalSetupProducts.map(product => <button type="button" key={product._id} className="admin-btn-ghost" onClick={() => { const params = new URLSearchParams({ tab: 'setup', ...(product.rentalOffers?.[0]?._id ? { listing: product.rentalOffers[0]._id } : { productId: product._id }) }); if (product.storeId) params.set('storeId', product.storeId); navigate?.(apiPrefix + '/rentals?' + params); }}>Complete rental setup: {product.name}</button>)}</section>}
-    {uploadOpen && <DraftPhotoUploadPanel apiPrefix={apiPrefix} files={files} setFiles={setFiles} groupMode={groupMode} setGroupMode={setGroupMode} groups={photoGroups} setGroups={setPhotoGroups} groupingSupported={meta.photoGrouping?.version >= 1} uploading={uploading} onUpload={onUpload} onClose={() => { setUploadOpen(false); setFiles([]); setPhotoGroups([]); }} />}
+    {uploadOpen && <DraftPhotoUploadPanel apiPrefix={apiPrefix} files={files} setFiles={setFiles} groupMode={groupMode} setGroupMode={setGroupMode} groups={photoGroups} setGroups={setPhotoGroups} groupingSupported={meta.photoGrouping?.version >= 1} uploading={uploading} uploadProgress={uploadProgress} onStopWaiting={() => uploadRequest.current?.abort?.()} onUpload={onUpload} onClose={() => { setUploadOpen(false); setFiles([]); setPhotoGroups([]); }} />}
 
     <div className="draft-summary-grid" aria-label="Draft summary">
       <SummaryButton label="Draft queue" value={Number(summary.draft || 0)} active={status === 'active' && !readiness} onClick={() => chooseSummary('', 'active')} />

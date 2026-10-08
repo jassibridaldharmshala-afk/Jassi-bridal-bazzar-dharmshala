@@ -1,0 +1,108 @@
+{
+  "asOf": "2026-10-08 15:59:17 UTC",
+  "sourceOnly": true,
+  "deployed": false,
+  "sourceBottlenecks": [
+    "Entire batch awaited serial master plus responsive image processing/storage before replying.",
+    "Generated display copies were decoded/prepared again by storage providers.",
+    "No bulk request deadline, stage display or status recovery while the original request stayed pending."
+  ],
+  "hostedCauseConfirmed": false,
+  "hostedLimits": "No production error logs or total source bytes supplied. Original transfer, hosting CPU and provider latency still affect actual duration.",
+  "flow": [
+    "Validate selected original files and product grouping.",
+    "Receive/stage the complete multipart batch.",
+    "Accept asynchronous processing; retain the staged originals until the worker settles.",
+    "Optimize masters without losing decoded detail; generate lossless resized display copies and persist storage receipts.",
+    "Create deterministic, transaction-backed drafts according to selected groups.",
+    "Open the selected drafts for separately initiated batch Smart Fill; review merchant prices, stock and publish."
+  ],
+  "features": [
+    "Authenticated account/store-scoped progress reads.",
+    "Real saved-file counts and stage messages; no invented transfer percentage.",
+    "Same-key receipt recovery, including old synchronous upload identities.",
+    "Stop waiting preserves the selection; accepted server work continues.",
+    "Interrupted/restarted worker leases become retryable; missing photos require the same originals to be selected again.",
+    "Partial storage receipts and deterministic draft IDs prevent duplicate work on retries.",
+    "Completed result wins when a competing claim loses after completion.",
+    "Staging cleanup waits for every started write.",
+    "Generic failure replies do not disclose database/provider diagnostics."
+  ],
+  "budgets": {
+    "maxPhotos": 30,
+    "perPhotoMB": 20,
+    "batchMB": 60,
+    "sharpRasterTasks": 1,
+    "mediaStoreSlotsPerProcess": 2,
+    "asyncBatchesPerProcess": 4,
+    "requestTimeoutMs": 300000,
+    "statusTimeoutMs": 15000,
+    "noProgressWaitMs": 120000,
+    "maxProcessingWaitMs": 600000,
+    "leaseMs": 90000,
+    "heartbeatMs": 20000
+  },
+  "verification": {
+    "frontend": {
+      "suites": 4,
+      "tests": 67,
+      "passed": 67,
+      "log": ".tmp/draft-upload-frontend-tests.log"
+    },
+    "finalFrontendFollowup": {
+      "suites": 2,
+      "tests": 33,
+      "passed": 33,
+      "overlapsPreviousRun": true,
+      "log": ".tmp/draft-upload-final-identity-tests.log"
+    },
+    "backend": {
+      "tests": 34,
+      "passed": 34,
+      "log": ".tmp/draft-upload-backend-tests.log"
+    },
+    "finalBackendFollowup": {
+      "tests": 17,
+      "passed": 17,
+      "overlapsPreviousRun": true,
+      "additionalRegression": "Concurrent completion after claim failure",
+      "log": ".tmp/draft-upload-final-recovery-tests.log"
+    },
+    "strictCIProductionBuild": {
+      "passed": true,
+      "log": ".tmp/draft-upload-production-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        1440
+      ],
+      "photosPerCase": 16,
+      "progressVisible": true,
+      "stoppedWaitingRetainsSelection": true,
+      "recoveryUsesSameKey": true,
+      "multipartRequestsPerCase": 1,
+      "recoveredDraftsPerCase": 16,
+      "errors": 0,
+      "overflow": false,
+      "screenshotsInspected": true,
+      "providers": "isolated fixtures",
+      "report": "review-notes/draft-upload-visual-qa.json"
+    },
+    "losslessPixels": "Existing PNG/JPEG/WebP, alpha, metadata, private/public source limits, responsive resized-pixel equality and provider parity regressions passed.",
+    "processingBenchmark": {
+      "beforeMs": 2086,
+      "afterMs": 1139,
+      "reductionPercent": 45.4,
+      "synthetic": true,
+      "includesStorageOrNetwork": false,
+      "report": "review-notes/draft-upload-benchmark.json"
+    }
+  },
+  "localDependencyRepair": "Restored incomplete backend/node_modules from the existing lockfile; package versions and environment unchanged. FFmpeg runtime rebuilt.",
+  "deploymentRequired": [
+    "Deploy canonical backend/ first; older synchronous clients remain supported.",
+    "Deploy the new frontend bundle.",
+    "Retry a representative original-photo batch on the actual hosting/provider to measure total duration."
+  ]
+}

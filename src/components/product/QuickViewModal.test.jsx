@@ -18,7 +18,7 @@ test('a mixed product keeps rental dates accessible when sale stock is empty', (
   expect(screen.getByText('Buy · Rs. 9,000')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Out of stock' })).toBeDisabled();
   fireEvent.click(screen.getByRole('button', { name: /Rent this item/ }));
-  expect(onRental).toHaveBeenCalledWith('/store/bridal/rental-book?product=bridal');
+  expect(onRental).toHaveBeenCalledWith('/store/bridal/products/bridal?mode=rent');
   expect(onOpenFull).not.toHaveBeenCalled();
 });
 test('mixed product quick view shows its independent sale and rental prices', () => {

@@ -1,0 +1,65 @@
+{
+  "environment": "Production Chrome, isolated local API fixtures; no live providers",
+  "report": [
+    {
+      "width": 390,
+      "passed": true,
+      "overflow": false,
+      "errors": [],
+      "calls": [
+        {
+          "action": "quote",
+          "useDates": [
+            "2030-01-10"
+          ],
+          "plan": "ADVANCE"
+        },
+        {
+          "action": "quote",
+          "useDates": [
+            "2030-01-10"
+          ],
+          "plan": "PICKUP"
+        },
+        {
+          "action": "booking",
+          "plan": "PICKUP"
+        },
+        {
+          "action": "request",
+          "type": "CANCEL"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "passed": true,
+      "overflow": false,
+      "errors": [],
+      "calls": [
+        {
+          "action": "quote",
+          "useDates": [
+            "2030-01-10"
+          ],
+          "plan": "ADVANCE"
+        },
+        {
+          "action": "quote",
+          "useDates": [
+            "2030-01-10"
+          ],
+          "plan": "PICKUP"
+        },
+        {
+          "action": "booking",
+          "plan": "PICKUP"
+        },
+        {
+          "action": "request",
+          "type": "CANCEL"
+        }
+      ]
+    }
+  ]
+}

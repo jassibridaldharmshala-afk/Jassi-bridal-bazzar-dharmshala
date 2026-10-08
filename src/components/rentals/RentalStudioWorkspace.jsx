@@ -30,10 +30,18 @@ function PiecePerformance({ base, timezone, busy, run }) {
   </section>;
 }
 export default function RentalStudioWorkspace({ base, policy, permissions, busy, run, onOpen }) {
+  const tools = [
+    permissions['inventory.read'] !== false && ['workshop', 'Cleaning & repairs', 'Track preparation, cleaning and repair jobs.'],
+    policy.refundDashboardEnabled && permissions['returns.refund'] !== false && ['refunds', 'Deposit refunds', 'Review eligible refunds and overdue settlements.'],
+    policy.piecePerformanceEnabled && permissions['reports.read'] !== false && permissions['inventory.cost.read'] === true && ['performance', 'Piece performance', 'Compare usage, income and recorded costs.'],
+  ].filter(Boolean);
+  const [selected, setSelected] = useState('');
+  const active = tools.some(([id]) => id === selected) ? selected : tools[0]?.[0];
   return <div className="rental-studio-stack">
-    {permissions['inventory.read'] !== false && <RentalWorkshop base={base} policy={policy} permissions={permissions} busy={busy} run={run} />}
-    {policy.refundDashboardEnabled && permissions['returns.refund'] !== false && <RefundDesk base={base} timezone={policy.timezone} busy={busy} onOpen={onOpen} />}
-    {policy.piecePerformanceEnabled && permissions['reports.read'] !== false && permissions['inventory.cost.read'] === true && <PiecePerformance base={base} timezone={policy.timezone} busy={busy} run={run} />}
+    <section className="rental-card"><h2>Workshop & settlement</h2><p className="rental-muted">Choose the work you need to do. Each tool opens separately.</p><nav className="rental-tool-grid" aria-label="Workshop and settlement tools">{tools.map(([id, title, description]) => <button type="button" key={id} aria-pressed={active === id} disabled={busy} onClick={() => setSelected(id)}><strong>{title}</strong><span>{description}</span></button>)}</nav>{!tools.length && <p>No tools are enabled for your staff access. Ask the store owner to review rental settings.</p>}</section>
+    {active === 'workshop' && <RentalWorkshop base={base} policy={policy} permissions={permissions} busy={busy} run={run} />}
+    {active === 'refunds' && <RefundDesk base={base} timezone={policy.timezone} busy={busy} onOpen={onOpen} />}
+    {active === 'performance' && <PiecePerformance base={base} timezone={policy.timezone} busy={busy} run={run} />}
     <p className="rental-muted">Optional workflows are controlled in Rental settings. Existing jobs remain available even when new job creation is disabled.</p>
   </div>;
 }

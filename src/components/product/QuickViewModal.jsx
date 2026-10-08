@@ -1,4 +1,5 @@
 import { useStorefront } from '../../context/StorefrontContext';
+import { rentalDetailHref } from '../../utils/rentalShopping';
 import { pushAppRoute, rentalProductHref } from '../../utils/routing';
 import useModalFocus from '../../hooks/useModalFocus';
 import { ShoppingBag, X } from 'lucide-react';
@@ -8,7 +9,7 @@ import { responsiveImage } from '../../utils/responsiveImages';
 import { isUnavailable, wishlistStock } from '../../utils/wishlist';
 import { getSelectableSizes } from '../../utils/productSizing';
 
-export default function QuickViewModal({ product, onClose, onOpenFull, onRental }) {
+export default function QuickViewModal({ product, onClose, onOpenFull, onRental, shoppingMode }) {
   const cart = useCart();
   const { storeSlug } = useStorefront();
   const dialogRef = useModalFocus(Boolean(product), onClose);
@@ -16,9 +17,9 @@ export default function QuickViewModal({ product, onClose, onOpenFull, onRental 
   const image = responsiveImage(product.images?.[getPrimaryImageIndex(product.images)], 'detail');
   const price = Number(product.sellingPrice ?? product.price ?? 0);
   const original = Number(product.originalPrice ?? price);
-  const bookRental = () => { onClose?.(); (onRental || pushAppRoute)(rentalProductHref(product, storeSlug)); };
-  const rental = product.commerceMode === 'RENTAL_ONLY';
-  const mixed = product.commerceMode === 'SALE_AND_RENTAL';
+  const bookRental = () => { onClose?.(); (onRental || pushAppRoute)(shoppingMode === 'rental' ? rentalDetailHref(product, storeSlug, product.rentalOffer?._id) : rentalProductHref(product, storeSlug)); };
+  const rental = shoppingMode === 'rental' || product.commerceMode === 'RENTAL_ONLY';
+  const mixed = !rental && product.commerceMode === 'SALE_AND_RENTAL';
   const unavailable = !rental && (isUnavailable(product) || wishlistStock(product) === 0);
   const needsSize = getSelectableSizes(product).length > 0;
   return <div className="fixed inset-0 z-[120] grid place-items-center p-4" role="presentation" onClick={(event) => { event.stopPropagation(); onClose?.(); }}>

@@ -56,3 +56,17 @@ test('failed payment methods expose retry and refresh also reloads the options',
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' })); await flush();
   expect(api.get.mock.calls.filter(([path]) => path.includes('payment-methods')).length).toBe(previous + 1);
 });
+
+test('before pickup only reschedule, cancellation and dispute are offered; collection and extension wait until the rental is out', async () => {
+  let current = booking('one'); api.get.mockImplementation(path => Promise.resolve(path.includes('payment-methods') ? [] : current));
+  render(<MyRentals route="/rentals?id=one" navigate={jest.fn()} />); await flush();
+  fireEvent.click(screen.getByRole('button', { name: 'Change dates / get help' }));
+  expect(screen.getByRole('option', { name: 'Change booking dates' })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /Return collection|Extend/i })).not.toBeInTheDocument();
+  current = { ...current, status: 'OUT', revision: 2 }; fireEvent.click(screen.getByRole('button', { name: 'Refresh' })); await flush();
+  fireEvent.click(screen.getByRole('button', { name: 'Change dates / get help' }));
+  expect(screen.getByRole('option', { name: /Return collection/i })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: /Extend/i })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: 'Change booking dates' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /Cancel/i })).not.toBeInTheDocument();
+});

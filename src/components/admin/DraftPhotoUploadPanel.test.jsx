@@ -45,3 +45,21 @@ test('AI group suggestions require review and applying keeps all original photos
   expect(screen.getByText('Product 1 · 2 photos')).toBeInTheDocument(); expect(screen.getByText('Product 2 · 1 photos')).toBeInTheDocument();
   expect(screen.getByTestId('photo-count')).toHaveTextContent('3');
 });
+
+test('upload progress reports completed photos and explains stopping the wait', () => {
+  const stop = jest.fn();
+  const files = [new File(['original'], 'bridal.png', { type: 'image/png' })];
+  render(<DraftPhotoUploadPanel files={files} groups={[]} groupMode="separate" setFiles={jest.fn()} setGroups={jest.fn()} setGroupMode={jest.fn()} uploading uploadProgress={{ phase: 'storing-original', photoIndex: 1, fileCount: 16, completedFiles: 2 }} onStopWaiting={stop} onUpload={jest.fn()} />);
+  expect(screen.getByRole('status')).toHaveTextContent('Photo 1: saving the original photo');
+  expect(screen.getByRole('status')).toHaveTextContent('2 of 16 photos fully saved');
+  expect(screen.getByRole('status')).toHaveTextContent('processing already accepted by the server continues');
+  fireEvent.click(screen.getByRole('button', { name: 'Stop waiting' }));
+  expect(stop).toHaveBeenCalledTimes(1);
+});
+
+test('an interrupted upload offers status recovery with the retained selection', () => {
+  const files = [new File(['original'], 'bridal.png', { type: 'image/png' })];
+  render(<DraftPhotoUploadPanel files={files} groups={[]} groupMode="separate" setFiles={jest.fn()} setGroups={jest.fn()} setGroupMode={jest.fn()} uploading={false} uploadProgress={{ phase: 'retry', message: 'Storage is slow. Check this upload again.' }} onUpload={jest.fn()} />);
+  expect(screen.getByRole('button', { name: 'Retry / check status' })).toBeEnabled();
+  expect(screen.getByRole('alert')).toHaveTextContent('Storage is slow');
+});

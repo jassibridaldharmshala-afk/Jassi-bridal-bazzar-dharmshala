@@ -5,7 +5,7 @@ import { getPrimaryImageUrl, normalizeImageUrl, normalizeProducts } from '../../
 
 const recentStorageKey = 'samira_recent_searches';
 
-export default function MobileSearchOverlay({ initialValue = '', navigate, onClose, storeSlug = '' }) {
+export default function MobileSearchOverlay({ initialValue = '', navigate, onClose, storeSlug = '', shoppingMode = 'buy' }) {
   const [query, setQuery] = useState(initialValue);
   const [results, setResults] = useState([]);
   const [recent, setRecent] = useState(readRecentSearches);
@@ -42,7 +42,7 @@ export default function MobileSearchOverlay({ initialValue = '', navigate, onClo
     setError('');
     const timer = window.setTimeout(async () => {
       try {
-        const response = await api.get(`/products?search=${encodeURIComponent(value)}&page=1&limit=8${storeSlug ? `&store=${encodeURIComponent(storeSlug)}` : ''}`, { cacheFirst: true });
+        const response = await api.get(`/products?search=${encodeURIComponent(value)}&page=1&limit=8${shoppingMode === 'rental' ? '&mode=rent' : ''}${storeSlug ? `&store=${encodeURIComponent(storeSlug)}` : ''}`, { cacheFirst: true });
         if (sequence !== requestSequence.current) return;
         const items = Array.isArray(response) ? response : response?.products || response?.items || [];
         setResults(normalizeProducts(items));
@@ -58,7 +58,7 @@ export default function MobileSearchOverlay({ initialValue = '', navigate, onClo
     }, 280);
 
     return () => window.clearTimeout(timer);
-  }, [query, attempt, storeSlug]);
+  }, [query, attempt, storeSlug, shoppingMode]);
 
   const remember = (value) => {
     const next = [value, ...recent.filter((item) => item.toLowerCase() !== value.toLowerCase())].slice(0, 6);
@@ -71,7 +71,7 @@ export default function MobileSearchOverlay({ initialValue = '', navigate, onClo
     if (!search) return;
     remember(search);
     onClose?.();
-    navigate(`/search?search=${encodeURIComponent(search)}`);
+    navigate(`${shoppingMode === 'rental' ? '/rental-book' : '/search'}?search=${encodeURIComponent(search)}`);
   };
 
   const openProduct = (product) => {
@@ -79,7 +79,7 @@ export default function MobileSearchOverlay({ initialValue = '', navigate, onClo
     if (!productId) return;
     if (query.trim()) remember(query.trim());
     onClose?.();
-    navigate(`/product?id=${encodeURIComponent(productId)}`);
+    navigate(`/product?id=${encodeURIComponent(productId)}${shoppingMode === 'rental' ? '&mode=rent' : ''}`);
   };
 
   return (

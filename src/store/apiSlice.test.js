@@ -4,6 +4,7 @@ import authReducer, { logout, setCredentials } from './authSlice';
 import { samiraApi } from './apiSlice';
 import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
 import { STOREFRONT_READ_TIMEOUT } from './storefrontTransport';
+import { DRAFT_UPLOAD_TIMEOUT } from '../services/draftUploadProgress';
 import { getDurableUploadRetryKey, hasUploadAttempt, retainUploadedReceipt, uploadScope } from '../services/uploadRetry';
 
 test('logout during photo preparation prevents multipart upload under a changed session', async () => {
@@ -24,14 +25,18 @@ test('multipart condition proof uploads preserve stage/consent/revision fields a
 
 test('bulk draft retries preserve the upload key while a changed grouping is a new operation', async () => {
   const photo = new File(['photo'], 'photo.webp', { type: 'image/webp' });
+  const previousClientKey = await getDurableUploadRetryKey({ path: '/admin/product-drafts/bulk-upload', files: [photo], fields: { groupMode: 'single' }, scope: uploadScope(testStore.getState().auth) });
   mockRawQuery.mockResolvedValueOnce({ error: { status: 500, data: { message: 'Save failed' } } }).mockResolvedValue({ data: { success: true, data: { drafts: [] } } });
   await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files: [photo], groupMode: 'single' }));
   await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files: [photo], groupMode: 'single' })).unwrap();
   await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files: [photo], groupMode: 'separate' })).unwrap();
   const keys = mockRawQuery.mock.calls.map(([value]) => value.headers['Idempotency-Key']);
   expect(keys[0]).toBe(keys[1]); expect(keys[2]).not.toBe(keys[0]);
+  expect(keys[0]).toBe(previousClientKey);
+  expect(mockRawQuery.mock.calls[0][0].body.get('asyncUpload')).toBe('true');
+  expect(mockRawQuery.mock.calls[0][0].timeout).toBe(DRAFT_UPLOAD_TIMEOUT);
   expect(mockRawQuery.mock.calls[0][0].body).toBeInstanceOf(FormData);
-  expect(mockRawQuery.mock.calls[1][0].body).toEqual({ resumeUpload: true });
+  expect(mockRawQuery.mock.calls[1][0].body).toEqual({ resumeUpload: true, asyncUpload: true });
 });
 
 test('an incomplete bulk receipt continues the multipart upload with the original key', async () => {
@@ -40,7 +45,7 @@ test('an incomplete bulk receipt continues the multipart upload with the origina
   await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files: [photo] }));
   mockRawQuery.mockResolvedValueOnce({ error: { status: 409, data: { code: 'UPLOAD_INCOMPLETE' } } }).mockResolvedValue({ data: { success: true } });
   await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files: [photo] })).unwrap();
-  expect(mockRawQuery.mock.calls[1][0].body).toEqual({ resumeUpload: true });
+  expect(mockRawQuery.mock.calls[1][0].body).toEqual({ resumeUpload: true, asyncUpload: true });
   expect(mockRawQuery.mock.calls[2][0].body).toBeInstanceOf(FormData);
   expect(mockRawQuery.mock.calls[0][0].headers['Idempotency-Key']).toBe(mockRawQuery.mock.calls[2][0].headers['Idempotency-Key']);
 });
@@ -55,7 +60,7 @@ test('grouped draft upload serializes assignments and cover changes use a differ
   expect(JSON.parse(firstRequest.body.get('photoGroups'))).toEqual(photoGroups);
   expect(firstRequest.body.getAll('images').map((file) => file.name)).toEqual(['front.webp', 'back.webp']);
   await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files, groupMode: 'grouped', photoGroups })).unwrap();
-  expect(mockRawQuery.mock.calls[1][0].body).toEqual({ resumeUpload: true });
+  expect(mockRawQuery.mock.calls[1][0].body).toEqual({ resumeUpload: true, asyncUpload: true });
   expect(mockRawQuery.mock.calls[1][0].headers['Idempotency-Key']).toBe(firstRequest.headers['Idempotency-Key']);
   await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files, groupMode: 'grouped', photoGroups: [{ ...photoGroups[0], coverIndex: 0 }] })).unwrap();
   expect(mockRawQuery.mock.calls[2][0].headers['Idempotency-Key']).not.toBe(firstRequest.headers['Idempotency-Key']);

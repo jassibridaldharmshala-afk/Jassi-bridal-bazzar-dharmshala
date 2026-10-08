@@ -72,7 +72,7 @@ test('product rental option discloses rate/deposit and preserves UTC in the book
   fireEvent.click(screen.getByRole('button', { name: 'Use these dates' }));
   const params = new URLSearchParams(navigate.mock.calls[0][0].split('?')[1]);
   expect(params.get('listing')).toBe('offer1'); expect(params.get('pickup')).toBe(available.pickupAt); expect(params.get('return')).toBe(available.returnDueAt);
-  expect(screen.getByText('Refundable deposit')).toBeInTheDocument();
+  expect(screen.getByText(/Refundable security/)).toBeInTheDocument();
 });
 test('tracker shows current progress, refund state and expired holds without confirmed milestones', () => {
   const booking = { status: 'OUT', policy, schedule: { pickupAt: available.pickupAt, returnDueAt: '2000-01-01T10:00:00Z' }, financial: { balancePaise: 5000 }, events: [] };
@@ -84,4 +84,15 @@ test('tracker shows current progress, refund state and expired holds without con
   view.rerender(<RentalBookingTracker booking={{ ...booking, status: 'HELD', expiresAt: '2000-01-01T10:00:00Z' }} />);
   expect(screen.getByRole('heading', { name: 'Hold expired' })).toBeInTheDocument();
   expect(screen.queryByText('Confirmed')).not.toBeInTheDocument();
+});
+
+test('customer calendar checks the full custody period without presenting it as billed use days', async () => {
+  api.get.mockResolvedValue({ rows: [{ ...available, billableDays: 2 }] });
+  render(<RentalAvailabilityCalendar listing={listing} policy={policy} availabilityOnly />);
+  expect(screen.getByLabelText('Pickup-to-return period')).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('button', { name: `${month}-10: Available` }));
+  expect(screen.getByText(/Select your actual use days at checkout/)).toBeInTheDocument();
+  expect(screen.queryByText(/Charged duration/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Rent & services/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Due to confirm/)).not.toBeInTheDocument();
 });

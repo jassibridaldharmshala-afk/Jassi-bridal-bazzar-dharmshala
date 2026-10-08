@@ -1,0 +1,12 @@
+{
+  "fixture": "deterministic synthetic patterned PNG",
+  "width": 2048,
+  "height": 640,
+  "sourceBytes": 1100798,
+  "beforeMs": 2086,
+  "afterMs": 1139,
+  "reductionPercent": 45.4,
+  "includesStorageOrNetwork": false,
+  "actualBridalPhotos": false,
+  "masterResized": false
+}

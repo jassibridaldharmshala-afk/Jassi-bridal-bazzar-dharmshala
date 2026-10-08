@@ -1,0 +1,120 @@
+{
+  "completedUtc": "2026-10-08 18:07:14 UTC",
+  "scope": "Customer rental shopping simplified around the existing sale storefront and checkout design.",
+  "customerFlow": [
+    "Buy / Rental tabs",
+    "Rental-only searchable and filtered collection",
+    "Shared product detail, gallery and wishlist",
+    "Book this rental / Add for later",
+    "Separate scoped rental bag",
+    "Dates and contact / Review and payment",
+    "Confirmed or pending booking panel",
+    "My rentals, invoice and receipts, cancellation request"
+  ],
+  "pricing": {
+    "billingBasis": "Selected actual use dates",
+    "transitDays": "Pickup and return days outside selected use dates add no rental charge.",
+    "inventory": "The full pickup-to-return period plus preparation and cleaning remains reserved.",
+    "paymentPlans": [
+      "ADVANCE",
+      "FULL",
+      "PICKUP"
+    ],
+    "paymentPlanControls": "Admin can enable allowed plans; amounts and policy are re-quoted and accepted server-side.",
+    "security": "Effective security collection timing follows the plan. Security remains distinct from rent.",
+    "cancellation": "Customer requests cancellation; authorized admin records the decision and may retain zero, some or all paid rent. Security and approved deductions remain separate."
+  },
+  "preservedSafeguards": [
+    "Server quote fingerprint and policy revision",
+    "Real physical-piece availability and transaction fences",
+    "Tenant and verified-customer ownership",
+    "Idempotent reservations and unknown-outcome recovery",
+    "Verified gateway amounts and pending payment recovery",
+    "Full agreed payment required before handover",
+    "Private condition proof and acknowledgements",
+    "Sale and rental stock, bags and checkout remain separate"
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 15,
+      "tests": 109,
+      "passed": 109,
+      "failed": 0,
+      "log": ".tmp/rental-shopping-frontend.log",
+      "includes": [
+        "Sale checkout selection and recovery",
+        "Guest quote and scoped sign-in",
+        "Rental bag account/store isolation",
+        "Full-payment gateway failure recovery",
+        "Identical-request reservation recovery",
+        "Saved delivery address whitelist",
+        "Product detail, quickview and wishlist",
+        "Admin payment settings and refund controls"
+      ]
+    },
+    "backend": {
+      "tests": 128,
+      "passed": 128,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "log": ".tmp/rental-shopping-backend.log",
+      "database": "Isolated local replica set",
+      "providers": "Test fixtures and mocks; production licence enforcement retained"
+    },
+    "strictCIProductionBuild": {
+      "passed": true,
+      "log": ".tmp/rental-shopping-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        1440
+      ],
+      "productionBuild": true,
+      "passed": true,
+      "pageErrors": 0,
+      "horizontalOverflow": false,
+      "flow": "Collection → product → rental bag → checkout → pickup booking → invoice → cancellation request",
+      "controls": "Mobile product rental bag shortcut and Help/payment overlap checks passed.",
+      "report": "review-notes/rental-shopping-visual-qa.json",
+      "api": "Isolated local fixtures",
+      "images": "Local sample fixtures, not real merchant product photography"
+    },
+    "countsAreScopedAndNotAddedToPriorRuns": true
+  },
+  "deployment": {
+    "deployed": false,
+    "frontendAndBackendRedeployRequired": true,
+    "canonicalBackend": "backend/",
+    "livePaymentsSMSLicenceAndPhysicalStoreAcceptance": "Not exercised by this local implementation verification."
+  },
+  "screenshots": [
+    "review-notes/rental-shopping-collection-390.png",
+    "review-notes/rental-shopping-product-390.png",
+    "review-notes/rental-shopping-checkout-payment-390.png",
+    "review-notes/rental-shopping-booked-390.png",
+    "review-notes/rental-shopping-checkout-payment-1440.png",
+    "review-notes/rental-shopping-booked-1440.png"
+  ],
+  "followup": {
+    "completedUtc": "2026-10-08 18:28:34 UTC",
+    "details": "review-notes/rental-shopping-followup.json",
+    "fixedEdgeCases": [
+      "STALE_OFFER",
+      "REQUEST_STAGE",
+      "CALENDAR_PRICE",
+      "ADMIN_USE_DATES"
+    ],
+    "frontendSuites": 16,
+    "frontendTests": 120,
+    "backendFollowupTests": 8,
+    "strictCIProductionBuild": true,
+    "browserWidths": [
+      390,
+      1440
+    ],
+    "allPassed": true,
+    "overlappingCountsAreNotAdded": true
+  }
+}

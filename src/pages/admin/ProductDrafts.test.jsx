@@ -194,7 +194,7 @@ test('creates three drafts from product photo groups with 4, 6 and 2 views', asy
   const secondPhoto = screen.getByLabelText('Select photo 2: photo-1.webp').closest('figure');
   fireEvent.click(within(secondPhoto).getByRole('button', { name: 'Make cover' }));
   fireEvent.click(screen.getByRole('button', { name: 'Create 3 drafts' }));
-  await waitFor(() => expect(mockUpload).toHaveBeenCalledWith({ files: photos, groupMode: 'grouped', apiPrefix: '/admin', photoGroups: [
+  await waitFor(() => expect(mockUpload).toHaveBeenCalledWith({ files: photos, groupMode: 'grouped', apiPrefix: '/admin', onProgress: expect.any(Function), photoGroups: [
     { name: 'Red lehenga', photoIndexes: [0, 1, 2, 3], coverIndex: 1 },
     { name: '', photoIndexes: [4, 5, 6, 7, 8, 9], coverIndex: 4 },
     { name: '', photoIndexes: [10, 11], coverIndex: 10 },
@@ -218,9 +218,9 @@ test('removing a photo preserves other assignments and a failed grouped upload c
   fireEvent.click(screen.getByRole('button', { name: 'Remove photo 1: view-0.webp' }));
   fireEvent.change(screen.getByLabelText('Product group for photo 2: view-2.webp'), { target: { value: screen.getByLabelText('Product group for photo 1: view-1.webp').value } });
   fireEvent.click(screen.getByRole('button', { name: 'Create one draft' }));
-  await screen.findByText('Network interrupted');
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Network interrupted'));
   expect(screen.getByRole('region', { name: 'Product group 1' })).toHaveTextContent('2 photos');
-  fireEvent.click(screen.getByRole('button', { name: 'Create one draft' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Retry / check status' }));
   await waitFor(() => expect(mockUpload).toHaveBeenCalledTimes(2));
   expect(mockUpload.mock.calls[0][0]).toEqual(mockUpload.mock.calls[1][0]);
   expect(mockUpload.mock.calls[1][0]).toMatchObject({ apiPrefix: '/seller', files: [photos[1], photos[2]], photoGroups: [{ photoIndexes: [0, 1], coverIndex: 0 }] });

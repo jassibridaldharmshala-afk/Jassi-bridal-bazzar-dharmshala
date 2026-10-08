@@ -115,10 +115,16 @@ Use the Node 20 executable selected by your environment:
 
 - Frontend: npm run test:client -- --runInBand
 - Build: CI=true npm run build (set CI through PowerShell on Windows)
-- Backend: npm test from backend-deploy/ or the mirrored backend/
+- Backend: npm test from backend/
 - Migration: npm run migrate:evidence -- --limit=100 starts read-only. Review backup/target ownership before using --apply or --delete-public.
 
 Authoritative current frontend/build logs are .tmp/rental-findings-frontend-complete.log and .tmp/rental-findings-production-build.log. The final affected frontend follow-up is .tmp/rental-date-draft-tests.log. Backend source was unchanged in the 119-point follow-up; its complete/final affected logs remain .tmp/pdf-audit-backend-verified.log and .tmp/pdf-audit-migration-final.log. Earlier failing/overlapping runs are diagnostic history, not added to the final counts.
 
 The optional product-link command's first localhost run had no backend on port 5000; it is not counted as passing live catalogue coverage. Its corrected pagination script was syntax checked.
 
+
+## Backend folder consolidation
+
+On 8 October 2026, at the user's request, the duplicate `backend-deploy/` folder was removed. `backend/` is now the only maintained backend source. Source files matched after line-ending normalization except the CORS test; its checks were combined in `backend/tests/cors.unit.test.js`. All 174 upload files unique to the removed folder were preserved under `backend/uploads/`. The existing backend environment and Git repository were retained.
+
+References to `backend-deploy/` in earlier audit evidence describe the historical test location; the corresponding source now lives under `backend/`. No hosted Render service was deleted or reconfigured. See [backend-consolidation.md](backend-consolidation.md).

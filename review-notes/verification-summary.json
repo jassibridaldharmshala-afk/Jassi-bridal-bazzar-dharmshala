@@ -258,5 +258,132 @@
     "maxWarnings": 0,
     "passed": true,
     "log": ".tmp/rental-findings-lint-final.log"
+  },
+  "backendLayout": {
+    "canonical": "backend/",
+    "removedDuplicate": "backend-deploy/",
+    "removedDuplicateExists": false,
+    "productionCodeEquivalent": true,
+    "comparison": "SHA256 comparison with text line-ending normalization; one CORS test difference merged",
+    "uniqueUploadsPreserved": 174,
+    "existingBackendEnvPreserved": true,
+    "existingBackendGitPreserved": true,
+    "affectedChecks": {
+      "entryPointSyntax": "passed",
+      "corsTestsPassed": 2,
+      "log": ".tmp/backend-consolidation-tests.log"
+    },
+    "deployedOrRenderServiceChanged": false
+  },
+  "draftUploadFix": {
+    "asOf": "2026-10-08 15:59:17 UTC",
+    "sourceOnly": true,
+    "deployed": false,
+    "report": "review-notes/draft-upload-fix.json",
+    "verification": {
+      "frontend": {
+        "suites": 4,
+        "tests": 67,
+        "passed": 67,
+        "log": ".tmp/draft-upload-frontend-tests.log"
+      },
+      "finalFrontendFollowup": {
+        "suites": 2,
+        "tests": 33,
+        "passed": 33,
+        "overlapsPreviousRun": true,
+        "log": ".tmp/draft-upload-final-identity-tests.log"
+      },
+      "backend": {
+        "tests": 34,
+        "passed": 34,
+        "log": ".tmp/draft-upload-backend-tests.log"
+      },
+      "finalBackendFollowup": {
+        "tests": 17,
+        "passed": 17,
+        "overlapsPreviousRun": true,
+        "additionalRegression": "Concurrent completion after claim failure",
+        "log": ".tmp/draft-upload-final-recovery-tests.log"
+      },
+      "strictCIProductionBuild": {
+        "passed": true,
+        "log": ".tmp/draft-upload-production-build.log"
+      },
+      "browser": {
+        "widths": [
+          390,
+          1440
+        ],
+        "photosPerCase": 16,
+        "progressVisible": true,
+        "stoppedWaitingRetainsSelection": true,
+        "recoveryUsesSameKey": true,
+        "multipartRequestsPerCase": 1,
+        "recoveredDraftsPerCase": 16,
+        "errors": 0,
+        "overflow": false,
+        "screenshotsInspected": true,
+        "providers": "isolated fixtures",
+        "report": "review-notes/draft-upload-visual-qa.json"
+      },
+      "losslessPixels": "Existing PNG/JPEG/WebP, alpha, metadata, private/public source limits, responsive resized-pixel equality and provider parity regressions passed.",
+      "processingBenchmark": {
+        "beforeMs": 2086,
+        "afterMs": 1139,
+        "reductionPercent": 45.4,
+        "synthetic": true,
+        "includesStorageOrNetwork": false,
+        "report": "review-notes/draft-upload-benchmark.json"
+      }
+    },
+    "countsNotAddedToEarlierFullRuns": true
+  },
+  "rentalStudioRedesign": {
+    "completedUtc": "2026-10-08 16:52:44 UTC",
+    "details": "review-notes/rental-studio-redesign.json",
+    "frontendSuites": 7,
+    "frontendTests": 44,
+    "passed": 44,
+    "countsAreScopedAndNotAddedToPriorRuns": true,
+    "strictCIProductionBuild": true,
+    "uiWidths": [
+      390,
+      820,
+      1440
+    ],
+    "browserApi": "isolated fixtures",
+    "deployed": false
+  },
+  "rentalShoppingRedesign": {
+    "completedUtc": "2026-10-08 18:07:14 UTC",
+    "details": "review-notes/rental-shopping-redesign.json",
+    "frontendSuites": 15,
+    "frontendTests": 109,
+    "backendTests": 128,
+    "allScopedTestsPassed": true,
+    "countsAreScopedAndNotAddedToPriorRuns": true,
+    "strictCIProductionBuild": true,
+    "uiWidths": [
+      390,
+      1440
+    ],
+    "browserApi": "isolated fixtures",
+    "deployed": false,
+    "followup": {
+      "completedUtc": "2026-10-08 18:28:34 UTC",
+      "details": "review-notes/rental-shopping-followup.json",
+      "frontendSuites": 16,
+      "frontendTests": 120,
+      "backendFollowupTests": 8,
+      "allPassed": true,
+      "strictCIProductionBuild": true,
+      "uiWidths": [
+        390,
+        1440
+      ],
+      "countsAreScopedAndNotAddedToPriorRuns": true,
+      "deployed": false
+    }
   }
 }

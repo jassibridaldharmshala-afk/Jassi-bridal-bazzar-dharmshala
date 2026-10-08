@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "photos": 16,
+      "realProgressVisible": true,
+      "stopWaitingKeepsPhotos": true,
+      "resumedSameUploadKey": true,
+      "multipartRequests": 1,
+      "receiptResumeRequests": 1,
+      "statusReads": 1,
+      "recoveredDrafts": 16,
+      "pageErrors": [],
+      "overflow": false,
+      "providers": "mocked"
+    },
+    {
+      "width": 1440,
+      "photos": 16,
+      "realProgressVisible": true,
+      "stopWaitingKeepsPhotos": true,
+      "resumedSameUploadKey": true,
+      "multipartRequests": 1,
+      "receiptResumeRequests": 1,
+      "statusReads": 1,
+      "recoveredDrafts": 16,
+      "pageErrors": [],
+      "overflow": false,
+      "providers": "mocked"
+    }
+  ],
+  "realProvidersCalled": false
+}

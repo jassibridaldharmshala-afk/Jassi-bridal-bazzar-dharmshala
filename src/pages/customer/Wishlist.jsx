@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStorefront } from '../../context/StorefrontContext';
 import api from '../../services/api';
 import { getPrimaryImageUrl, normalizeProduct } from '../../services/normalize';
+import { rentalShoppingRoute } from '../../utils/rentalShopping';
 import { rentalProductHref, productHref } from '../../utils/routing';
 import { activeVariants, findProductVariant } from '../../utils/variants';
 import { getSizeChartColumns } from '../../utils/productSizing';
@@ -16,28 +17,29 @@ import '../../styles/MobileShoppingTheme.css';
 const cardPrice = product => product.commerceMode === 'RENTAL_ONLY' ? (product.rentalPreview?.dailyRatePaise ?? Number.MAX_SAFE_INTEGER) / 100 : wishlistPrice(product).price;
 const money = value => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
-export default function Wishlist({ navigate }) {
+export default function Wishlist({ navigate, route = '/wishlist' }) {
   const wishlist = useWishlist(); const cart = useCart(); const { user } = useAuth(); const { storeSlug } = useStorefront();
+  const rentalShopping = rentalShoppingRoute(route);
   const [search, setSearch] = useState(''); const [filter, setFilter] = useState('all'); const [sort, setSort] = useState('recent');
   const [category, setCategory] = useState(''); const [limit, setLimit] = useState(40);
   const [selected, setSelected] = useState(null); const [notice, setNotice] = useState(null); const [undoBusy, setUndoBusy] = useState(false);
   const [movedIds, setMovedIds] = useState([]);
-  const shop = storeSlug ? `/store/${storeSlug}/products` : '/products';
+  const shop = storeSlug ? `/store/${storeSlug}/${rentalShopping ? 'rental-book' : 'products'}` : rentalShopping ? '/rental-book' : '/products';
   const categories = useMemo(() => [...new Set(wishlist.items.filter(product => !isUnavailable(product)).map(product => typeof product.category === 'string' ? product.category : product.category?.name).filter(Boolean))].sort(), [wishlist.items]);
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     const rows = [...wishlist.items].reverse().filter(product => {
       const categoryName = typeof product.category === 'string' ? product.category : product.category?.name;
-      return (!query || [product.name, product.brand, categoryName, ...(product.colors || [])].join(' ').toLowerCase().includes(query))
+      return (!rentalShopping || ['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode)) && (!query || [product.name, product.brand, categoryName, ...(product.colors || [])].join(' ').toLowerCase().includes(query))
         && (!category || categoryName === category)
         && (filter !== 'stock' || (product.commerceMode !== 'RENTAL_ONLY' && wishlistStock(product) > 0))
         && (filter !== 'sale' || (product.commerceMode !== 'RENTAL_ONLY' && !isUnavailable(product) && wishlistPrice(product).discount > 0));
     });
-    if (sort === 'low') rows.sort((a, b) => cardPrice(a) - cardPrice(b));
-    if (sort === 'high') rows.sort((a, b) => cardPrice(b) - cardPrice(a));
+    if (sort === 'low') rows.sort((a, b) => rentalShopping ? Number(a.rentalPreview?.dailyRatePaise || 0) - Number(b.rentalPreview?.dailyRatePaise || 0) : cardPrice(a) - cardPrice(b));
+    if (sort === 'high') rows.sort((a, b) => rentalShopping ? Number(b.rentalPreview?.dailyRatePaise || 0) - Number(a.rentalPreview?.dailyRatePaise || 0) : cardPrice(b) - cardPrice(a));
     if (sort === 'discount') rows.sort((a, b) => wishlistPrice(b).discount - wishlistPrice(a).discount);
     return rows;
-  }, [wishlist.items, search, category, filter, sort]);
+  }, [wishlist.items, search, category, filter, sort, rentalShopping]);
   useEffect(() => { setLimit(40); }, [search, filter, sort, category]);
   const remove = async product => {
     const result = await wishlist.removeFromWishlist(product);
@@ -72,11 +74,11 @@ export default function Wishlist({ navigate }) {
           <label className="sc-wishlist__sort"><span>Sort by</span><select value={sort} onChange={event => setSort(event.target.value)} aria-label="Sort wishlist"><option value="recent">Recently saved</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="discount">Biggest discount</option></select></label>
           <button className="sc-wishlist__refresh sc-wishlist__icon" onClick={wishlist.refresh} disabled={wishlist.loading} aria-label="Refresh prices and availability"><RefreshCw size={18} className={wishlist.loading ? 'sc-wishlist__spin' : ''} /></button>
         </div>
-        <div className="sc-wishlist__filters"><div aria-label="Filter wishlist">{[['all', 'All items'], ['stock', 'In stock'], ['sale', 'On sale']].map(([value, label]) => <button key={value} aria-pressed={filter === value} className={filter === value ? 'is-active' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div>{categories.length > 1 && <select aria-label="Filter by category" value={category} onChange={event => setCategory(event.target.value)}><option value="">All categories</option>{categories.map(name => <option key={name}>{name}</option>)}</select>}</div>
+        <div className="sc-wishlist__filters"><div aria-label="Filter wishlist">{(rentalShopping ? [['all', 'Rental items']] : [['all', 'All items'], ['stock', 'In stock'], ['sale', 'On sale']]).map(([value, label]) => <button key={value} aria-pressed={filter === value} className={filter === value ? 'is-active' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div>{categories.length > 1 && <select aria-label="Filter by category" value={category} onChange={event => setCategory(event.target.value)}><option value="">All categories</option>{categories.map(name => <option key={name}>{name}</option>)}</select>}</div>
       </div>}
       {wishlist.loading && !count ? <div className="sc-wishlist__loading" role="status" aria-label="Loading wishlist"><div className="sc-wishlist__grid">{[1, 2, 3, 4].map(value => <div className="sc-wishlist__skeleton" key={value}><div /><span /><span /></div>)}</div><p>Loading your wishlist…</p></div> : !count ? <div className="sc-wishlist__empty"><div className="sc-wishlist__empty-icon"><Heart size={30} strokeWidth={1.5} /></div><h2>Your wishlist is empty</h2><p>Tap the heart on a product to save it here.</p><button className="sc-wishlist__primary" onClick={() => navigate(shop)}>Explore the collection <ArrowRight size={18} /></button></div> : <>
         <p className="sc-wishlist__results">{filtered.length} saved {filtered.length === 1 ? 'style' : 'styles'}{wishlist.loading ? ' · Updating availability…' : ''}</p>
-        {!filtered.length ? <div className="sc-wishlist__empty sc-wishlist__empty--filtered"><Search size={30} /><h2>No matching styles</h2><p>Try a different search or clear your filters.</p><button className="sc-wishlist__outline" onClick={() => { setSearch(''); setCategory(''); setFilter('all'); }}>Clear filters</button></div> : <div className="sc-wishlist__grid">{filtered.slice(0, limit).map(product => <WishlistCard key={wishlistId(product)} product={product} pending={wishlist.pendingIds?.includes(wishlistId(product))} moved={movedIds.includes(wishlistId(product))} onRemove={() => remove(product)} onMove={() => product.commerceMode === 'RENTAL_ONLY' ? navigate(rentalProductHref(product, storeSlug)) : setSelected(product)} onBag={() => navigate('/cart')} onOpen={() => navigate(productHref(product, storeSlug))} />)}</div>}
+        {!filtered.length ? <div className="sc-wishlist__empty sc-wishlist__empty--filtered"><Search size={30} /><h2>No matching styles</h2><p>Try a different search or clear your filters.</p><button className="sc-wishlist__outline" onClick={() => { setSearch(''); setCategory(''); setFilter('all'); }}>Clear filters</button></div> : <div className="sc-wishlist__grid">{filtered.slice(0, limit).map(product => <WishlistCard key={wishlistId(product)} product={product} rentalShopping={rentalShopping} pending={wishlist.pendingIds?.includes(wishlistId(product))} moved={movedIds.includes(wishlistId(product))} onRemove={() => remove(product)} onMove={() => (rentalShopping || product.commerceMode === 'RENTAL_ONLY') ? navigate(rentalProductHref(product, storeSlug)) : setSelected(product)} onBag={() => navigate('/cart')} onOpen={() => navigate(rentalShopping || product.commerceMode === 'RENTAL_ONLY' ? rentalProductHref(product, storeSlug) : productHref(product, storeSlug))} />)}</div>}
         {filtered.length > limit && <button className="sc-wishlist__more sc-wishlist__outline" onClick={() => setLimit(value => value + 40)}>Show more styles</button>}
         <footer className="sc-wishlist__footer"><button onClick={() => navigate(shop)}>Continue shopping <ArrowRight size={16} /></button></footer>
       </>}
@@ -89,18 +91,18 @@ function ProductImage({ product }) {
   const [failed, setFailed] = useState(false); const src = getPrimaryImageUrl(product.images || []);
   return src && !failed ? <img src={src} alt={product.name} loading="lazy" onError={() => setFailed(true)} /> : <span className="sc-wishlist__image-empty"><ImageOff size={30} /><span>Image unavailable</span></span>;
 }
-function Price({ product, variant, saleSelection = false }) {
+function Price({ product, variant, saleSelection = false, rentalShopping = false }) {
   const { price, original, discount } = wishlistPrice(product, variant);
-  const rental = product.commerceMode === 'RENTAL_ONLY', mixed = product.commerceMode === 'SALE_AND_RENTAL';
+  const rental = rentalShopping || product.commerceMode === 'RENTAL_ONLY', mixed = product.commerceMode === 'SALE_AND_RENTAL';
   if (rental) return <div className="sc-wishlist__price"><strong>{product.rentalPreview?.dailyRatePaise ? `Rent from ${money(product.rentalPreview.dailyRatePaise / 100)} / day` : 'Rental pricing & dates'}</strong></div>;
   return <><div className="sc-wishlist__price"><strong>{mixed ? 'Sale · ' : ''}{money(price)}</strong>{original > price && <del>{money(original)}</del>}{discount > 0 && <span>{discount}% off</span>}</div>{mixed && !saleSelection && <p className="sc-wishlist__rental-price">{product.rentalPreview?.dailyRatePaise ? `Rent from ${money(product.rentalPreview.dailyRatePaise / 100)} / day` : 'Rental pricing & dates'}</p>}</>;
 }
-function WishlistCard({ product, pending, moved, onRemove, onMove, onBag, onOpen }) {
+function WishlistCard({ product, rentalShopping = false, pending, moved, onRemove, onMove, onBag, onOpen }) {
   const unavailable = isUnavailable(product); const stock = wishlistStock(product); const options = wishlistOptions(product);
-  const rental = product.commerceMode === 'RENTAL_ONLY', mixed = product.commerceMode === 'SALE_AND_RENTAL';
+  const rental = rentalShopping || product.commerceMode === 'RENTAL_ONLY', mixed = !rental && product.commerceMode === 'SALE_AND_RENTAL';
   return <article className={`sc-wish-card${unavailable ? ' is-unavailable' : ''}`} aria-label={product.name}>
     <div className="sc-wish-card__visual"><button className="sc-wish-card__image" onClick={onOpen} disabled={unavailable} aria-label={`View ${product.name}`}><ProductImage product={product} /></button><button className="sc-wish-card__remove" onClick={onRemove} disabled={pending} aria-label={`Remove ${product.name} from wishlist`}>{pending ? <LoaderCircle size={17} className="sc-wishlist__spin" /> : <X size={18} />}</button>{!unavailable && !rental && stock === 0 && <span className="sc-wish-card__badge is-sold">{mixed ? 'Sale out of stock' : 'Out of stock'}</span>}{!unavailable && !rental && stock > 0 && stock <= 5 && <span className="sc-wish-card__badge">Only {stock} left</span>}</div>
-    <div className="sc-wish-card__details"><p className="sc-wish-card__brand">{unavailable ? 'NO LONGER AVAILABLE' : product.brand || 'Jassi General Store'}</p><button onClick={onOpen} disabled={unavailable} className="sc-wish-card__name" title={product.name}>{product.name}</button>{!unavailable && <Price product={product} />}<p className="sc-wish-card__options">{unavailable ? 'You can remove this saved item.' : [product.rentalPreview?.fitting?.adjustable ? 'Adjustable fitting' : options.sizes.length === 1 ? options.sizes[0] || 'One size' : options.sizes.length ? `${options.sizes.length} sizes` : rental ? 'Fitting details' : 'View size details', options.colors.filter(Boolean).length > 1 ? `${options.colors.length} colours` : options.colors[0]].filter(Boolean).join(' · ')}</p></div>
+    <div className="sc-wish-card__details"><p className="sc-wish-card__brand">{unavailable ? 'NO LONGER AVAILABLE' : product.brand || 'Jassi General Store'}</p><button onClick={onOpen} disabled={unavailable} className="sc-wish-card__name" title={product.name}>{product.name}</button>{!unavailable && <Price product={product} rentalShopping={rentalShopping} />}<p className="sc-wish-card__options">{unavailable ? 'You can remove this saved item.' : [product.rentalPreview?.fitting?.adjustable ? 'Adjustable fitting' : options.sizes.length === 1 ? options.sizes[0] || 'One size' : options.sizes.length ? `${options.sizes.length} sizes` : rental ? 'Fitting details' : 'View size details', options.colors.filter(Boolean).length > 1 ? `${options.colors.length} colours` : options.colors[0]].filter(Boolean).join(' · ')}</p></div>
     <button className="sc-wish-card__move" onClick={rental ? onOpen : moved ? onBag : onMove} disabled={pending || unavailable || (!rental && stock === 0)}>{rental ? 'Check rental dates' : moved ? 'View in bag' : unavailable ? 'Unavailable' : stock === 0 ? 'Out of stock' : 'Move to bag'}{!unavailable && !rental && stock !== 0 && <ShoppingBag size={16} />}</button>
     {mixed && !unavailable && <button type="button" className="sc-wish-card__rental" disabled={pending} onClick={onOpen}>Check rental dates →</button>}
   </article>;

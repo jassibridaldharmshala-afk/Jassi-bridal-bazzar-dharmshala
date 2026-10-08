@@ -10,7 +10,7 @@ export function rentalPricingError(value) {
   if (value.advanceMode === 'FIXED' && (!Number.isSafeInteger(value.advanceAmountPaise) || value.advanceAmountPaise < 1 || value.advanceAmountPaise > 100000000)) return 'Enter a fixed booking advance greater than zero.';
   return '';
 }
-export default function ProductRentalPricing({ value, offers = [], onChange, error, apiPrefix }) {
+export default function ProductRentalPricing({ value, offers = [], onChange, error, apiPrefix, compact = false }) {
   const pricing = value || emptyRentalPricing;
   const patch = (key, next) => onChange({ ...pricing, [key]: next });
   const money = key => pricing[key] === '' || pricing[key] === undefined ? '' : pricing[key] / 100;
@@ -26,8 +26,8 @@ export default function ProductRentalPricing({ value, offers = [], onChange, err
       {pricing.advanceMode === 'PERCENT' && <label className="admin-field"><span>Rental advance (%)</span><input className="admin-field__control" type="number" min="1" max="100" step="1" value={pricing.advancePercent ?? ''} onChange={event => patch('advancePercent', Number(event.target.value))} /></label>}
       {pricing.advanceMode === 'FIXED' && <label className="admin-field"><span>Rental advance per set (₹)</span><input className="admin-field__control" type="number" min="0.01" step="0.01" value={money('advanceAmountPaise')} onChange={event => setMoney('advanceAmountPaise', event.target.value)} /><small>Capped at the rental amount; deposit follows shop policy.</small></label>}
     </div>
-    <RentalFittingFields value={pricing.fitting} onChange={value => patch('fitting', value)} />
+    {compact ? <details className="rental-disclosure"><summary>Fitting & included items · {pricing.fitting?.adjustable ? 'Adjustable' : 'Review fitting'}</summary><RentalFittingFields value={pricing.fitting} onChange={value => patch('fitting', value)} /></details> : <RentalFittingFields value={pricing.fitting} onChange={value => patch('fitting', value)} />}
     {error && <p role="alert" data-error-field="rentalPricing" tabIndex="-1" className="admin-field__error">{error}</p>}
-    <p className="admin-form-hint">{!pricing.listingId ? 'Saving creates an inactive rental offer. Add the actual pieces and activate it in Rental Studio before customers can book.' : selected?.active ? 'This offer is live. Saving updates its future quotes; existing bookings keep their accepted prices.' : 'This offer is inactive. Add physical pieces and activate it in Rental Studio.'} <a href={`${apiPrefix}/rentals?tab=setup${pricing.listingId ? `&listing=${encodeURIComponent(pricing.listingId)}` : ''}`}>Complete rental setup</a></p>
+    <p className="admin-form-hint">{!pricing.listingId ? 'Saving creates an inactive rental offer. Add the actual pieces and activate it in Rental Studio before customers can book.' : selected?.active ? 'This offer is live. Saving updates its future quotes; existing bookings keep their accepted prices.' : 'This offer is inactive. Add physical pieces and activate it in Rental Studio.'} {!compact && <a href={`${apiPrefix}/rentals?tab=setup${pricing.listingId ? `&listing=${encodeURIComponent(pricing.listingId)}` : ''}`}>Complete rental setup</a>}</p>
   </section>;
 }

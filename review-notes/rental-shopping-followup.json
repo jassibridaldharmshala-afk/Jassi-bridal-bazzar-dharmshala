@@ -1,0 +1,74 @@
+{
+  "completedUtc": "2026-10-08 18:28:34 UTC",
+  "request": "Recheck whether any part of the simplified rental shopping flow was missed.",
+  "fixed": [
+    {
+      "id": "STALE_OFFER",
+      "finding": "A removed linked offer could silently fall back to another rental option.",
+      "change": "Show an unavailable-link correction and require explicit selection of an available option before booking.",
+      "regression": "RentalOffer.test.jsx: removed linked offer cannot silently book another size"
+    },
+    {
+      "id": "REQUEST_STAGE",
+      "finding": "Return collection and extension were visible before pickup, although the backend only accepts them for an OUT rental.",
+      "change": "Offer reschedule/cancel before pickup, collection/extension while OUT, and dispute where supported. Hide repeated pending cancellation and obsolete request forms.",
+      "regression": "MyRentals.test.jsx: request choices follow the actual booking stage"
+    },
+    {
+      "id": "CALENDAR_PRICE",
+      "finding": "The optional customer calendar displayed a custody-duration quote as charged rental days.",
+      "change": "Use the customer calendar for complete custody-period availability. Show final rent only after actual use days are selected at checkout. Staff calendar pricing remains available.",
+      "regression": "RentalPricingCalendar.test.jsx: customer calendar omits custody-based charged duration and prices"
+    },
+    {
+      "id": "ADMIN_USE_DATES",
+      "finding": "Admin rescheduling did not expose the newly introduced actual use dates.",
+      "change": "Show and submit explicitly agreed use dates for USE_DAYS bookings. Server still checks availability and requires the new total to be explicitly accepted.",
+      "regression": "Rentals.test.jsx and rentalShopping.integration.test.js: revised use dates, free transit and fresh price acceptance"
+    }
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 16,
+      "tests": 120,
+      "passed": 120,
+      "failed": 0,
+      "log": ".tmp/rental-shopping-followup-frontend.log"
+    },
+    "backendFollowup": {
+      "suite": "rentalShopping.integration.test.js",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "log": ".tmp/rental-shopping-followup-backend.log"
+    },
+    "earlierBackendAggregate": {
+      "tests": 128,
+      "passed": 128,
+      "scope": "Previous full grouped rental checks; backend production code unchanged during this follow-up.",
+      "log": ".tmp/rental-shopping-backend.log"
+    },
+    "strictCIProductionBuild": {
+      "passed": true,
+      "log": ".tmp/rental-shopping-followup-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        1440
+      ],
+      "passed": true,
+      "errors": 0,
+      "horizontalOverflow": false,
+      "flow": "Rental collection, product, availability calendar, bag, checkout, pickup booking, invoice use days and cancellation request.",
+      "report": "review-notes/rental-shopping-visual-qa.json",
+      "providers": "Isolated local fixtures"
+    },
+    "overlappingCountsAreNotAdded": true
+  },
+  "remaining": {
+    "deploy": "Frontend and canonical backend/ need deployment.",
+    "liveAcceptance": "Real OTP, managed licence, payment capture/webhook/refund, store inventory and physical pickup/return remain deployment acceptance checks.",
+    "claim": "This review covers identified requirements and tested edge cases; it is not a guarantee that no future issue can occur."
+  }
+}

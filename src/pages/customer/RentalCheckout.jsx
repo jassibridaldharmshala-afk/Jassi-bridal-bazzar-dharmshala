@@ -1,28 +1,39 @@
-import RentalFaq from '../../components/rentals/RentalFaq';
-import { trackEvent } from '../../utils/analytics';
-import { useEffect } from 'react';
-import api from '../../services/api';
-import { rentalUrl } from '../../utils/rentals';
-import { readRentalSession, clearRentalSession } from '../../utils/rentalPlan';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useStorefront } from '../../context/StorefrontContext';
+import { useRentalBag } from '../../context/RentalBagContext';
+import { rentalDetailHref } from '../../utils/rentalShopping';
 import { storefrontPath } from '../../utils/routing';
-import RentalCatalogueBrowser from '../../components/rentals/RentalCatalogueBrowser';
-import '../../components/rentals/Rentals.css';
-export default function RentalCheckout({ navigate: navigateRoute, route = '/rental-book' }) {
-  const { user } = useAuth();
-  const { storeSlug } = useStorefront();
-  useEffect(() => { trackEvent('RENTAL_CTA', { storeSlug }); }, [storeSlug]);
-  const navigate = path => navigateRoute(storefrontPath(path, storeSlug));
+import { rentalUrl, localDateTime } from '../../utils/rentals';
+import { saveRentalSession } from '../../utils/rentalPlan';
+import api from '../../services/api';
+import RentalShop from './RentalShop';
+import RentalShoppingCheckout from './RentalShoppingCheckout';
+export default function RentalCheckout({ navigate, route = '/rental-book' }) {
+  const { storeSlug } = useStorefront(); const { user } = useAuth();
+  if (/\/rental-book$/.test(route.split('?')[0])) {
+    const params = new URLSearchParams(route.split('?')[1] || '');
+    if (params.get('product') || params.get('listing')) return <RentalLinkEntry key={route + ':' + storeSlug} params={params} navigate={navigate} />;
+    return <RentalShop route={route} navigate={navigate} />;
+  }
+  return <RentalShoppingCheckout key={storeSlug + ':' + (user?._id || user?.id || 'guest')} navigate={navigate} />;
+}
+function RentalLinkEntry({ params, navigate }) {
+  const { storeSlug } = useStorefront(); const bag = useRentalBag(); const [error, setError] = useState('');
+  const listing = params.get('listing'), product = params.get('product');
   useEffect(() => {
-    const actor = user?._id || user?.id;
-    if (!actor) return undefined;
+    if (!bag.ready) return undefined;
     let alive = true;
-    const pending = readRentalSession('reserve', storeSlug, actor);
-    if (pending?.request?.attemptId) api.get(rentalUrl('/rentals/bookings/recover/' + pending.request.attemptId, storeSlug), { silent: true, forceRefetch: true }).then(booking => { if (alive) { clearRentalSession('reserve', storeSlug, actor); clearRentalSession('contact', storeSlug, actor); navigateRoute(storefrontPath('/rentals?id=' + booking._id, storeSlug)); } }).catch(() => {});
+    if (!listing) { navigate(rentalDetailHref({ _id: product }, storeSlug)); return undefined; }
+    api.get(rentalUrl('/rentals/catalogue?listingIds=' + encodeURIComponent(listing), storeSlug), { silent: true, forceRefetch: true }).then(value => {
+      const offer = value?.rows?.find(row => row._id === listing && (!product || String(row.productId) === product));
+      if (!offer) throw new Error('This rental option is unavailable. Choose another rental.');
+      if (!alive) return;
+      if (!bag.items.some(item => item.listingId === listing) && !bag.add(listing)) throw new Error('Your rental bag is full. Review its items before adding another.');
+      if (params.get('pickup') && params.get('return')) saveRentalSession('checkout-dates', storeSlug, { pickupAt: localDateTime(params.get('pickup'), value.configuration?.policy?.timezone), returnDueAt: localDateTime(params.get('return'), value.configuration?.policy?.timezone) });
+      navigate(storefrontPath('/rental-checkout', storeSlug));
+    }).catch(e => { if (alive) setError(e.message); });
     return () => { alive = false; };
-  }, [user, storeSlug, navigateRoute]);
-  const productId = new URLSearchParams(route.split('?')[1] || '').get('product') || '';
-  const query = new URLSearchParams(route.split('?')[1] || '');
-  return <main className="rental-workspace"><header className="rental-hero"><h1>Rent your occasion look</h1><p>Outfits, jewellery and accessories, with clear dates, transparent deposits and a tracked return.</p></header><div className="rental-actions"><button type="button" className="rental-button rental-button--secondary" onClick={() => navigate('/rentals')}>My rentals</button><button type="button" className="rental-button rental-button--secondary" onClick={() => navigate('/products')}>Browse products</button></div><RentalCatalogueBrowser key={storeSlug + ':' + route} storeSlug={storeSlug} user={user} initialProductId={productId} initialListingId={query.get('listing') || ''} initialWaitlistId={query.get('waitlist') || ''} initialSchedule={{ pickupAt: query.get('pickup'), returnDueAt: query.get('return') }} navigate={navigate} onRequireLogin={() => navigate(`/login?redirect=${encodeURIComponent(storefrontPath(route, storeSlug))}`)} onBooked={booking => navigate(`/rentals?id=${booking._id}`)} /><RentalFaq storeSlug={storeSlug} /></main>;
+  }, [bag.ready, listing, product, navigate, storeSlug, params, bag]);
+  return <section className="rental-shopping-page">{error ? <><p role="alert">{error}</p><button className="rental-shopping-primary" onClick={() => navigate(storefrontPath('/rental-book', storeSlug))}>Browse rentals</button></> : <p role="status">Opening your rental…</p>}</section>;
 }

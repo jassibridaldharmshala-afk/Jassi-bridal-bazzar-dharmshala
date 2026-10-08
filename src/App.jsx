@@ -2,6 +2,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import ApplicationTheme from './components/ui/ApplicationTheme';
 import { AuthProvider } from './context/AuthContext';
+import { RentalBagProvider } from './context/RentalBagContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import Navbar from './components/layout/Navbar';
@@ -45,6 +46,8 @@ const ProfileDetails = lazy(() => import('./pages/customer/ProfileDetails'));
 const AddressManagement = lazy(() => import('./pages/customer/AddressManagement'));
 const MyOrders = lazy(() => import('./pages/customer/MyOrders'));
 const MyRentals = lazy(() => import('./pages/customer/MyRentals'));
+const RentalCart = lazy(() => import('./pages/customer/RentalCart'));
+const RentalSuccess = lazy(() => import('./pages/customer/RentalSuccess'));
 const RentalCheckout = lazy(() => import('./pages/customer/RentalCheckout'));
 const RentalOperations = lazy(() => import('./pages/admin/Rentals'));
 const OrderDetail = lazy(() => import('./pages/customer/OrderDetail'));
@@ -115,6 +118,9 @@ const customerRoutes = {
   '/orders': MyOrders,
   '/rentals': MyRentals,
   '/rental-book': RentalCheckout,
+  '/rental-cart': RentalCart,
+  '/rental-checkout': RentalCheckout,
+  '/rental-success': RentalSuccess,
   '/order-detail': OrderDetail,
   '/order-success': OrderSuccess,
   '/payment-failed': PaymentFailed,
@@ -278,14 +284,15 @@ function AppShell({ route, navigate }) {
     '/profile/addresses/edit',
     '/orders',
     '/rentals',
+    '/rental-success',
     '/checkout',
     '/order-detail',
     '/order-success',
     '/returns',
     '/notifications',
   ];
-  const focusedMobileRoutes = ['/product', '/cart', '/checkout', '/wishlist', '/orders', '/order-detail', '/order-success', '/profile/addresses'];
-  const hideMobileBottomNavRoutes = ['/checkout', '/profile/details'];
+  const focusedMobileRoutes = ['/rental-cart', '/rental-checkout', '/rental-success', '/rentals', '/product', '/cart', '/checkout', '/wishlist', '/orders', '/order-detail', '/order-success', '/profile/addresses'];
+  const hideMobileBottomNavRoutes = ['/rental-checkout', '/checkout', '/profile/details'];
   const standaloneAuthRoutes = ['/login', '/register'];
   const immersiveRoutes = ['/profile/addresses/new', '/profile/addresses/edit'];
   const cartStoragePlan = useMemo(() => createStoragePlan(storeSlug ? 'samira_cart:' + storeSlug : 'samira_cart', user), [user, storeSlug]);
@@ -380,6 +387,7 @@ function AppShell({ route, navigate }) {
     >
       <CartProvider key={cartStoragePlan.storageName} storageName={cartStoragePlan.storageName} legacyStorageNames={cartStoragePlan.legacyStorageNames}>
         <WishlistProvider key={wishlistStoragePlan.storageName} storageName={wishlistStoragePlan.storageName} legacyStorageNames={wishlistStoragePlan.legacyStorageNames}>
+          <RentalBagProvider user={user} storeSlug={storeSlug}>
           <MobileAppCompanion enabled={!isAdmin && !isSeller} />
           <Suspense fallback={null}><ContextualHelp route={route} navigate={navigate} /></Suspense>
           {isAdmin ? (
@@ -407,7 +415,7 @@ function AppShell({ route, navigate }) {
                 {mainContent}
               </main>
               {showShell && <Footer navigate={navigate} />}
-              {showShell && !hideMobileBottomNavRoutes.includes(routePath) && <MobileBottomNav active={routePath} navigate={navigate} />}
+              {showShell && !hideMobileBottomNavRoutes.includes(routePath) && <MobileBottomNav route={route} active={routePath} navigate={navigate} />}
               {showShell && showLoginPrompt && (
                 <LazyBoundary resetKey={route}><Suspense fallback={null}>
                 <LoginPrompt
@@ -427,6 +435,7 @@ function AppShell({ route, navigate }) {
               )}
             </>
           )}
+          </RentalBagProvider>
         </WishlistProvider>
       </CartProvider>
       {showMobileLoader && <MobileOverlayLoader />}

@@ -1,3 +1,4 @@
+import { rentalUseDayLabel } from '../../utils/rentalShopping';
 import { rentalDate, rentalMoney } from '../../utils/rentals';
 import { invoiceAddress } from '../../utils/receiptData';
 import RentalBookingDetails from './RentalBookingDetails';
@@ -17,6 +18,7 @@ export default function RentalDocuments({ booking }) {
     {invoiceAddress(invoice.seller?.billingAddress || invoice.seller?.address).map((line, index) => <p className="rental-muted" key={index}>{line}</p>)}
     <p className="rental-muted">{invoice.seller?.contactPhone} {invoice.seller?.contactEmail} · Customer: {invoice.customer?.phone} {invoice.customer?.email}</p>
     <p className="rental-muted">Pickup {rentalDate(booking.schedule.pickupAt, tz)} · return by {rentalDate(booking.schedule.returnDueAt, tz)}</p>
+    {booking.schedule.useDates?.length > 0 && <p className="rental-muted">Charged use days: {booking.schedule.useDates.map(rentalUseDayLabel).join(', ')}</p>}
     {invoice.seller?.gstin && <p>Business tax ID: {invoice.seller.gstin}</p>}
     <p className="rental-muted">Issued {rentalDate(invoice.issuedAt, tz)} · {invoice.serviceCode && `Classification ${invoice.serviceCode} · `}Policy {invoice.policyRevision}{invoice.revised ? ' · Revised rental amount (original accepted quote preserved)' : ''}</p>
     <div className="rental-table-wrap"><table className="rental-table"><thead><tr><th>Item</th><th>Qty</th><th>Rent</th><th>Services</th><th>Deposit</th></tr></thead><tbody>{invoice.items.map(i => <tr key={i.listingId}><td>{i.title}</td><td>{i.quantity}</td><td>{rentalMoney(i.rentPaise)}</td><td>{rentalMoney(i.feesPaise)}</td><td>{rentalMoney(i.depositPaise)}</td></tr>)}</tbody></table></div>

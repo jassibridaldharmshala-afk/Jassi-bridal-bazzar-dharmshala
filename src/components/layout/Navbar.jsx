@@ -1,3 +1,5 @@
+import { useRentalBag } from '../../context/RentalBagContext';
+import { rentalShoppingRoute } from '../../utils/rentalShopping';
 import RentalStorefrontLink from '../rentals/RentalStorefrontLink';
 import NotificationBell from '../notifications/NotificationBell';
 import { useEffect, useMemo, useState } from 'react';
@@ -40,6 +42,8 @@ export default function Navbar({
   isAdmin: isAdminProp,
 }) {
   const cart = useCart();
+  const rentalBag = useRentalBag();
+  const rentalShopping = rentalShoppingRoute(route);
   const wishlist = useWishlist();
   const { user, switchMode } = useAuth();
   const { config: websiteConfig } = useWebsiteCustomization();
@@ -57,7 +61,7 @@ export default function Navbar({
   const activeLinkLabel = useMemo(() => getDesktopActiveLink(routePath, routeParams), [routeParams, routePath]);
   const searchValue = useMemo(() => new URLSearchParams(route.split('?')[1] || '').get('search') || '', [route]);
   const [searchTerm, setSearchTerm] = useState(searchValue);
-  const cartCount = Number.isFinite(Number(cartCountProp)) ? Number(cartCountProp) : Number(cart?.itemCount || 0);
+  const cartCount = Number.isFinite(Number(cartCountProp)) ? Number(cartCountProp) : Number(rentalShopping ? rentalBag.itemCount : cart?.itemCount || 0);
   const wishlistCount = Number.isFinite(Number(wishlistCountProp)) ? Number(wishlistCountProp) : Number(wishlist?.items?.length || 0);
   const go = path => (onNavigate || navigate || (() => {}))(storefrontPath(path, parseStoreSlug(route)));
   const isAdmin = typeof isAdminProp === 'boolean' ? isAdminProp : user?.role === 'admin';
@@ -86,7 +90,7 @@ export default function Navbar({
     const params = new URLSearchParams();
     if (value) params.set('search', value);
     else params.delete('search');
-    go(`/search${params.toString() ? `?${params}` : ''}`);
+    go(`${rentalShopping ? '/rental-book' : '/search'}${params.toString() ? `?${params}` : ''}`);
   };
 
   return (
@@ -164,7 +168,7 @@ export default function Navbar({
                 value={searchTerm}
                 placeholder="Search for products, styles..."
                 onFocus={() => {
-                  if (!routePath.startsWith('/search')) go('/search');
+                  if (!routePath.startsWith('/search')) go(rentalShopping ? '/rental-book' : '/search');
                 }}
                 onChange={(event) => setSearchTerm(event.currentTarget.value)}
                 onKeyDown={(event) => {
@@ -197,7 +201,7 @@ export default function Navbar({
               <button
                 type="button"
                 className="sc-navbar__action"
-                onClick={() => (onWishlistClick ? onWishlistClick() : go('/wishlist'))}
+                onClick={() => (onWishlistClick ? onWishlistClick() : go(rentalShopping ? '/wishlist?mode=rent' : '/wishlist'))}
                 aria-label="Wishlist"
               >
                 <span className="sc-navbar__action-icon">
@@ -210,7 +214,7 @@ export default function Navbar({
               <button
                 type="button"
                 className="sc-navbar__action"
-                onClick={() => (onCartClick ? onCartClick() : go('/cart'))}
+                onClick={() => (onCartClick ? onCartClick() : go(rentalShopping ? '/rental-cart' : '/cart'))}
                 aria-label="Cart"
               >
                 <span className="sc-navbar__action-icon">

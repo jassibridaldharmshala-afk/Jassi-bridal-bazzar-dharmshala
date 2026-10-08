@@ -15,7 +15,7 @@ export default function RentalBookingTracker({ booking, checkedAt }) {
   const overdue = booking.status === 'OUT' && new Date(booking.schedule.returnDueAt).getTime() < Date.now();
   const explanation = expired ? 'This payment hold expired. Choose dates again to start a new booking.' : cancelled ? 'This booking was cancelled. Any approved refund is tracked below.' : ({
     HELD: 'Your dates are temporarily held. Complete the required payment before the hold expires.',
-    CONFIRMED: 'Your advance is verified and your rental dates are confirmed.',
+    CONFIRMED: booking.quote?.paymentPlan === 'PICKUP' ? 'Your rental dates are confirmed. Payment is due at pickup.' : 'Your payment is verified and your rental dates are confirmed.',
     PREPARING: 'The store is preparing your reserved pieces.',
     READY: 'Your pieces are ready for pickup or dispatch. Follow the collection details below.',
     OUT: 'Your rental is underway. Return every piece by the deadline shown below.',

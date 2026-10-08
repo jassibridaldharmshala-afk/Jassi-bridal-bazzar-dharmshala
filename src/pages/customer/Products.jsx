@@ -1,4 +1,5 @@
-import RentalStorefrontLink from '../../components/rentals/RentalStorefrontLink';
+import RentalShop from './RentalShop';
+import ShoppingModeTabs from '../../components/rentals/ShoppingModeTabs';
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ProductGrid from '../../components/product/ProductGrid';
@@ -28,7 +29,10 @@ import { buildCatalogFacets } from '../../utils/catalogFacets';
 const PAGE_SIZE = 24;
 const CATALOG_RETURN_KEY = 'samira_catalog_return';
 
-export default function Products({ navigate, route = '/products' }) {
+export default function Products(props) {
+  return new URLSearchParams((props.route || '').split('?')[1] || '').get('mode') === 'rent' ? <RentalShop {...props} /> : <BuyProducts {...props} />;
+}
+function BuyProducts({ navigate, route = '/products' }) {
   const dispatch = useDispatch();
   const { storeSlug } = useStorefront();
   const [openFilters, setOpenFilters] = useState(false);
@@ -47,6 +51,7 @@ export default function Products({ navigate, route = '/products' }) {
   const requestPage = catalogState.key === requestKey ? page : 1;
   const requestParams = useMemo(() => ({
     ...Object.fromEntries(params.entries()),
+    mode: 'buy',
     store: storeSlug,
     page: requestPage,
     limit: PAGE_SIZE,
@@ -188,7 +193,7 @@ export default function Products({ navigate, route = '/products' }) {
   return (
     <section className="min-h-screen bg-ivory px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 md:p-0 lg:bg-white">
       <SeoHead route={route} page={categorySeo || undefined} />
-      <div className="mx-auto my-3 max-w-[1500px]"><RentalStorefrontLink className="rental-button" navigate={navigate}>Plan dates, rent an outfit or jewellery →</RentalStorefrontLink></div><nav className="rental-mode-tabs mx-auto my-3 max-w-[1500px]" aria-label="Shop by purchase mode">{[['', 'All'], ['buy', 'Buy'], ['rent', 'Rent']].map(([value, label]) => <button type="button" key={label} aria-pressed={(filters.mode || '') === value} className={(filters.mode || '') === value ? 'is-selected' : ''} onClick={() => updateParam('mode', value)}>{label}</button>)}</nav>
+      <ShoppingModeTabs mode="buy" navigate={navigate} />
       {showCatalogBanner && <StorefrontBannerSlot banners={banners} position="Category - Featured" navigate={navigate} compact className="max-w-[1500px] px-0 md:px-6" />}
       {(
         <DesktopNewArrivalsLayout

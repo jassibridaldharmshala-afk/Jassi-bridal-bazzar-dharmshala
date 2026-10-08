@@ -1,0 +1,75 @@
+{
+  "completedUtc": "2026-10-08 16:52:44 UTC",
+  "scope": "Rental Studio admin setup and desktop/mobile usability. Local source changes only.",
+  "changes": [
+    "Daily work, new booking, calendar and physical pieces in a compact primary navigation.",
+    "Purpose-labelled More tools cards, grouped shop settings, first-use rental setup guide.",
+    "Three-step guided price/fitting, actual physical-piece registration, review/activation.",
+    "Responsive booking and inventory cards; single DOM for each record, accessible labels and staff status copy.",
+    "Exact tenant-scoped linked-product lookup; missing products stop setup and merchant titles are preserved.",
+    "Pending prices/piece entries block activation; quantity/rack/condition changes participate in unsaved-change handling.",
+    "Guided setup hands the selected offer to bundle editing; optional fees, fitting, manual codes, labels and maintenance remain accessible.",
+    "Immediate workspace mode refresh after settings save; direct settings links render correctly.",
+    "One workshop/settlement tool mounted at a time; staff permissions retained.",
+    "Readable pieces/offers search, bounded existing API pagination, safe retry on incomplete responses."
+  ],
+  "verification": {
+    "runtime": "Node 20.20.2",
+    "frontend": {
+      "suites": 7,
+      "tests": 44,
+      "passed": 44,
+      "failed": 0,
+      "log": ".tmp/rental-studio-tests.log",
+      "countsAreScoped": true,
+      "overlapPriorProjectRuns": true
+    },
+    "productionBuild": {
+      "strictCI": true,
+      "passed": true,
+      "log": ".tmp/rental-studio-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        820,
+        1440
+      ],
+      "passed": true,
+      "productionBundle": true,
+      "api": "isolated fixtures",
+      "pageErrors": 0,
+      "pageHorizontalOverflow": false,
+      "results": "review-notes/rental-studio-visual-qa.json",
+      "script": ".tmp/rental-studio-ui-check.cjs",
+      "flows": [
+        "booking filters/cards",
+        "More tools",
+        "settings save",
+        "piece editor",
+        "price entry",
+        "counted piece registration",
+        "activation",
+        "booking management"
+      ]
+    },
+    "visualInspection": [
+      "mobile daily work and booking cards",
+      "desktop daily work and tool menu",
+      "mobile and desktop settings",
+      "mobile and desktop guided setup",
+      "mobile physical inventory"
+    ],
+    "sourceFormatting": "git diff --check passed"
+  },
+  "guide": "review-notes/rental-studio-setup-guide.md",
+  "deployment": {
+    "performed": false,
+    "needed": "Frontend redeploy"
+  },
+  "limits": [
+    "Browser QA uses isolated fixtures, not hosted shop data.",
+    "No live licence, SMS, storage, payments or physical shop operations were exercised.",
+    "Backend rules, production secrets, prices and physical shop inventory were not changed."
+  ]
+}

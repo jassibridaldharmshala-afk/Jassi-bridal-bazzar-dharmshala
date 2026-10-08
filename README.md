@@ -25,12 +25,11 @@ The default catalog uses **Boutique — Sale & Rental** with 15 product fields a
 
 No existing `.env` file, database record, upload, Git history, build output or dependency is copied from the source platform. The one-time installation credential is newly generated for this client and can be revoked independently. Production builds omit source maps, deployment headers restrict script sources and framing, private API responses are not cached, CORS accepts only configured origins, and sensitive actions are validated by the backend. Browser JavaScript is public by design, so never put secrets or authorization decisions in frontend code.
 
-## Install the combined or separate project
+## Install the project
 
-The combined project contains the frontend at this root and its runtime backend in `backend/`.
-The backend deployment source in `backend-deploy/` is also maintained for a separate Render backend service.
-Run `npm ci` at the frontend root and inside the backend directory used by your deployment.
-A frontend-only package needs the separate backend package alongside it; `npm run server` expects the combined `backend/` layout.
+The frontend is at this root. `backend/` is the backend source used for local development and Render.
+Run `npm ci` at the frontend root and inside `backend/`.
+`npm run server` starts `backend/server.js`; the Render blueprint also uses `backend/`.
 
 Set the frontend API URL to the actual backend service. Set backend public API URL and CORS origin to the actual deployment;
 the Jassi frontend origin is `https://jassi-bridal-bazzar-dharmshalas.onrender.com` (including the final **s**).

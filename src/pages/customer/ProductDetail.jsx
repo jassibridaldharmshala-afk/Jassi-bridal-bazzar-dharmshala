@@ -13,6 +13,7 @@ import PublicReviewCard from '../../components/product/PublicReviewCard';
 import Icon from '../../components/layout/Icon';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useRentalBag } from '../../context/RentalBagContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { getPrimaryImageIndex, getPrimaryImageUrl, normalizeImageUrl, normalizeProduct, normalizeProducts } from '../../services/normalize';
 import { useGetProductQuery, useGetProductsQuery, useGetReviewsQuery, useGetSettingsQuery, useGetVariantGroupQuery } from '../../store/apiSlice';
@@ -37,6 +38,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   const isDesktop = useMediaQuery('(min-width: 1024px)', false, { getInitialValueInEffect: false });
   const navigate = useCallback(path => navigateRoute(storefrontPath(path, storeSlug)), [navigateRoute, storeSlug]);
   const cart = useCart();
+  const rentalBag = useRentalBag();
   const wishlist = useWishlist();
   const { user } = useAuth();
   const [size, setSize] = useState('');
@@ -231,7 +233,8 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   const purchaseEnabled = product?.purchaseEnabled !== false && settingsData?.commerceMode !== 'RENTAL_ONLY' && product?.commerceMode !== 'RENTAL_ONLY';
   const rentalOnly = !purchaseEnabled || (supportsRental && purchaseMode === 'rent');
   const selectedMode = rentalOnly ? 'rent' : 'buy';
-  const chooseRentalDates = () => navigate('/rental-book?' + new URLSearchParams({ product: productId, ...(product?.rentalPreview?.listingId ? { listing: product.rentalPreview.listingId } : {}) }));
+  const headerBagCount = rentalOnly ? rentalBag.itemCount : cart.itemCount;
+  useEffect(() => { setPurchaseMode(new URLSearchParams(route.split('?')[1] || '').get('mode') === 'rent' ? 'rent' : 'buy'); }, [route]);
   const isOutOfStock = rentalOnly || (selectedStock !== null && Number(selectedStock) <= 0);
   const sizeStock = (item) => {
     if (!hasManagedVariants(product || {})) return null;
@@ -719,7 +722,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
         <div className="flex items-center gap-0.5 text-slate-800">
           <button type="button" onClick={() => navigate('/search')} className="grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label="Search"><Icon name="search" className="h-5 w-5" /></button>
           <button type="button" onClick={handleShare} className="grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label="Share product"><Share2 className="h-5 w-5" /></button>
-          <button type="button" onClick={() => navigate('/cart')} className="relative grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label={cart.itemCount ? `Cart, ${cart.itemCount} items` : 'Cart'}><Icon name="bag" className="h-5 w-5" />{cart.itemCount > 0 ? <span aria-hidden="true" className="absolute right-0 top-0 rounded-full bg-rose px-1 text-[8px] font-bold leading-4 text-white">{cart.itemCount > 99 ? '99+' : cart.itemCount}</span> : null}</button>
+          <button type="button" onClick={() => navigate(rentalOnly ? '/rental-cart' : '/cart')} className="relative grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label={headerBagCount ? `${rentalOnly ? 'Rental bag' : 'Cart'}, ${headerBagCount} items` : rentalOnly ? 'Rental bag' : 'Cart'}><Icon name="bag" className="h-5 w-5" />{headerBagCount > 0 ? <span aria-hidden="true" className="absolute right-0 top-0 rounded-full bg-rose px-1 text-[8px] font-bold leading-4 text-white">{headerBagCount > 99 ? '99+' : headerBagCount}</span> : null}</button>
         </div>
       </header>
       <div className="mx-auto max-w-6xl md:grid md:grid-cols-[0.95fr_1fr] md:gap-8 md:px-6">
@@ -1025,7 +1028,6 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
         <p className="small-text mt-8 text-slate-500">Product Code: {product.sku || productId}</p>
       </div>
 
-      {supportsRental && rentalOnly && <div className="rental-sticky-action md:hidden"><button type="button" className="rental-button" onClick={chooseRentalDates}>Choose rental dates</button><button type="button" className="rental-text-button" onClick={() => navigate('/contact')}>Ask the store</button></div>}
       {!rentalOnly && <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2.5 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
         <div className={`grid gap-2 ${storeWhatsappNumber ? 'grid-cols-[.9fr_1.2fr_.9fr]' : 'grid-cols-2'}`}>
           <button disabled={isOutOfStock || cartBusy || cart.loading} onClick={buyNow} className="h-12 rounded-[10px] border border-wine bg-white px-2 text-[12px] font-bold text-wine disabled:border-slate-200 disabled:text-slate-400">

@@ -1,5 +1,6 @@
 import { createApi, defaultSerializeQueryArgs, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { getApiBaseUrl } from './apiBaseUrl';
+import { DRAFT_UPLOAD_TIMEOUT, followDraftUpload } from '../services/draftUploadProgress';
 import { compressImageFile, isSupportedImageFile, preparePhotoUploads } from '../services/imageCompression';
 import { logout, setCredentials } from './authSlice';
 import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
@@ -305,7 +306,7 @@ export const samiraApi = createApi({
       providesTags: ['AdminCategories'],
     }),
     bulkUploadProductDrafts: builder.mutation({
-      async queryFn({ files, groupMode = 'separate', photoGroups, apiPrefix = '/admin' }, api, extraOptions, baseQuery) {
+      async queryFn({ files, groupMode = 'separate', photoGroups, apiPrefix = '/admin', onProgress }, api, extraOptions, baseQuery) {
         const prefix = apiPrefix === '/seller' ? '/seller' : '/admin';
         const path = `${prefix}/product-drafts/bulk-upload`;
         let idempotencyKey;
@@ -314,12 +315,16 @@ export const samiraApi = createApi({
           if (groupMode === 'grouped' && (!Array.isArray(photoGroups) || !photoGroups.length)) throw new Error('Create product photo groups before uploading.');
           const fields = { groupMode, ...(groupMode === 'grouped' ? { photoGroups: JSON.stringify(photoGroups) } : {}) };
           const scope = uploadScope(api.getState().auth);
+          const sameScope = () => !api.signal.aborted && uploadScope(api.getState().auth) === scope;
+          const progress = value => { if (sameScope()) { try { onProgress?.(value); } catch { /* Observers cannot cancel a saved upload. */ } } };
+          progress({ phase: 'preparing', fileCount: files?.length || 0, completedFiles: 0 });
+          const follow = result => followDraftUpload({ result, query: args => baseQuery(args, api, extraOptions), path, key: idempotencyKey, signal: api.signal, onProgress: progress, sameScope });
           idempotencyKey = await getDurableUploadRetryKey({ path, files, fields, scope });
           if (api.signal.aborted || uploadScope(api.getState().auth) !== scope) throw new Error('Your session changed or the upload was cancelled. Please retry.');
           if (hasUploadAttempt(idempotencyKey)) {
             // All photos may already be stored even though draft save/response
             // failed. Resume by receipt, without posting the photos again.
-            const resumed = await baseQuery({ url: path, method: 'POST', body: { resumeUpload: true }, headers: { 'Idempotency-Key': idempotencyKey } }, api, extraOptions);
+            const resumed = await follow(await baseQuery({ url: path, method: 'POST', body: { resumeUpload: true, asyncUpload: true }, timeout: DRAFT_UPLOAD_TIMEOUT, silent: true, headers: { 'Idempotency-Key': idempotencyKey } }, api, extraOptions));
             if (!resumed.error) { finishUploadRetryKey(idempotencyKey); return { data: resumed.data }; }
             if (resumed.error.status !== 404 && resumed.error.data?.code !== 'UPLOAD_INCOMPLETE') {
               if (resumed.error.data?.code === 'UPLOAD_RETRY_CONFLICT') forgetUploadRetryKey(idempotencyKey);
@@ -332,18 +337,19 @@ export const samiraApi = createApi({
             if (!isSupportedImageFile(file)) {
               return { error: { status: 400, data: { message: 'Only JPG, JPEG, PNG, and WEBP images are allowed.' } } };
             }
-            preparedFiles.push(await compressImageFile(file, {
-              maxWidthOrHeight: 1600,
-            }));
+            preparedFiles.push(await compressImageFile(file));
           }
           const formData = new FormData();
           preparedFiles.forEach((file) => formData.append('images', file));
           if (api.signal.aborted || uploadScope(api.getState().auth) !== scope) throw new Error('Your session changed or the upload was cancelled. Please retry.');
           Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+          formData.append('asyncUpload', 'true');
           markUploadAttempt(idempotencyKey);
-          const result = await baseQuery({ url: path, method: 'POST', body: formData, headers: { 'Idempotency-Key': idempotencyKey } }, api, extraOptions);
+          progress({ phase: 'uploading', fileCount: preparedFiles.length, completedFiles: 0 });
+          const result = await follow(await baseQuery({ url: path, method: 'POST', body: formData, timeout: DRAFT_UPLOAD_TIMEOUT, silent: true, headers: { 'Idempotency-Key': idempotencyKey } }, api, extraOptions));
           if (result.error) {
             if (result.error.data?.code === 'UPLOAD_RETRY_CONFLICT') forgetUploadRetryKey(idempotencyKey);
+            if (['FETCH_ERROR', 'TIMEOUT_ERROR'].includes(result.error.status)) return { error: { ...result.error, data: { message: 'The upload response timed out or could not be reached. Your photos are kept. Check status with this same selection before starting another upload.' } } };
             return { error: result.error };
           }
           finishUploadRetryKey(idempotencyKey);

@@ -38,8 +38,6 @@ import { shouldExitEmptyCheckout } from '../../utils/checkoutGuard';
 import { checkoutCart } from '../../utils/bag';
 import { checkoutPayloadSignature, clearCheckoutAttempt, getCheckoutAttempt } from '../../utils/checkoutAttempt';
 import CouponSelector from '../../components/coupon/CouponSelector';
-import './Checkout.css';
-import './CheckoutMobile.css';
 import '../../styles/MobileShoppingTheme.css';
 
 const PAYMENT_METHOD_NOTES = {

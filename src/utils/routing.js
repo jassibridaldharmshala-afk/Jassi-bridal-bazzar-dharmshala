@@ -1,7 +1,7 @@
 export const RESERVED_PATHS = new Set([
   'products', 'product', 'category', 'search', 'wishlist', 'cart', 'checkout',
   'login', 'register', 'profile', 'orders', 'order-detail', 'order-success',
-  'rentals', 'rental-book',
+  'rentals', 'rental-book', 'rental-cart', 'rental-checkout', 'rental-success',
   'payment-failed', 'contact', 'privacy-policy', 'terms', 'return-policy',
   'shipping-policy', 'cancellation-policy', 'size-guide', 'faqs', 'our-story',
   'returns', 'notifications', 'seller', 'admin', 'master', 'store', 'share', 'api', 'health', 'uploads',
@@ -83,7 +83,7 @@ export function productHref(product, storeSlug = '') {
 }
 
 export function storefrontPath(path, storeSlug = '') {
-  if (!storeSlug || !/^\/(?:$|\?|products(?:[/?]|$)|product(?:[/?]|$)|search(?:[/?]|$)|category(?:[/?]|$)|rentals(?:[/?]|$)|rental-book(?:[/?]|$)|contact(?:[/?]|$)|cart(?:[/?]|$)|wishlist(?:[/?]|$)|checkout(?:[/?]|$)|profile(?:[/?]|$)|orders(?:[/?]|$)|order-detail(?:[/?]|$)|order-success(?:[/?]|$)|returns(?:[/?]|$)|notifications(?:[/?]|$)|payment-failed(?:[/?]|$)|login(?:[/?]|$)|register(?:[/?]|$)|faqs(?:[/?]|$)|terms(?:[/?]|$)|shipping-policy(?:[/?]|$)|return-policy(?:[/?]|$)|cancellation-policy(?:[/?]|$)|privacy-policy(?:[/?]|$))/.test(String(path || ''))) return path;
+  if (!storeSlug || !/^\/(?:$|\?|products(?:[/?]|$)|product(?:[/?]|$)|search(?:[/?]|$)|category(?:[/?]|$)|rentals(?:[/?]|$)|rental-(?:book|cart|checkout|success)(?:[/?]|$)|contact(?:[/?]|$)|cart(?:[/?]|$)|wishlist(?:[/?]|$)|checkout(?:[/?]|$)|profile(?:[/?]|$)|orders(?:[/?]|$)|order-detail(?:[/?]|$)|order-success(?:[/?]|$)|returns(?:[/?]|$)|notifications(?:[/?]|$)|payment-failed(?:[/?]|$)|login(?:[/?]|$)|register(?:[/?]|$)|faqs(?:[/?]|$)|terms(?:[/?]|$)|shipping-policy(?:[/?]|$)|return-policy(?:[/?]|$)|cancellation-policy(?:[/?]|$)|privacy-policy(?:[/?]|$))/.test(String(path || ''))) return path;
   return `/store/${encodeURIComponent(storeSlug)}${path === '/' ? '' : path}`;
 }
 
@@ -102,5 +102,6 @@ export function currentPath() {
 
 export function rentalProductHref(product, storeSlug = '') {
   const key = String(product?._id || product?.id || '').trim();
-  return storefrontPath(key ? '/rental-book?product=' + encodeURIComponent(key) : '/rental-book', storeSlug);
+  const href = key ? productHref(product, storeSlug) : storefrontPath('/rental-book', storeSlug);
+  return key ? href + (href.includes('?') ? '&' : '?') + 'mode=rent' : href;
 }

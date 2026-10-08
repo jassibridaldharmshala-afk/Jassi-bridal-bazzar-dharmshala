@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
+import { rentalDetailHref } from '../../utils/rentalShopping';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductImageCarousel from '../product/ProductImageCarousel';
@@ -10,7 +11,7 @@ import { isUnavailable, wishlistId, wishlistOptions, wishlistStock } from '../..
 import { getSelectableSizes } from '../../utils/productSizing';
 import './ProductCard.css';
 
-export default function ProductCard({ product, navigate, onAddToCart, onWishlistToggle, isWishlisted: isWishlistedProp, badgeLabel, onBeforeOpen, imagePriority = false }) {
+export default function ProductCard({ product, navigate, onAddToCart, onWishlistToggle, isWishlisted: isWishlistedProp, badgeLabel, onBeforeOpen, imagePriority = false, shoppingMode }) {
   const cart = useCart();
   const wishlist = useWishlist();
   const { storeSlug } = useStorefront();
@@ -21,8 +22,8 @@ export default function ProductCard({ product, navigate, onAddToCart, onWishlist
   const isWishlisted = typeof isWishlistedProp === 'boolean'
     ? isWishlistedProp
     : wishlist.items.some(item => wishlistId(item) === productId);
-  const rental = product.commerceMode === 'RENTAL_ONLY' || product.purchaseEnabled === false;
-  const mixed = product.commerceMode === 'SALE_AND_RENTAL';
+  const rental = shoppingMode === 'rental' || product.commerceMode === 'RENTAL_ONLY' || product.purchaseEnabled === false;
+  const mixed = !rental && product.commerceMode === 'SALE_AND_RENTAL';
   const saleUnavailable = !rental && isUnavailable(product);
   const unavailable = saleUnavailable && !mixed;
   const stock = rental ? null : wishlistStock(product);
@@ -42,7 +43,7 @@ export default function ProductCard({ product, navigate, onAddToCart, onWishlist
 
   const openProduct = () => {
     onBeforeOpen?.(product);
-    navigate?.(productHref(product, storeSlug));
+    navigate?.(rental ? rentalDetailHref(product, storeSlug, product.rentalOffer?._id) : productHref(product, storeSlug));
   };
   const toggleWishlist = async event => {
     event.stopPropagation();
@@ -104,11 +105,11 @@ export default function ProductCard({ product, navigate, onAddToCart, onWishlist
             data-card-field="cart"
           >
             <ShoppingBag size={17} strokeWidth={1.6} />
-            <span>{rental ? 'Check dates' : unavailable ? 'Unavailable' : mixed && (saleUnavailable || stock === 0) ? 'Rent · check dates' : stock === 0 ? 'Out of stock' : needsSize ? 'Select size' : cartItem ? 'Add more' : 'Add to bag'}</span>
+            <span>{rental ? 'Book rental' : unavailable ? 'Unavailable' : mixed && (saleUnavailable || stock === 0) ? 'Rent · check dates' : stock === 0 ? 'Out of stock' : needsSize ? 'Select size' : cartItem ? 'Add more' : 'Add to bag'}</span>
           </button>
         </div>
       </div>
-      {quickOpen && <QuickViewModal product={product} onClose={() => setQuickOpen(false)} onOpenFull={() => { setQuickOpen(false); openProduct(); }} />}
+      {quickOpen && <QuickViewModal product={product} shoppingMode={shoppingMode} onClose={() => setQuickOpen(false)} onOpenFull={() => { setQuickOpen(false); openProduct(); }} />}
     </article>
   );
 }
