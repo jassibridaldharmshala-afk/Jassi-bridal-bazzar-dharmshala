@@ -5,9 +5,21 @@ import {
   getSizeChartColumns,
   getSizeChartValidation,
   inferSizeChartProfile,
+  resolveSizingMode,
+  usesGarmentSizing,
 } from './productSizing';
 
 describe('category-aware product sizing', () => {
+  test.each(['auto', 'sized', 'free-size'])('blank sizes default to Free Size in %s mode without mandatory measurements', sizingMode => {
+    const product = { name: 'Bridal lehenga', category: 'Lehengas', sizingMode, sizes: [] };
+    expect(resolveSizingMode(product)).toBe('free-size');
+    expect(getSizeChartValidation(product)).toEqual({ valid: true, missing: [] });
+    expect(buildSizeChartPayload(product)).toEqual({ unit: 'in', columns: [], rows: [] });
+  });
+  test('manual size options remain editable when automatic shop sizing is disabled', () => {
+    expect(usesGarmentSizing({ industry: 'boutique', features: { sizing: false } }, { sizingMode: 'sized', sizes: ['M'] })).toBe(true);
+    expect(resolveSizingMode({ name: 'Bridal lehenga', sizingMode: 'sized', sizes: ['M'] })).toBe('sized');
+  });
   test('treats sarees as one-size products even when legacy sizes exist', () => {
     const saree = { name: 'Royal Silk Saree', category: 'Sarees', sizes: ['S', 'M', 'XL'] };
     expect(inferSizeChartProfile(saree)).toBe('free-size');

@@ -11,7 +11,7 @@ export function productAttributeDefinitions(structure, categories = [], product 
     definition = structure.categoryDefinitions.find(item => item.key === parentKey);
   }
   for (const item of [...chain.flatMap(layer => layer.attributes || []), ...(category?.attributeOverrides || [])]) if (item && typeof item === 'object' && item.key) definitions.set(item.key, { ...definitions.get(item.key), ...item });
-  return [...definitions.values()].filter(item => item.active !== false && (usesGarmentSizing(structure, product) || !sizeAttribute(item.key)));
+  return [...definitions.values()].filter(item => item.active !== false && (usesGarmentSizing(structure, product) || !sizeAttribute(item.key))).map(item => sizeAttribute(item.key) ? { ...item, required: false } : item);
 }
 
 export function asCatalogList(payload) {

@@ -13,12 +13,12 @@ export const SIZE_MEASUREMENTS = {
 
 export const automaticSizing = structure => structure?.industry !== 'boutique' && structure?.features?.sizing !== false;
 export const sizeAttribute = key => /^(?:size|sizes|accessory_size|ring_size|bangle_size|size_range|measurements)$/i.test(key);
-// Existing size-based inventory remains editable; new bridal listings need no
-// fixed garment sizes or measurement chart.
+// Merchants can enter sizes even when automatic bridal sizing is disabled.
+// AI sizing remains controlled separately by automaticSizing.
 export const usesGarmentSizing = (structure, product = {}) => structure?.features?.sizing !== false
-  && (structure?.industry !== 'boutique' || product.sizingMode === 'sized' || product.trackVariants || product.variants?.length > 0
-    || (Array.isArray(product.sizes) ? product.sizes.length > 0 : Boolean(String(product.sizes || '').trim()))
-    || product.sizeChart?.rows?.length > 0 || Boolean(product.attributeValues?.size));
+  || product.sizingMode === 'sized' || hasSizeOptions(product);
+const hasSizeOptions = product => uniqueStrings(product.sizes).some(size => !/^free[ -]?size$/i.test(size))
+  || (product.variants || []).some(variant => variant?.size && !/^free[ -]?size$/i.test(variant.size));
 
 export const SIZE_CHART_PROFILES = {
   'kurta-set': {
@@ -78,8 +78,9 @@ export function inferSizeChartProfile(product = {}) {
 
 export function resolveSizingMode(product = {}) {
   const explicit = String(product.sizingMode || 'auto').toLowerCase();
-  if (explicit === 'sized') return 'sized';
   if (explicit === 'free-size') return 'free-size';
+  if (!hasSizeOptions(product)) return 'free-size';
+  if (explicit === 'sized') return 'sized';
   return inferSizeChartProfile(product) === 'free-size' ? 'free-size' : 'sized';
 }
 

@@ -49,6 +49,38 @@ test('photo draft editor keeps sale and rental prices separate', async () => {
   expect(normalizeDraftBody({ ...draft, commerceMode: 'SALE_AND_RENTAL', rentalPricing: { dailyRatePaise: 60000, depositPaise: 100000 } })).toEqual(expect.objectContaining({ price: 1000, rentalPricing: { dailyRatePaise: 60000, depositPaise: 100000 } }));
 });
 
+test('draft commerce options stay visible in Inventory and blank sizes publish as Free Size', async () => {
+  render(<ProductDrafts />);
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Review' }))[0]);
+  fireEvent.change(screen.getByLabelText('Available for'), { target: { value: 'SALE_AND_RENTAL' } });
+  fireEvent.change(screen.getByLabelText('Rental price per day (₹)'), { target: { value: '500' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Inventory' }));
+  expect(screen.getByLabelText('Available for')).toHaveValue('SALE_AND_RENTAL');
+  const sizes = screen.getByLabelText('Available sizes');
+  expect(sizes).toHaveValue(''); expect(sizes).not.toBeRequired();
+  fireEvent.change(screen.getByLabelText('Sizing mode'), { target: { value: 'sized' } });
+  expect(screen.queryByLabelText('M Bust')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Save & publish' }));
+  await waitFor(() => expect(mockPublish).toHaveBeenCalledWith({ ids: ['draft-a'], apiPrefix: '/admin' }));
+  expect(mockSave.mock.calls[0][0].body).toMatchObject({ commerceMode: 'SALE_AND_RENTAL', sellingPrice: 1000, rentalPricing: { dailyRatePaise: 50000 }, sizingMode: 'free-size', sizes: [], sizeChart: { rows: [] } });
+});
+
+test('draft sizes can be entered manually even when shop sizing is disabled and clearing them preserves stock', async () => {
+  render(<ProductDrafts />);
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Review' }))[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'Inventory' }));
+  fireEvent.change(screen.getByLabelText('Available sizes'), { target: { value: 'M' } });
+  expect(screen.getByLabelText('Sizing mode')).toHaveValue('sized');
+  expect(screen.getByLabelText('M Bust')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+  expect(mockSave.mock.calls[0][0].body).toMatchObject({ sizes: ['M'], sizingMode: 'sized', stock: 2 });
+  fireEvent.change(screen.getByLabelText('Available sizes'), { target: { value: '' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+  await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(2));
+  expect(mockSave.mock.calls[1][0].body).toMatchObject({ sizes: [], sizingMode: 'free-size', stock: 2 });
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(window, 'confirm').mockReturnValue(true);

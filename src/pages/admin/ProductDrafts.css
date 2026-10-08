@@ -224,3 +224,8 @@
   .draft-filters { grid-template-columns: 1fr; }
   .draft-check-grid { grid-template-columns: 1fr; }
 }
+
+.draft-editor__commerce { display:grid; gap:6px; padding:12px 20px; border-bottom:1px solid #ecdfd7; background:#fffaf6; }
+.draft-editor__commerce label { display:grid; gap:5px; font-size:12px; font-weight:700; color:#741f38; }
+.draft-editor__commerce select { max-width:360px; }
+.draft-editor__commerce p { margin:0; font-size:12px; color:#77676d; }

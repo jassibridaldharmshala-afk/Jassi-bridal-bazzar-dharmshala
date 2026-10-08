@@ -1,17 +1,16 @@
-import { getSelectableSizes, getSizeChartColumns, getSizeChartValidation, reconcileSizeChartRows, resolveSizingMode, usesGarmentSizing } from '../../utils/productSizing';
+import { getSelectableSizes, getSizeChartColumns, getSizeChartValidation, reconcileSizeChartRows, resolveSizingMode } from '../../utils/productSizing';
 import { importSizingProduct } from '../../utils/socialImport';
 
 export default function ImportSizeFields({ form, onUpdate, categories, structure }) {
-  if (!usesGarmentSizing(structure, form)) return null;
   const product = importSizingProduct(form, categories, structure);
   const sized = resolveSizingMode(product) === 'sized';
   const columns = getSizeChartColumns(product);
   const rows = reconcileSizeChartRows(form.sizeChart?.rows, getSelectableSizes(product), columns);
   const complete = getSizeChartValidation(product).valid;
   const content = <>
-    <label className="admin-field"><span>Sizing</span><select className="admin-field__control" value={form.sizingMode || 'auto'} onChange={(event) => onUpdate('sizingMode', event.target.value)}><option value="auto">Based on product type</option><option value="sized">Selectable sizes</option><option value="free-size">Free size / no size selection</option></select></label>
+    <label className="admin-field"><span>Sizing</span><select className="admin-field__control" value={form.sizingMode || 'auto'} onChange={event => { onUpdate('sizingMode', event.target.value); if (event.target.value === 'free-size') onUpdate('sizes', ''); }}><option value="auto">Automatic · Free size if sizes are blank</option><option value="sized">Selectable sizes</option><option value="free-size">Free size / no size selection</option></select></label>
+    <label className="admin-field"><span>Available sizes (comma separated)</span><input aria-label="Available sizes (comma separated)" className="admin-field__control" value={Array.isArray(form.sizes) ? form.sizes.join(', ') : form.sizes || ''} placeholder="Optional · blank means Free Size" onChange={event => { onUpdate('sizingMode', event.target.value.trim() ? 'sized' : 'free-size'); onUpdate('sizes', event.target.value); }} /><small>Sizes are optional. Leave blank for Free Size / adjustable items.</small></label>
     {sized && <>
-      <label className="admin-field"><span>Available sizes (comma separated)</span><input className="admin-field__control" value={Array.isArray(form.sizes) ? form.sizes.join(', ') : form.sizes || ''} placeholder="S, M, L" onChange={(event) => onUpdate('sizes', event.target.value)} /></label>
       {rows.length > 0 && <div className="social-import__measurements">
         <label className="admin-field"><span>Measurement unit</span><select className="admin-field__control" value={form.sizeChart?.unit || 'in'} onChange={(event) => onUpdate('sizeChart', { ...form.sizeChart, unit: event.target.value })}><option value="in">Inches</option><option value="cm">Centimetres</option></select></label>
         <p>Use the actual garment measurements. Measurements found in the source are filled in for review.</p>

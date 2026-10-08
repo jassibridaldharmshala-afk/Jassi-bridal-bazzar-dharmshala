@@ -47,13 +47,14 @@ test('quick add saves reviewed free-size details and can reset for another produ
   expect(screen.getByLabelText(/Stock/)).toHaveValue(null);
 });
 
-test('new bridal clothing saves without size fields or mandatory measurements', async () => {
+test('new bridal clothing offers optional size fields and saves blank sizes as Free Size', async () => {
   configuration = { industry: 'boutique', features: { sizing: true }, attributes: [{ key: 'size', label: 'Size' }] };
   render(<QuickAddProduct />); await fillBasic();
   fireEvent.click(screen.getByRole('button', { name: 'Tops', exact: true }));
   fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'Wine bridal top' } });
-  expect(screen.queryByLabelText('Sizing')).not.toBeInTheDocument();
-  expect(screen.queryByLabelText('Size')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Sizing')).toBeInTheDocument();
+  expect(screen.getByLabelText('Available sizes (comma separated)')).not.toBeRequired();
+  expect(screen.queryByLabelText('M Bust')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Looks good, add product' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/products', expect.objectContaining({ sizingMode: 'free-size', sizes: [], sizeChart: expect.objectContaining({ rows: [] }) })));
 });

@@ -36,7 +36,7 @@ test.each(['/admin', '/seller'])('Smart Fill uses %s permissions and saves revie
   fireEvent.click(screen.getByRole('button', { name: /Apply \d+ selected details/ }));
   expect(screen.getByLabelText(/Product name/)).toHaveValue('Wine embroidered saree');
   expect(screen.getByLabelText(/^Material/)).toHaveValue('Georgette');
-  fireEvent.change(screen.getByLabelText('Stock quantity'), { target: { value: '3' } });
+  fireEvent.change(screen.getByLabelText('Sale stock quantity'), { target: { value: '3' } });
   fireEvent.click(screen.getByRole('button', { name: 'Add Product' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledWith(prefix + '/products', expect.objectContaining({ name: 'Wine embroidered saree', price: 899, originalPrice: 1299, stock: 3, sizes: [], highlights: ['Embroidered border'], metaTitle: 'Wine embroidered saree', attributeValues: { material: 'Georgette' } })));
 });
@@ -101,10 +101,10 @@ test('enabling size-level inventory preserves existing stock and supports produc
   render(<ProductForm />);
   await screen.findByRole('option', { name: 'Dresses' });
   fireEvent.change(screen.getByRole('combobox', { name: /Category/ }), { target: { value: 'dress' } });
-  fireEvent.change(screen.getByLabelText('Stock quantity'), { target: { value: '7' } });
+  fireEvent.change(screen.getByLabelText('Sale stock quantity'), { target: { value: '7' } });
   fireEvent.change(screen.getByLabelText('Selectable sizes'), { target: { value: 'S' } });
   fireEvent.click(screen.getByLabelText('Track stock by size and/or colour'));
-  expect(screen.getByLabelText('Total stock (calculated from variants)')).toBeDisabled();
+  expect(screen.getByLabelText('Total sale stock (calculated from variants)')).toBeDisabled();
   expect(await screen.findByLabelText('S default stock')).toHaveValue(7);
 });
 
@@ -123,11 +123,36 @@ test('copy existing product creates a safe new listing without reusing inventory
   await act(async () => { fireEvent.click(useProduct); await Promise.resolve(); });
   expect(screen.getByLabelText(/Product name/)).toHaveValue('Classic silk saree copy');
   expect(screen.getByLabelText(/^SKU/)).toHaveValue('');
-  expect(screen.getByLabelText('Stock quantity')).toHaveValue(0);
+  expect(screen.getByLabelText('Sale stock quantity')).toHaveValue(0);
   expect(screen.getByText(/Add a unique SKU/)).toBeInTheDocument();
 });
 beforeEach(() => { jest.clearAllMocks(); localStorage.clear(); jest.spyOn(window, 'confirm').mockReturnValue(true); api.get.mockResolvedValue([]); });
 afterEach(() => jest.restoreAllMocks());
+
+test.each(['/admin', '/seller'])('optional sizes stay visible on %s and a blank bridal product saves as Free Size', async prefix => {
+  api.get.mockImplementation(async path => path === '/catalog-configuration' ? { industry: 'boutique', features: { sizing: false }, attributes: [{ key: 'size', label: 'Size', type: 'text', required: true }] }
+    : path.includes('/categories') ? [category] : path.includes('duplicate-check') ? { conflicts: [] } : []);
+  api.post.mockResolvedValue({ _id: 'created' });
+  render(<ProductForm apiPrefix={prefix} uploadPrefix={`${prefix}/uploads`} />);
+  await screen.findByRole('option', { name: 'Sarees' });
+  const sizes = screen.getByLabelText('Selectable sizes');
+  expect(sizes).not.toBeRequired(); expect(sizes).toHaveValue('');
+  fireEvent.change(sizes, { target: { value: 'M' } });
+  expect(screen.getByLabelText(/^Customer sizing/)).toHaveValue('sized');
+  expect(screen.getByLabelText('M Bust')).toBeInTheDocument();
+  fireEvent.change(sizes, { target: { value: '' } });
+  expect(screen.queryByLabelText('M Bust')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'Wine bridal lehenga' } });
+  fireEvent.change(screen.getByLabelText(/^SKU/), { target: { value: 'OPTIONAL-SIZE-1' } });
+  fireEvent.change(screen.getByRole('combobox', { name: /Category/ }), { target: { value: 'cat' } });
+  fireEvent.change(screen.getByLabelText('Original price'), { target: { value: '1500' } });
+  fireEvent.change(screen.getByLabelText('Selling price'), { target: { value: '1200' } });
+  fireEvent.change(screen.getByLabelText('Sale stock quantity'), { target: { value: '3' } });
+  fireEvent.change(screen.getByLabelText(/Full Description/), { target: { value: 'Wine bridal outfit with visible floral embroidery.' } });
+  fireEvent.click(screen.getByRole('button', { name: `Upload photo ${prefix}/uploads` }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add Product' }));
+  await waitFor(() => expect(api.post).toHaveBeenCalledWith(`${prefix}/products`, expect.objectContaining({ sizingMode: 'free-size', sizes: [], sizeChart: { unit: 'in', columns: [], rows: [] }, stock: 3, commerceMode: 'SALE_ONLY' })));
+});
 
 test('banner typing, upload and placement submit real text values; failed save retains the editor', async () => {
   api.post.mockRejectedValueOnce(new Error('Banner save failed')).mockResolvedValueOnce({ _id: 'banner' });

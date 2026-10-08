@@ -63,7 +63,7 @@ const emptyProduct = {
   saleStartAt: '',
   saleEndAt: '',
   sizes: '',
-  sizingMode: 'auto',
+  sizingMode: 'free-size',
   sizeChartProfile: 'auto',
   sizeChart: { unit: 'in', columns: [], rows: [] },
   sizeFitNotes: '',
@@ -362,7 +362,16 @@ export default function ProductForm({
   const update = (field, value) => {
     setForm((current) => {
       const next = { ...current, [field]: value };
-      if ((field === 'sizes' || field === 'colors') && current.trackVariants) {
+      if (field === 'sizes') {
+        const hasSizes = splitList(value).some(size => !/^free[ -]?size$/i.test(size));
+        next.sizingMode = hasSizes ? 'sized' : 'free-size';
+        if (hasSizes && current.sizeChartProfile === 'free-size') next.sizeChartProfile = 'auto';
+      }
+      if ((field === 'sizingMode' && value === 'free-size') || (field === 'sizes' && next.sizingMode === 'free-size')) {
+        next.sizes = ''; next.trackVariants = false; next.variants = [];
+        next.sizeChart = { unit: 'in', columns: [], rows: [] };
+      }
+      if ((field === 'sizes' || field === 'colors') && next.trackVariants) {
         next.variants = seedExistingStock(
           buildVariantMatrix(splitList(field === 'sizes' ? value : current.sizes), splitList(field === 'colors' ? value : current.colors), current.variants),
           current,
@@ -539,8 +548,8 @@ export default function ProductForm({
         saleStartAt: form.commerceMode === 'RENTAL_ONLY' ? null : nullableDate(form.saleStartAt),
         saleEndAt: form.commerceMode === 'RENTAL_ONLY' ? null : nullableDate(form.saleEndAt),
         sizes: sizingMode === 'sized' ? selectableSizes : [],
-        sizingMode: usesGarmentSizing(structure, form) ? form.sizingMode || 'auto' : 'free-size',
-        sizeChartProfile: usesGarmentSizing(structure, form) ? form.sizeChartProfile || 'auto' : 'free-size',
+        sizingMode,
+        sizeChartProfile: sizingMode === 'sized' ? form.sizeChartProfile || 'auto' : 'free-size',
         sizeChart: buildSizeChartPayload(sizingProduct),
         colors: splitList(form.colors),
         tags: splitList(form.tags),
@@ -592,7 +601,7 @@ export default function ProductForm({
       const sizingMode = resolveSizingMode(sizingProduct);
       const tracksVariants = form.trackVariants && (sizingMode === 'sized' || getEffectiveVariantConfig(structure, categories, form).enabled);
       const payload = buildDraftPayload(form, {
-        sizingMode: sizingProduct.sizingMode || 'auto', sizeChartProfile: sizingProduct.sizeChartProfile || 'auto',
+        sizingMode, sizeChartProfile: sizingMode === 'sized' ? sizingProduct.sizeChartProfile || 'auto' : 'free-size',
         sizes: sizingMode === 'sized' ? getSelectableSizes(sizingProduct) : [],
         variants: tracksVariants ? form.variants : [],
         stock: tracksVariants ? form.variants.reduce((sum, variant) => sum + Math.max(0, Number(variant.stock || 0)), 0) : Number(form.stock || 0),
@@ -877,16 +886,15 @@ export default function ProductForm({
           />
           <p className="mt-2 text-xs font-semibold text-slate-500">{form.videos.length}/2 videos uploaded.</p>
         </div>}
-        {usesGarmentSizing(structure, form) && <><label className="admin-field">
+        <label className="admin-field">
           <span>Customer sizing</span>
           <select value={form.sizingMode || 'auto'} onChange={(event) => update('sizingMode', event.target.value)} className="admin-field__control">
-            <option value="auto">Automatic from product category</option>
+            <option value="auto">Automatic · Free size if sizes are blank</option>
             <option value="sized">Customer must select a size</option>
             <option value="free-size">No size selection / free size</option>
           </select>
           <small className="text-xs font-semibold text-slate-500">
-            Current behaviour: {effectiveSizingMode === 'sized' ? 'show size choices and size chart' : 'hide size choices'}.
-            {effectiveSizingMode === 'sized' && ' For sarees or products without size options, choose No size selection / free size.'}
+            Sizes are optional. Leave them blank for Free Size / adjustable items; enter labels only when customers should choose a size.
           </small>
         </label>
         <label className="admin-field">
@@ -901,13 +909,11 @@ export default function ProductForm({
             {Object.entries(SIZE_CHART_PROFILES).map(([value, profile]) => <option key={value} value={value}>{profile.label}</option>)}
           </select>
         </label>
-        </>}
-        {effectiveSizingMode === 'sized' ? (
-          <Input field="sizes" label="Selectable sizes" value={form.sizes} onChange={(value) => update('sizes', value)} error={errors.sizes} placeholder="XS, S, M, L, XL, XXL" />
-        ) : (
+        <Input field="sizes" label="Selectable sizes" value={form.sizes} onChange={(value) => update('sizes', value)} error={errors.sizes} placeholder="Optional · blank means Free Size" />
+        {effectiveSizingMode !== 'sized' && (
           <div className="admin-form-hint lg:col-span-2">
             <h3>No size chart required</h3>
-            <p>This product does not require garment sizing. Customers can add it without choosing S, M, L or XL.</p>
+            <p>Free Size is the default when no size labels are entered. Customers can order this item without choosing a size.</p>
           </div>
         )}
         <Input label="Colors" value={form.colors} onChange={(value) => update('colors', value)} placeholder="Pink, Maroon, Gold" />
@@ -1537,7 +1543,7 @@ function getActiveAttributeDefinitions(structure, categories = [], form = {}) {
   chain.forEach((layer) => (layer.attributes || []).forEach((item) => {
     if (typeof item === 'object' && item.key) merged.set(item.key, { ...(merged.get(item.key) || {}), ...item });
   }));
-  return Array.from(merged.values()).filter((item) => item.active !== false && (usesGarmentSizing(structure, form) || !sizeAttribute(item.key))).sort((left, right) => Number(left.sortOrder || 0) - Number(right.sortOrder || 0));
+  return Array.from(merged.values()).filter((item) => item.active !== false && (usesGarmentSizing(structure, form) || !sizeAttribute(item.key))).map(item => sizeAttribute(item.key) ? { ...item, required: false } : item).sort((left, right) => Number(left.sortOrder || 0) - Number(right.sortOrder || 0));
 }
 
 function getEffectiveVariantConfig(structure, categories = [], form = {}) {
