@@ -11,6 +11,15 @@ export const SIZE_MEASUREMENTS = {
   inseamLength: { label: 'Inseam length', shortLabel: 'Inseam', help: 'Measure from the crotch seam to the bottom hem along the inner leg.' },
 };
 
+export const automaticSizing = structure => structure?.industry !== 'boutique' && structure?.features?.sizing !== false;
+export const sizeAttribute = key => /^(?:size|sizes|accessory_size|ring_size|bangle_size|size_range|measurements)$/i.test(key);
+// Existing size-based inventory remains editable; new bridal listings need no
+// fixed garment sizes or measurement chart.
+export const usesGarmentSizing = (structure, product = {}) => structure?.features?.sizing !== false
+  && (structure?.industry !== 'boutique' || product.sizingMode === 'sized' || product.trackVariants || product.variants?.length > 0
+    || (Array.isArray(product.sizes) ? product.sizes.length > 0 : Boolean(String(product.sizes || '').trim()))
+    || product.sizeChart?.rows?.length > 0 || Boolean(product.attributeValues?.size));
+
 export const SIZE_CHART_PROFILES = {
   'kurta-set': {
     label: 'Kurta / ethnic set',

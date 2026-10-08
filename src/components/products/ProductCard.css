@@ -79,3 +79,4 @@
   .sc-product-card__stock { font-size: 9px; }
 }
 @media (prefers-reduced-motion: reduce) { .sc-product-card, .sc-product-card * { transition: none !important; } }
+.sc-product-card__rental-link{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 10px;margin-top:10px;border:1px solid #e9d7c2;border-radius:9px;background:#fcf6ee;color:#733047;font-size:11px;font-weight:700;text-align:left;cursor:pointer}.sc-product-card__rental-link:hover{background:#f7ecde}.sc-product-card__rental-link:focus-visible{outline:2px solid #bd955b;outline-offset:3px}

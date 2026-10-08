@@ -4,8 +4,17 @@ import api from '../services/api';
 jest.mock('../services/api', () => ({ get: jest.fn() }));
 jest.mock('../store/store', () => ({ store: { dispatch: jest.fn() } }));
 jest.mock('../store/apiSlice', () => ({ samiraApi: { util: { invalidateTags: jest.fn() } } }));
-function ReadTheme() { const { config, refresh } = useWebsiteCustomization(); return <><span data-testid="colour">{config.colors.primary}</span><button onClick={() => refresh({ force: true })}>Refresh</button></>; }
+function ReadTheme() { const { config, refresh, loading } = useWebsiteCustomization(); return <><span data-testid="colour">{config.colors.primary}</span><span data-testid="loading">{String(loading)}</span><button onClick={() => refresh({ force: true })}>Refresh</button></>; }
 beforeEach(() => { jest.clearAllMocks(); window.history.replaceState({}, '', '/'); });
+
+test('an empty config response keeps the last usable theme and a later refresh recovers', async () => {
+  api.get.mockResolvedValueOnce(undefined).mockResolvedValueOnce({ config: { colors: { primary: '#123456' } } });
+  render(<WebsiteCustomizationProvider route="/store/brand"><ReadTheme /></WebsiteCustomizationProvider>);
+  await waitFor(() => expect(screen.getByTestId('loading').textContent).toBe('false'));
+  expect(screen.getByTestId('colour').textContent).toBe('#6d1f34');
+  fireEvent.click(screen.getByText('Refresh'));
+  await waitFor(() => expect(screen.getByTestId('colour').textContent).toBe('#123456'));
+});
 test('published refresh bypasses stale cache and boutique changes use explicit scope', async () => {
   api.get.mockResolvedValue({ config: { colors: { primary: '#123456' } } });
   const view = render(<WebsiteCustomizationProvider route="/"><ReadTheme /></WebsiteCustomizationProvider>);

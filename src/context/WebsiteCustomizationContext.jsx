@@ -39,7 +39,9 @@ export function WebsiteCustomizationProvider({ children, route = '' }) {
       }
       const data = await api.get(`/website-config?store=${encodeURIComponent(slug)}`, { cacheFirst: true, forceRefetch: options.force === true });
       if (id !== requestId.current) return data;
-      setConfig((current) => reuseEqualBranches(current, mergeWebsiteConfig(data.config)));
+      if (!data?.config || typeof data.config !== 'object' || Array.isArray(data.config)) return null;
+      const nextConfig = mergeWebsiteConfig(data.config);
+      setConfig((current) => reuseEqualBranches(current, nextConfig));
       setTheme((current) => reuseEqualBranches(current, data.theme || null));
       setMetadata((current) => reuseEqualBranches(current, data.metadata || {}));
       setBrandIdentityManaged(Boolean(data.brandIdentityManaged));

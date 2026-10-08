@@ -82,7 +82,7 @@ export default function ProductInfoPanel({
           )}
         </button>
 
-        {!rentalOnly && <><div className="sc-info__price-row">
+        {!rentalOnly && <>{product.commerceMode === 'SALE_AND_RENTAL' && <span className="rental-eyebrow">BUY & KEEP · SALE PRICE</span>}<div className="sc-info__price-row">
           <span className="sc-info__price">₹{formatIndian(currentPrice)}</span>
           {originalPrice > currentPrice ? <span className="sc-info__original">MRP ₹{formatIndian(originalPrice)}</span> : null}
           {discount > 0 ? <span className="sc-info__discount">({Math.round(discount)}% OFF)</span> : null}

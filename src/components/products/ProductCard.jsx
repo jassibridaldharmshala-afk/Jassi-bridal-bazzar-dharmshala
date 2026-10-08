@@ -22,6 +22,7 @@ export default function ProductCard({ product, navigate, onAddToCart, onWishlist
     ? isWishlistedProp
     : wishlist.items.some(item => wishlistId(item) === productId);
   const rental = product.commerceMode === 'RENTAL_ONLY';
+  const mixed = product.commerceMode === 'SALE_AND_RENTAL';
   const unavailable = !rental && isUnavailable(product);
   const stock = rental ? null : wishlistStock(product);
   const options = wishlistOptions(product);
@@ -59,7 +60,7 @@ export default function ProductCard({ product, navigate, onAddToCart, onWishlist
   };
 
   return (
-    <article className={'sc-product-card' + (unavailable || stock === 0 ? ' is-unavailable' : '')} data-theme-product-card data-mobile-catalog-card aria-label={product.name}>
+    <article className={'sc-product-card' + (unavailable || (!mixed && stock === 0) ? ' is-unavailable' : '')} data-theme-product-card data-mobile-catalog-card aria-label={product.name}>
       <div className="sc-product-card__media" data-theme-product-media>
         <ProductImageCarousel product={product} className="sc-product-card__carousel" onOpen={openProduct} priority={imagePriority} />
         {badge && !unavailable && <span className="sc-product-card__badge" data-badge-tone={badgeTone}>{badge}</span>}
@@ -73,7 +74,7 @@ export default function ProductCard({ product, navigate, onAddToCart, onWishlist
           data-card-field="wishlist"
         ><Heart size={18} strokeWidth={1.8} fill={isWishlisted ? 'currentColor' : 'none'} /></button>
         {rating > 0 && reviews > 0 && <p className="sc-product-card__rating" data-card-field="rating" aria-label={rating.toFixed(1) + ' out of 5, ' + reviews + ' reviews'}><strong>{rating.toFixed(1)}</strong><Star size={11} fill="currentColor" /><span>{reviews}</span></p>}
-        {(unavailable || stock === 0) && <span className="sc-product-card__sold">{unavailable ? 'Unavailable' : 'Out of stock'}</span>}
+        {(unavailable || stock === 0) && <span className="sc-product-card__sold">{unavailable ? 'Unavailable' : mixed ? 'Sale out of stock' : 'Out of stock'}</span>}
         <button type="button" className="sc-product-card__quick" data-card-field="quick-view" onClick={() => setQuickOpen(true)}>Quick view</button>
       </div>
 
@@ -82,10 +83,11 @@ export default function ProductCard({ product, navigate, onAddToCart, onWishlist
           <h3 className="sc-product-card__title" title={product.name} data-card-field="title">{product.name}</h3>
         </button>
         <div className="sc-product-card__price-copy" data-card-field="price">
-          <strong className="sc-product-card__price">{rental ? 'Check rental rates' : money(price)}</strong>
+          <strong className="sc-product-card__price">{rental ? product.rentalPreview?.dailyRatePaise ? `${money(product.rentalPreview.dailyRatePaise / 100)} / day` : 'Check rental rates' : `${mixed ? 'Sale · ' : ''}${money(price)}`}</strong>
           {!rental && originalPrice > price && <del className="sc-product-card__original">{money(originalPrice)}</del>}
           {!rental && discount > 0 && <span className="sc-product-card__discount" data-card-field="discount">{discount}% off</span>}
         </div>
+        {mixed && !unavailable && <button type="button" className="sc-product-card__rental-link" onClick={openProduct} aria-label={`Rental pricing and dates for ${product.name}`}>{product.rentalPreview?.dailyRatePaise ? `Rent from ${money(product.rentalPreview.dailyRatePaise / 100)} / day` : 'Rental pricing & dates'} <span aria-hidden="true">→</span></button>}
         <div className="sc-product-card__footer">
           <div className="sc-product-card__meta">
             {optionLabel && <p className="sc-product-card__options">{optionLabel}</p>}

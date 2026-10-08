@@ -296,13 +296,15 @@ export const samiraApi = createApi({
       providesTags: ['AdminCategories'],
     }),
     bulkUploadProductDrafts: builder.mutation({
-      async queryFn({ files, groupMode = 'separate', apiPrefix = '/admin' }, api, extraOptions, baseQuery) {
+      async queryFn({ files, groupMode = 'separate', photoGroups, apiPrefix = '/admin' }, api, extraOptions, baseQuery) {
         const prefix = apiPrefix === '/seller' ? '/seller' : '/admin';
         const path = `${prefix}/product-drafts/bulk-upload`;
-        const mode = groupMode === 'single' ? 'single' : 'separate';
         let idempotencyKey;
         try {
-          idempotencyKey = await getDurableUploadRetryKey({ path, files, fields: { groupMode: mode }, scope: uploadScope(api.getState().auth) });
+          if (!['single', 'separate', 'grouped'].includes(groupMode)) throw new Error('Choose a valid product photo grouping option.');
+          if (groupMode === 'grouped' && (!Array.isArray(photoGroups) || !photoGroups.length)) throw new Error('Create product photo groups before uploading.');
+          const fields = { groupMode, ...(groupMode === 'grouped' ? { photoGroups: JSON.stringify(photoGroups) } : {}) };
+          idempotencyKey = await getDurableUploadRetryKey({ path, files, fields, scope: uploadScope(api.getState().auth) });
           if (hasUploadAttempt(idempotencyKey)) {
             // All photos may already be stored even though draft save/response
             // failed. Resume by receipt, without posting the photos again.
@@ -315,7 +317,7 @@ export const samiraApi = createApi({
           }
           const preparedFiles = [];
           for (const file of Array.from(files || [])) {
-            if (!file) continue;
+            if (!file) throw new Error('A selected photo is missing. Review the photos before uploading.');
             if (file.__compressionMeta) {
               preparedFiles.push(file);
               continue;
@@ -331,7 +333,7 @@ export const samiraApi = createApi({
           }
           const formData = new FormData();
           preparedFiles.forEach((file) => formData.append('images', file));
-          formData.append('groupMode', groupMode === 'single' ? 'single' : 'separate');
+          Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
           markUploadAttempt(idempotencyKey);
           const result = await baseQuery({ url: path, method: 'POST', body: formData, headers: { 'Idempotency-Key': idempotencyKey } }, api, extraOptions);
           if (result.error) {
@@ -408,6 +410,8 @@ export const samiraApi = createApi({
 
 function tagsForPath(path = '', mutation = false) {
   if (/\/(?:admin|seller)\/rentals\/configuration(?:\?|$)/.test(path)) return mutation ? ['Settings', 'AdminSettings', 'Products', 'Cart'] : ['Settings'];
+  if (/\/(?:admin|seller)\/rentals\/(?:listings|assets)(?:\/|\?|$)/.test(path)) return mutation ? ['Products', 'AdminProducts', 'Inventory', 'Wishlist'] : [];
+  if (/\/rentals\/(?:catalogue|availability|products)(?:\/|\?|$)/.test(path)) return mutation ? [] : ['Products'];
   if (/\/smart-fill\//.test(path)) return mutation && /\/catalog\/save(?:\?|$)/.test(path) ? ['Products', 'AdminProducts', 'AdminDashboard'] : [];
   if (/\/products\/(?:smart-fill|quick-analyze)(?:\/status)?$/.test(path)) return [];
   if (path.includes('/admin/social-imports')) return mutation && path.endsWith('/draft') ? ['ProductDrafts'] : [];

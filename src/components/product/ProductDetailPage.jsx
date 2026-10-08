@@ -122,7 +122,7 @@ export default function ProductDetailPage({
           />
 
           <div className="sc-pdp__info-stack">
-            <RentalOffer productId={product._id || product.id} navigate={navigate} />
+            <RentalOffer productId={product._id || product.id} commerceMode={settings.commerceMode === 'RENTAL_ONLY' ? 'RENTAL_ONLY' : product.commerceMode} navigate={navigate} />
             <ProductInfoPanel
               product={product}
               rentalOnly={settings.commerceMode === 'RENTAL_ONLY' || product.commerceMode === 'RENTAL_ONLY'}

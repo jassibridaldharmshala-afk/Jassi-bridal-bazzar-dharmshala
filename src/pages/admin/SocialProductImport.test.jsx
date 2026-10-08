@@ -4,7 +4,7 @@ import SocialProductImport from './SocialProductImport';
 import api from '../../services/api';
 import { fetchCategories } from '../../utils/catalogOptions';
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
-jest.mock('../../utils/catalogOptions', () => ({ fetchCategories: jest.fn().mockResolvedValue([{ _id: 'category-1', name: 'Kurtis' }]) }));
+jest.mock('../../utils/catalogOptions', () => ({ ...jest.requireActual('../../utils/catalogOptions'), fetchCategories: jest.fn().mockResolvedValue([{ _id: 'category-1', name: 'Kurtis' }]) }));
 const id = '0123456789abcdef01234567';
 const ready = { _id: id, platform: 'instagram', status: 'ready', stage: 'Ready to review', sourceUrl: 'https://www.instagram.com/p/ABC/', createdAt: '2026-09-06T09:00:00.000Z', attempts: 1,
   images: [{ id: 'a', url: '/uploads/a.webp', kind: 'photo' }, { id: 'b', url: '/uploads/b.webp', kind: 'frame', timestamp: 2 }], videos: [],

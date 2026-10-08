@@ -22,6 +22,8 @@ export default function Categories() {
   const [selected, setSelected] = useState([]);
   const [editor, setEditor] = useState(null);
   const [action, setAction] = useState(null);
+  const [bridalSetup, setBridalSetup] = useState(null);
+  const [setupBusy, setSetupBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -32,6 +34,13 @@ export default function Categories() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    let active = true;
+    api.get('/admin/categories/bridal-setup', { silent: true })
+      .then((result) => { if (active) setBridalSetup(result); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const roots = useMemo(() => categories.filter((category) => !category.parent && !category.isArchived), [categories]);
   const filtered = useMemo(() => categories.filter((category) => {
@@ -54,6 +63,20 @@ export default function Categories() {
   }), [categories]);
 
   const notify = (text, type = 'success') => setMessage({ type, text });
+
+  const applyBridalSetup = async () => {
+    if (setupBusy) return;
+    setSetupBusy(true);
+    try {
+      const result = await api.post('/admin/categories/bridal-setup', {});
+      setBridalSetup({ ...result, missing: [], structureUpdated: false });
+      await load();
+      notify(result.created?.length
+        ? `${result.created.length} bridal categories added as hidden. Add real products, then make each category visible.`
+        : 'Bridal catalogue is ready. Your existing categories were preserved.');
+    } catch (error) { notify(error.message, 'error'); }
+    finally { setSetupBusy(false); }
+  };
 
   const toggleStatus = async (category) => {
     if (busy) return;
@@ -157,6 +180,19 @@ export default function Categories() {
       <PageHeader title="Categories" note="Organize storefront navigation, product fields and search visibility from one place.">
         <button type="button" className="admin-btn" onClick={() => setEditor({ mode: 'Add', category: null })}><Plus size={17} /> Add category</button>
       </PageHeader>
+
+      {bridalSetup && <div className="admin-card p-5 space-y-3">
+        <div><h2 className="text-lg font-bold text-rose">Bridal sale and rental catalogue</h2><p className="text-sm text-slate-600">Set up clothing, jewellery, bangles and jaimala categories. New categories start hidden until you add real products and make them visible.</p></div>
+        <p className="text-sm"><strong>{bridalSetup.missing?.length || 0}</strong> categories to add · <strong>{bridalSetup.existing?.length || 0}</strong> already present</p>
+        {!!bridalSetup.missing?.length && <p className="text-sm text-slate-700">To add: {bridalSetup.missing.join(', ')}</p>}
+        {!!bridalSetup.archived?.length && <p className="text-sm text-amber-800">Archived categories need manual review: {bridalSetup.archived.join(', ')}</p>}
+        {!!bridalSetup.conflicts?.length && <p className="text-sm text-amber-800">Naming conflicts need manual review: {bridalSetup.conflicts.join(', ')}</p>}
+        <div className="flex flex-wrap gap-3">
+          {(bridalSetup.missing?.length > 0 || bridalSetup.structureUpdated) && <button type="button" className="admin-btn" disabled={setupBusy} onClick={applyBridalSetup}>{setupBusy ? 'Setting up…' : 'Add bridal categories'}</button>}
+          <a className="admin-btn-ghost" href="/admin/products/add">Add product</a>
+          <a className="admin-btn-ghost" href="/admin/rentals">Set rental rates and deposits</a>
+        </div>
+      </div>}
 
       <div className="category-summary-grid">
         <SummaryCard label="Categories" value={summary.total} icon={FolderTree} active={status === 'all'} onClick={() => setStatus('all')} />

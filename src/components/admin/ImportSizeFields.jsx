@@ -1,8 +1,8 @@
-import { getSelectableSizes, getSizeChartColumns, getSizeChartValidation, reconcileSizeChartRows, resolveSizingMode } from '../../utils/productSizing';
+import { getSelectableSizes, getSizeChartColumns, getSizeChartValidation, reconcileSizeChartRows, resolveSizingMode, usesGarmentSizing } from '../../utils/productSizing';
 import { importSizingProduct } from '../../utils/socialImport';
 
 export default function ImportSizeFields({ form, onUpdate, categories, structure }) {
-  if (structure?.features?.sizing === false) return null;
+  if (!usesGarmentSizing(structure, form)) return null;
   const product = importSizingProduct(form, categories, structure);
   const sized = resolveSizingMode(product) === 'sized';
   const columns = getSizeChartColumns(product);

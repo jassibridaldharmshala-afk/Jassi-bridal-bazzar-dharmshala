@@ -1,4 +1,5 @@
-import { getSizeChartValidation } from './productSizing';
+import { getSizeChartValidation, usesGarmentSizing } from './productSizing';
+import { productAttributeDefinitions } from './catalogOptions';
 export const SOCIAL_IMPORT_RUNNING = ['queued', 'reading', 'media', 'analyzing'];
 export const SOCIAL_IMPORT_STATUS = { queued: 'Queued', reading: 'Reading post', media: 'Importing media', analyzing: 'Preparing details', ready: 'Ready to review', failed: 'Needs attention', cancelled: 'Cancelled' };
 export function socialUrlError(value) {
@@ -16,6 +17,8 @@ export function socialReviewForm(job) {
   return { name: value.name || '', category: value.category || '', subCategory: value.subCategory || '',
     price: value.price ?? '', originalPrice: value.originalPrice ?? '', stock: job.savedReview ? value.stock ?? '' : '', description: value.description || '',
     shortDescription: value.shortDescription || '', fabric: value.fabric || '', occasion: value.occasion || '',
+    careInstructions: value.careInstructions || '',
+    metaTitle: value.metaTitle || '', metaDescription: value.metaDescription || '', metaKeywords: value.metaKeywords || '',
     colors: list('colors'), sizes: list('sizes'), tags: list('tags'), highlights: list('highlights'), sizingMode: value.sizingMode || 'auto',
     sizeChart: value.sizeChart || { unit: 'in', columns: [], rows: [] }, sizeChartProfile: value.sizeChartProfile || 'auto', attributeValues: value.attributeValues || {}, draftUpdatedAt: value.draftUpdatedAt,
     imageIds: value.imageIds || selected.map((image) => image.id), primaryImageId: value.primaryImageId || primary?.id || '',
@@ -35,7 +38,7 @@ export function socialReviewError(form) {
 export function importSizingProduct(form, categories = [], structure) {
   return { ...form, category: categories.find((item) => String(item._id) === String(form.category))?.name || '',
     sizes: Array.isArray(form.sizes) ? form.sizes : String(form.sizes || '').split(',').map((size) => size.trim()).filter(Boolean),
-    ...(structure?.features?.sizing === false ? { sizingMode: 'free-size', sizeChartProfile: 'free-size' } : {}) };
+    ...(!usesGarmentSizing(structure, form) ? { sizingMode: 'free-size', sizeChartProfile: 'free-size' } : {}) };
 }
 
 export function socialPublishMissing(form, categories = [], structure) {
@@ -47,6 +50,6 @@ export function socialPublishMissing(form, categories = [], structure) {
   if (!form.imageIds?.length) missing.push('Product photos');
   const sizing = getSizeChartValidation(importSizingProduct(form, categories, structure));
   if (!sizing.valid) missing.push('Available sizes and measurements');
-  for (const item of structure?.attributes || []) if (item.required && !String(form.attributeValues?.[item.key] || '').trim()) missing.push(item.label);
+  for (const item of productAttributeDefinitions(structure, categories, form)) if (item.required && !String(form.attributeValues?.[item.key] || '').trim()) missing.push(item.label);
   return missing;
 }

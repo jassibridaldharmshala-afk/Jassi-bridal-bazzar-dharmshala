@@ -72,6 +72,7 @@ export default function RelatedProductCarousel({ products = [], navigate, title 
                   <span className="sc-related__price">{rental ? product.rentalPreview ? `₹${(product.rentalPreview.dailyRatePaise / 100).toLocaleString('en-IN')} / day` : 'Check rental rates' : `Rs. ${price}`}</span>
                   {!rental && Number(product.originalPrice) > Number(product.price) && <span className="sc-related__original">Rs. {original}</span>}
                 </div>
+                {product.commerceMode === 'SALE_AND_RENTAL' && <button type="button" className="rental-text-button" onClick={() => navigate(`/product?id=${productId}`)}>{product.rentalPreview?.dailyRatePaise ? `Rent from ₹${(product.rentalPreview.dailyRatePaise / 100).toLocaleString('en-IN')} / day · dates →` : 'Rental pricing & dates →'}</button>}
                 {rental && product.rentalPreview && <p>Refundable deposit: ₹{(product.rentalPreview.depositPaise / 100).toLocaleString('en-IN')}</p>}
                 {!rental && discount > 0 && <p className="sc-related__discount">({discount}% OFF)</p>}
                 <button type="button" disabled={unavailable || (!rental && cart.loading)} className={`sc-related__cart disabled:opacity-50${cartItem && !rental ? ' sc-related__cart--active' : ''}`} onClick={() => rental ? navigate(`/rental-book?product=${encodeURIComponent(productId)}`) : needsSize ? navigate(`/product?id=${productId}`) : cart.addToCart(product)}>

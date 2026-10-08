@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { normalizeImageUrl } from '../../services/normalize';
 import { displaySmartValue, fieldValue, sameValue, selectedSmartPatch, smartPhotos, smartRequest, snapshotForm, suggestionRows } from '../../utils/productSmartFill';
 import './ProductSmartFill.css';
+import { automaticSizing } from '../../utils/productSizing';
 
 export default function ProductSmartFill({ form, categories, structure, onApply, apiPrefix = '/admin', priceField = 'price', seo = true, disabled = false }) {
   const uid = useId();
@@ -20,7 +21,8 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
   const [undo, setUndo] = useState(null);
   const request = useRef(null);
   const photos = smartPhotos(form);
-  const chosen = (selection ?? photos.slice(0, 3)).filter(url => photos.includes(url)).slice(0, 3);
+  const maxPhotos = Math.min(6, status?.maxPhotos || 3);
+  const chosen = (selection ?? photos.slice(0, maxPhotos)).filter(url => photos.includes(url)).slice(0, maxPhotos);
   const inputs = JSON.stringify({ notes, photos: chosen });
   const stale = preview && preview.inputs !== inputs;
 
@@ -53,7 +55,7 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
     }
   };
   const togglePhoto = (url) => {
-    setSelection(chosen.includes(url) ? chosen.filter(item => item !== url) : chosen.length < 3 ? [...chosen, url] : chosen);
+    setSelection(chosen.includes(url) ? chosen.filter(item => item !== url) : chosen.length < maxPhotos ? [...chosen, url] : chosen);
   };
   const patch = preview && !stale ? selectedSmartPatch(preview.rows, selected, form, replace) : [];
   const apply = () => {
@@ -71,14 +73,14 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
     {open && <div id={uid} className="product-smart-fill__body">
       <p>Use clear views of one product. Review suggested details before adding them to your form.</p>
       {!!photos.length && <div>
-        <p className="product-smart-fill__label">Product photos <span>{chosen.length}/3 selected</span></p>
-        <div className="product-smart-fill__photos">{photos.map((url, index) => <button key={url} type="button" disabled={busy || disabled || (!chosen.includes(url) && chosen.length >= 3)} aria-pressed={chosen.includes(url)} aria-label={`Use product photo ${index + 1}`} onClick={() => togglePhoto(url)}>
+        <p className="product-smart-fill__label">Product photos <span>{chosen.length}/{maxPhotos} selected</span></p>
+        <div className="product-smart-fill__photos">{photos.map((url, index) => <button key={url} type="button" disabled={busy || disabled || (!chosen.includes(url) && chosen.length >= maxPhotos)} aria-pressed={chosen.includes(url)} aria-label={`Use product photo ${index + 1}`} onClick={() => togglePhoto(url)}>
           <img src={normalizeImageUrl(url)} alt={`Product view ${index + 1}`} loading="lazy" /><span>{chosen.includes(url) ? 'Selected' : 'Select'}</span>
         </button>)}</div>
       </div>}
       <label className="product-smart-fill__label" htmlFor={uid + '-notes'}>Supplier notes or product details</label>
       <textarea id={uid + '-notes'} rows={4} maxLength={7000} value={notes} disabled={busy || disabled} onChange={event => setNotes(event.target.value)} placeholder={'Paste details in English, Hindi or Hinglish. For example:\nName: Wine embroidered saree\nFabric: Georgette\nSelling price: Rs 1299\nMRP: Rs 1999'} />
-      <p className="product-smart-fill__hint">{status?.enabled === false ? 'Photo AI is not configured. You can still fill explicitly stated details from notes.' : 'Uses your selected photos and details already entered. Add photos in the product photo section.'} Stock stays manual. Price and available sizes are suggested only when stated.</p>
+      <p className="product-smart-fill__hint">{status?.enabled === false ? 'Photo AI is not configured. You can still fill explicitly stated details from notes.' : 'Fills category, design, colours, specifications, descriptions, highlights, tags and SEO from your photos and notes.'} Stock stays manual; prices, materials and care need stated details. {!automaticSizing(structure) ? 'Sizes and measurements are not filled for adjustable bridal items.' : 'Available sizes need stated details.'}</p>
       <div className="product-smart-fill__actions">
         <button type="button" className="admin-btn" disabled={busy || disabled} onClick={analyze}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}{busy ? 'Reading product details…' : 'Suggest details'}</button>
         {busy && <button type="button" className="admin-btn-ghost" onClick={() => { request.current?.abort(); request.current = null; setBusy(false); setNotice('Analysis cancelled.'); }}>Cancel</button>}

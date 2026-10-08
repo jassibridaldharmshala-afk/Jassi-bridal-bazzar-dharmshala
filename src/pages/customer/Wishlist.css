@@ -190,3 +190,5 @@
   .sc-wishlist__footer { background: white; border-color: var(--wish-border); }
   .sc-wish-dialog__choices button[aria-pressed=true] { background: var(--blush, #fff0f4); }
 }
+
+.sc-wishlist__rental-price{font-size:12px;font-weight:700;color:#702038;margin-top:8px}.sc-wish-card__rental{width:100%;min-height:42px;padding:10px;border:1px solid #e8d9cc;border-radius:10px;color:#702038;background:#fff8ef;font-size:12px;font-weight:700;margin-top:8px;cursor:pointer}

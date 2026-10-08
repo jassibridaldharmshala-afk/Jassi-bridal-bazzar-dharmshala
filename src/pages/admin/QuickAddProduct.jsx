@@ -6,7 +6,7 @@ import ProductSmartFill from '../../components/admin/ProductSmartFill';
 import { applySmartPatch } from '../../utils/productSmartFill';
 import PageHeader from '../../components/admin/PageHeader';
 import ImportSizeFields from '../../components/admin/ImportSizeFields';
-import { asCatalogList, fetchSubcategories } from '../../utils/catalogOptions';
+import { asCatalogList, fetchSubcategories, productAttributeDefinitions } from '../../utils/catalogOptions';
 import { importSizingProduct } from '../../utils/socialImport';
 import { buildSizeChartPayload, getSelectableSizes, getSizeChartValidation, resolveSizingMode } from '../../utils/productSizing';
 import './SocialProductImport.css';
@@ -135,6 +135,7 @@ export default function QuickAddProduct() {
     try {
       const result = await api.post('/admin/products/quick-analyze', {
         imageUrl,
+        imageUrls: images.slice(0, 6).map(item => item.url).filter(Boolean),
         categories: categoriesRef.current.map((item) => ({ _id: item._id, name: item.name })),
         subcategories,
       });
@@ -187,8 +188,9 @@ export default function QuickAddProduct() {
       }
       return;
     }
-    if (firstUrl === analyzedUrlRef.current) return;
-    analyzedUrlRef.current = firstUrl;
+    const photoSet = JSON.stringify(images.slice(0, 6).map(item => item.url).filter(Boolean));
+    if (photoSet === analyzedUrlRef.current) return;
+    analyzedUrlRef.current = photoSet;
 
     // Do not fill from the phone filename first — wait for vision when AI is on.
     if (visionEnabledRef.current === false) {
@@ -207,7 +209,7 @@ export default function QuickAddProduct() {
     if (!getSizeChartValidation(sizing).valid) nextErrors.sizing = 'Complete the available sizes and actual measurements below.';
     if (!Number.isSafeInteger(Number(form.stock)) || Number(form.stock) < 0) nextErrors.stock = 'Enter a whole-number stock quantity.';
     if (!Number.isFinite(Number(form.price))) nextErrors.price = 'Enter a valid selling price.';
-    for (const attribute of structure.attributes || []) {
+    for (const attribute of productAttributeDefinitions(structure, categories, form)) {
       if (attribute.required && !String(form.attributeValues?.[attribute.key] ?? '').trim()) nextErrors[attribute.key] = `${attribute.label} is required.`;
     }
     setErrors(nextErrors);
@@ -335,14 +337,14 @@ export default function QuickAddProduct() {
             {errors.images && <p className="admin-field__error mt-2">{errors.images}</p>}
           </div>
 
-          {structure?.attributes?.map((attribute) => <label key={attribute.key} className="admin-field mt-4"><span>{attribute.label}{attribute.unit ? ` (${attribute.unit})` : ''}{attribute.required && <em>*</em>}</span><input className="admin-field__control" maxLength={500} value={form.attributeValues?.[attribute.key] ?? ''} onChange={(event) => { update('attributeValues', { ...form.attributeValues, [attribute.key]: event.target.value }); setErrors((current) => ({ ...current, [attribute.key]: undefined })); }} />{errors[attribute.key] && <span className="admin-field__error">{errors[attribute.key]}</span>}</label>)}
+          {productAttributeDefinitions(structure, categories, form).map((attribute) => <label key={attribute.key} className="admin-field mt-4"><span>{attribute.label}{attribute.unit ? ` (${attribute.unit})` : ''}{attribute.required && <em>*</em>}</span><input className="admin-field__control" maxLength={500} value={form.attributeValues?.[attribute.key] ?? ''} onChange={(event) => { update('attributeValues', { ...form.attributeValues, [attribute.key]: event.target.value }); setErrors((current) => ({ ...current, [attribute.key]: undefined })); }} />{errors[attribute.key] && <span className="admin-field__error">{errors[attribute.key]}</span>}</label>)}
           {structure && <div className="mt-4"><ImportSizeFields form={form} onUpdate={update} categories={categories} structure={structure} />{errors.sizing && <p role="alert" className="admin-field__error">{errors.sizing}</p>}</div>}
         </div>
 
         <div className="admin-form-card">
           <h2>Review</h2>
           <p className="admin-form-card__note">Review the product details and confirm your available stock.</p>
-          <div className="mt-4"><ProductSmartFill form={form} categories={categories} structure={structure} seo={false} disabled={saving || analyzing || !structure}
+          <div className="mt-4"><ProductSmartFill form={form} categories={categories} structure={structure} disabled={saving || analyzing || !structure}
             onApply={(patch, undo) => {
               nameTouchedRef.current = true; copyTouchedRef.current = true; categoryTouchedRef.current = true;
               setNameTouched(true); setCopyTouched(true); setCategoryTouched(true);

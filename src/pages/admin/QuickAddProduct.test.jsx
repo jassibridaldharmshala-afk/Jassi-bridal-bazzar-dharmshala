@@ -46,6 +46,17 @@ test('quick add saves reviewed free-size details and can reset for another produ
   expect(screen.getByLabelText(/Product name/)).toHaveValue('');
   expect(screen.getByLabelText(/Stock/)).toHaveValue(null);
 });
+
+test('new bridal clothing saves without size fields or mandatory measurements', async () => {
+  configuration = { industry: 'boutique', features: { sizing: true }, attributes: [{ key: 'size', label: 'Size' }] };
+  render(<QuickAddProduct />); await fillBasic();
+  fireEvent.click(screen.getByRole('button', { name: 'Tops', exact: true }));
+  fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'Wine bridal top' } });
+  expect(screen.queryByLabelText('Sizing')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Size')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Looks good, add product' }));
+  await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/products', expect.objectContaining({ sizingMode: 'free-size', sizes: [], sizeChart: expect.objectContaining({ rows: [] }) })));
+});
 test('failed product create preserves all reviewed fields for retry', async () => {
   api.post.mockRejectedValueOnce(new Error('Inventory unavailable'));
   render(<QuickAddProduct />); await fillBasic();

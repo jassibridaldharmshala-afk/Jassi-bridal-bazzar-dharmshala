@@ -1,3 +1,19 @@
+import { sizeAttribute, usesGarmentSizing } from './productSizing';
+
+export function productAttributeDefinitions(structure, categories = [], product = {}) {
+  const category = categories.find(item => String(item._id) === String(product.category?._id || product.category));
+  let definition = structure?.categoryDefinitions?.find(item => item.key === category?.definitionKey || item.name === category?.name);
+  const definitions = new Map((structure?.attributes || []).map(item => [item.key, item]));
+  const chain = [], visited = new Set();
+  while (definition && !visited.has(definition.key)) {
+    visited.add(definition.key); chain.unshift(definition);
+    const parentKey = definition.parentKey;
+    definition = structure.categoryDefinitions.find(item => item.key === parentKey);
+  }
+  for (const item of [...chain.flatMap(layer => layer.attributes || []), ...(category?.attributeOverrides || [])]) if (item && typeof item === 'object' && item.key) definitions.set(item.key, { ...definitions.get(item.key), ...item });
+  return [...definitions.values()].filter(item => item.active !== false && (usesGarmentSizing(structure, product) || !sizeAttribute(item.key)));
+}
+
 export function asCatalogList(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;

@@ -22,6 +22,7 @@ client-installation.json
 uploads/
 **/uploads/
 tmp/
+/.tmp/
 **/tmp/
 *.log
 *.pid

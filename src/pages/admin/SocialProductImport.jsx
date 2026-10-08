@@ -4,7 +4,7 @@ import { IconBrandFacebook as Facebook, IconBrandInstagram as Instagram } from '
 import api from '../../services/api';
 import PageHeader from '../../components/admin/PageHeader';
 import ImportSizeFields from '../../components/admin/ImportSizeFields';
-import { fetchCategories } from '../../utils/catalogOptions';
+import { fetchCategories, productAttributeDefinitions } from '../../utils/catalogOptions';
 import { normalizeImageUrl } from '../../services/normalize';
 import { SOCIAL_IMPORT_RUNNING, SOCIAL_IMPORT_STATUS, socialReviewForm, socialReviewError, socialPublishMissing, socialUrlError } from '../../utils/socialImport';
 import './SocialProductImport.css';
@@ -186,12 +186,12 @@ function ReviewImport({ job, categories, structure, structureError, onCreated })
         {job.suggestion?.fieldSources?.price && <p className="social-import__price-source">Found in {({ caption: 'the caption', on_screen: 'video text', speech: 'reel audio' })[job.suggestion.fieldSources.price.source] || 'the source'}{job.suggestion.fieldSources.price.timestampSeconds != null ? ` at ${Number(job.suggestion.fieldSources.price.timestampSeconds).toFixed(1)}s` : ''}: “{job.suggestion.fieldSources.price.quote}”</p>}
         {job.suggestion?.priceAmbiguous && <p className="social-import__alert">The source price is unclear or belongs to several products. Enter the price for this product.</p>}
         <ImportSizeFields form={form} onUpdate={update} categories={categories} structure={structure} />
-        {structure?.attributes?.filter((item) => item.required).map((item) => <label className="admin-field" key={item.key}><span>{item.label}{item.unit ? ` (${item.unit})` : ''} *</span><input className="admin-field__control" maxLength={500} value={form.attributeValues[item.key] || ''} onChange={(event) => update('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></label>)}
+        {productAttributeDefinitions(structure, categories, form).filter((item) => item.required).map((item) => <label className="admin-field" key={item.key}><span>{item.label}{item.unit ? ` (${item.unit})` : ''} *</span><input className="admin-field__control" maxLength={500} value={form.attributeValues[item.key] || ''} onChange={(event) => update('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></label>)}
         <details className="social-import__additional"><summary>Review all filled details & optional fields</summary>
           <label className="admin-field"><span>Description</span><textarea className="admin-field__control" rows={4} maxLength={6000} value={form.description} onChange={(event) => update('description', event.target.value)} /></label>
           <div className="social-import__field-row">{field('originalPrice', 'MRP (₹)', 'number')}{field('subCategory', 'Subcategory')}{field('colors', 'Colors (comma separated)')}{field('fabric', 'Fabric / material')}{field('occasion', 'Occasion')}</div>
-          {field('shortDescription', 'Short description')}{field('tags', 'Tags (comma separated)')}{field('highlights', 'Highlights (comma separated)')}
-          {structure?.attributes?.filter((item) => !item.required).map((item) => <label className="admin-field" key={item.key}><span>{item.label}</span><input className="admin-field__control" maxLength={500} value={form.attributeValues[item.key] || ''} onChange={(event) => update('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></label>)}
+          {field('shortDescription', 'Short description')}{field('tags', 'Tags (comma separated)')}{field('highlights', 'Highlights (comma separated)')}{field('careInstructions', 'Care instructions')}{field('metaTitle', 'SEO title')}{field('metaDescription', 'SEO description')}{field('metaKeywords', 'SEO keywords')}
+          {productAttributeDefinitions(structure, categories, form).filter((item) => !item.required).map((item) => <label className="admin-field" key={item.key}><span>{item.label}</span><input className="admin-field__control" maxLength={500} value={form.attributeValues[item.key] || ''} onChange={(event) => update('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></label>)}
         </details>
       </fieldset>
       {job.warnings?.length > 0 && <details className="social-import__notes"><summary>Review notes ({job.warnings.length})</summary><ul>{job.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul></details>}

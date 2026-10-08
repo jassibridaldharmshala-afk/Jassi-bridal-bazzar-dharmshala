@@ -6,7 +6,7 @@ import {fetchCategories,fetchSubcategories} from '../../utils/catalogOptions';
 const mockNotify=jest.fn();
 jest.mock('../../context/AuthContext',()=>({useAuth:()=>({notify:mockNotify})}));
 jest.mock('../../services/api',()=>({get:jest.fn(),patch:jest.fn(),post:jest.fn()}));
-jest.mock('../../utils/catalogOptions',()=>({fetchCategories:jest.fn(),fetchSubcategories:jest.fn()}));
+jest.mock('../../utils/catalogOptions',()=>({...jest.requireActual('../../utils/catalogOptions'),fetchCategories:jest.fn(),fetchSubcategories:jest.fn()}));
 const candidate={_id:'candidate',groupNumber:1,status:'suggested',sourceRange:{startSeconds:1,endSeconds:4},suggestions:{name:'Pink embroidered saree',sizingMode:'free-size'},analysis:{status:'unavailable'},frames:[
   {_id:'front',url:'/uploads/front.jpg',timestampSeconds:1,selected:true,recommended:true,recommendedCover:true,selectionVersion:'quality-v1',qualityScore:.9,viewType:'front'},
   {_id:'side',url:'/uploads/side.jpg',timestampSeconds:4,selected:false,recommended:false,selectionVersion:'quality-v1',qualityScore:.8,viewType:'side'},

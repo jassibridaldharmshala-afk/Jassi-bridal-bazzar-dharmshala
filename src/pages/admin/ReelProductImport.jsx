@@ -1,3 +1,4 @@
+import { productAttributeDefinitions } from '../../utils/catalogOptions';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, FileVideo, GitMerge, Info, MoveRight, Plus, RefreshCcw,
@@ -403,7 +404,7 @@ function ReviewWorkspace({ jobId }) {
         pattern: form.pattern, fabric: form.fabric, occasion: form.occasion, tags: form.tags,
         description: form.description, price: form.price, sizes: form.sizingMode === 'free-size' ? '' : form.sizes,
         sizingMode: form.sizingMode, stock: form.stock, primaryFrameId: form.primaryFrameId,
-        originalPrice: form.originalPrice, sizeChart: form.sizeChart, sizeChartProfile: form.sizeChartProfile, attributeValues: form.attributeValues,
+        originalPrice: form.originalPrice, shortDescription: form.shortDescription, highlights: form.highlights, careInstructions: form.careInstructions, metaTitle: form.metaTitle, metaDescription: form.metaDescription, metaKeywords: form.metaKeywords, sizeChart: form.sizeChart, sizeChartProfile: form.sizeChartProfile, attributeValues: form.attributeValues,
       },
       selectedFrameIds: form.selectedFrameIds,
     });
@@ -766,7 +767,7 @@ function CandidateCard({ candidate, candidates, categories, structure, form, sma
       {candidate.suggestions?.fieldSources?.price && <p className="social-import__price-source">Price from {({ speech: 'reel audio', on_screen: 'video text', caption: 'the caption' })[candidate.suggestions.fieldSources.price.source] || 'the source'}: “{candidate.suggestions.fieldSources.price.quote}”</p>}
       {candidate.suggestions?.priceAmbiguous && <p className="mt-3 text-xs font-bold text-amber-800">The source has several products or an unclear price. Confirm the price for this product.</p>}
       <div className="my-4"><ImportSizeFields form={form} onUpdate={onUpdate} categories={categories} structure={structure} /></div>
-      {structure?.attributes?.filter((item) => item.required).map((item) => <Labeled key={item.key} label={item.label} hint="Required"><TextInput value={form.attributeValues[item.key] || ''} onChange={(event) => onUpdate('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></Labeled>)}
+      {productAttributeDefinitions(structure, categories, form).filter((item) => item.required).map((item) => <Labeled key={item.key} label={item.label} hint="Required"><TextInput value={form.attributeValues[item.key] || ''} onChange={(event) => onUpdate('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></Labeled>)}
       <details className="social-import__additional"><summary className="cursor-pointer text-sm font-bold text-wine">Review all filled details & optional fields</summary><div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Labeled label="Subcategory">
           <Select value={form.subCategory || ''} onChange={(event) => onUpdate('subCategory', event.target.value)} className="w-full">
@@ -781,7 +782,7 @@ function CandidateCard({ candidate, candidates, categories, structure, form, sma
         <Labeled label="Tags"><TextInput value={form.tags} onChange={(event) => onUpdate('tags', event.target.value)} placeholder="festive, maroon" className="w-full" /></Labeled>
         <Labeled label="MRP"><TextInput type="number" min="0" value={form.originalPrice} onChange={(event) => onUpdate('originalPrice', event.target.value)} placeholder="Optional" className="w-full" /></Labeled>
         <div className="sm:col-span-2"><Labeled label="Product description"><TextArea value={form.description} onChange={(event) => onUpdate('description', event.target.value)} placeholder="Describe the visible style, work and silhouette" className="w-full" maxLength={800} /></Labeled></div>
-        {structure?.attributes?.filter((item) => !item.required).map((item) => <Labeled key={item.key} label={item.label}><TextInput value={form.attributeValues[item.key] || ''} onChange={(event) => onUpdate('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></Labeled>)}
+        {productAttributeDefinitions(structure, categories, form).filter((item) => !item.required).map((item) => <Labeled key={item.key} label={item.label}><TextInput value={form.attributeValues[item.key] || ''} onChange={(event) => onUpdate('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></Labeled>)}
       </div></details>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={onSave} className="inline-flex h-10 items-center gap-2 rounded-xl bg-wine px-4 text-xs font-black text-white"><Check className="h-4 w-4" />Save candidate</button>
@@ -830,6 +831,12 @@ function candidateForm(candidate) {
     tags: Array.isArray(overrides.tags || suggestions.tags) ? (overrides.tags || suggestions.tags).join(', ') : overrides.tags || '',
     sizes: Array.isArray(overrides.sizes) ? (overrides.sizes.length ? overrides.sizes : suggestions.sizes || []).join(', ') : overrides.sizes || suggestions.sizes?.join(', ') || '',
     sizingMode: (overrides.sizingMode || suggestions.sizingMode || 'auto').replace('confirm', 'auto'),
+    shortDescription: overrides.shortDescription || suggestions.shortDescription || '',
+    highlights: overrides.highlights || suggestions.highlights || [],
+    careInstructions: overrides.careInstructions || suggestions.careInstructions || '',
+    metaTitle: overrides.metaTitle || suggestions.metaTitle || '',
+    metaDescription: overrides.metaDescription || suggestions.metaDescription || '',
+    metaKeywords: overrides.metaKeywords || suggestions.metaKeywords || '',
     description: overrides.description || suggestions.description || suggestions.shortDescription || '',
     price: Number(overrides.price ?? overrides.sellingPrice) > 0 ? overrides.price ?? overrides.sellingPrice : suggestions.price ?? '',
     originalPrice: Number(overrides.originalPrice) > 0 ? overrides.originalPrice : suggestions.originalPrice ?? '',

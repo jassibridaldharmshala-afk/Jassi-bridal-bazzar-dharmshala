@@ -1,7 +1,8 @@
+import { automaticSizing, sizeAttribute } from './productSizing';
 export const SMART_FIELDS = {
   name: 'Product name', sku: 'SKU (generated product code)', category: 'Category', subCategory: 'Subcategory', shortDescription: 'Short description',
   description: 'Description', price: 'Selling price', originalPrice: 'Original price / MRP', colors: 'Colours', fabric: 'Fabric',
-  occasion: 'Occasion', tags: 'Tags', highlights: 'Highlights', sizes: 'Available sizes', sizingMode: 'Sizing',
+  occasion: 'Occasion', tags: 'Tags', highlights: 'Highlights', careInstructions: 'Care instructions', sizes: 'Available sizes', sizingMode: 'Sizing',
   metaTitle: 'SEO title', metaDescription: 'SEO description', metaKeywords: 'SEO keywords',
 };
 export const sameValue = (a, b) => JSON.stringify(a ?? '') === JSON.stringify(b ?? '');
@@ -26,7 +27,7 @@ export function smartPhotos(form) {
 }
 
 export function smartRequest(form, notes, imageUrls) {
-  const fields = ['name', 'category', 'subCategory', 'fabric', 'colors', 'sizes', 'occasion', 'description', 'attributeValues'];
+  const fields = ['name', 'category', 'subCategory', 'fabric', 'colors', 'occasion', 'description', 'shortDescription', 'highlights', 'careInstructions', 'attributeValues'];
   return { notes, imageUrls, existing: Object.fromEntries(fields.map(key => [key, key === 'category' ? id(form.category) : form[key]])) };
 }
 
@@ -45,7 +46,7 @@ export function suggestionRows(result, baseline, { categories = [], structure, p
     if ((!seo && (field.startsWith('meta') || field === 'sku')) || (field === 'sizingMode' && data[field] === 'auto')) continue;
     // Changing option matrices requires deliberate inventory editing.
     if (variants && inventoryFields.includes(field)) continue;
-    if (structure?.features?.sizing === false && ['sizes', 'sizingMode'].includes(field)) continue;
+    if (!automaticSizing(structure) && ['sizes', 'sizingMode'].includes(field)) continue;
     let value = data[field];
     if (empty(value, field)) continue;
     if (field === 'category' && !categories.some(category => String(category._id) === String(value))) continue;
@@ -57,12 +58,19 @@ export function suggestionRows(result, baseline, { categories = [], structure, p
     if (sameValue(before, value)) continue;
     rows.push({ key, field, label, value, before, empty: empty(before, key), evidence: result.fieldSources?.[field], categoryBefore: id(baseline.category), ...(key === 'category' ? { subCategoryBefore: baseline.subCategory } : {}) });
   }
-  for (const attribute of structure?.attributes || []) {
+  const categoryId = data.category || id(baseline.category);
+  const category = categories.find(item => String(item._id) === String(categoryId));
+  const definition = structure?.categoryDefinitions?.find(item => item.key === category?.definitionKey || item.name === category?.name);
+  const attributes = new Map((structure?.attributes || []).map(item => [item.key, item]));
+  for (const item of [...(definition?.attributes || []), ...(category?.attributeOverrides || [])]) if (item && typeof item === 'object' && item.key) attributes.set(item.key, item);
+  for (const attribute of attributes.values()) {
+    if (!automaticSizing(structure) && sizeAttribute(attribute.key)) continue;
+    if (variants && attribute.variant) continue;
     const value = data.attributeValues?.[attribute.key];
     const key = 'attributeValues.' + attribute.key;
     if (typeof value !== 'string' || !value.trim()) continue;
     const before = fieldValue(baseline, key);
-    if (!sameValue(value, before)) rows.push({ key, field: key, label: attribute.label, value, before, empty: empty(before, key), evidence: result.fieldSources?.['attribute.' + attribute.key] });
+    if (!sameValue(value, before)) rows.push({ key, field: key, label: attribute.label, value, before, empty: empty(before, key), evidence: result.fieldSources?.['attribute.' + attribute.key], categoryBefore: id(baseline.category), categoryTarget: categoryId, categoryDependent: !(structure?.attributes || []).some(item => item.key === attribute.key) || [...(definition?.attributes || []), ...(category?.attributeOverrides || [])].some(item => item?.key === attribute.key) });
   }
   return rows;
 }
@@ -77,6 +85,8 @@ export function selectedSmartPatch(rows, selected, form, replace = false) {
   else if (category && form.subCategory && !patch.some(row => row.key === 'subCategory')) {
     patch = [...patch, { key: 'subCategory', before: form.subCategory, value: '' }];
   }
+  const targetCategory = patch.find(row => row.key === 'category')?.value || id(form.category);
+  patch = patch.filter(row => !row.categoryDependent || (sameValue(id(form.category), row.categoryBefore) && String(row.categoryTarget) === String(targetCategory)));
   const proposed = applySmartPatch(form, patch);
   const price = Number(proposed.sellingPrice ?? proposed.price);
   const mrp = Number(proposed.originalPrice);

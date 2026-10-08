@@ -87,17 +87,17 @@ const DEFAULT_FIELD_ORDER = [
 export function buildAssistantSuggestions(input = {}) {
   const categoryName = normalizeText(input.categoryName || input.category || input.type || '');
   const productType = normalizeProductType(categoryName);
-  const rule = CATEGORY_RULES[productType] || CATEGORY_RULES.suit;
+  const rule = CATEGORY_RULES[productType] || { productType: categoryName || 'Product', name: ({ color, work, fabric, categoryName: label }) => joinParts([color, work, fabric, label || categoryName || 'Product']) };
   const mainColor = normalizeText(input.color || input.mainColor || '');
   const secondaryColors = normalizeList(input.secondaryColors || input.secondaryColor || '');
   const fabric = normalizeText(input.fabric || '');
-  const occasion = normalizeText(input.occasion || 'Everyday wear');
-  const style = normalizeText(input.style || input.type || 'Ethnic');
-  const work = normalizeText(input.workPattern || input.work || 'Plain');
-  const fit = normalizeText(input.fit || 'Regular');
-  const usesSelectableSizes = productType !== 'saree';
-  const sizeRange = usesSelectableSizes ? normalizeText(input.sizeRange || input.sizes || 'S, M, L, XL') : '';
-  const priceSegment = normalizeText(input.priceSegment || 'Premium');
+  const occasion = normalizeText(input.occasion || '');
+  const style = normalizeText(input.style || input.type || '');
+  const work = normalizeText(input.workPattern || input.work || '');
+  const fit = normalizeText(input.fit || '');
+  const usesSelectableSizes = input.sizingEnabled !== false && productType !== 'saree';
+  const sizeRange = usesSelectableSizes ? normalizeText(input.sizeRange || input.sizes || '') : '';
+  const priceSegment = normalizeText(input.priceSegment || '');
   const targetCustomer = normalizeText(input.targetCustomer || '');
   const subCategory = normalizeText(input.subCategory || '');
   const categoryLabel = normalizeText(input.categoryLabel || categoryName || rule.productType);
@@ -143,7 +143,7 @@ export function buildAssistantSuggestions(input = {}) {
     fit,
     sizeRange,
   });
-  const careInstructions = generateCareInstructions(fabric);
+  const careInstructions = normalizeText(input.careInstructions || '');
   const seo = generateSeo({
     productName,
     categoryName: categoryLabel,
@@ -196,7 +196,7 @@ export function buildAssistantSuggestions(input = {}) {
     tags,
     highlights,
     careInstructions,
-    returnPolicy: '7 days return/exchange available as per store policy',
+    returnPolicy: normalizeText(input.returnPolicy || ''),
     seo,
     caption,
     flags,
@@ -225,27 +225,12 @@ export function generateSku(input = {}) {
 }
 
 export function generateShortDescription(input = {}) {
-  const category = normalizeText(input.categoryName || input.productType || 'collection').toLowerCase();
-  const color = normalizeText(input.color || 'Elegant');
-  const fabric = normalizeText(input.fabric || 'premium fabric').toLowerCase();
-  const occasion = normalizeText(input.occasion || 'special occasions').toLowerCase();
-  const style = normalizeText(input.style || 'versatile').toLowerCase();
-  return `Elegant ${color.toLowerCase()} ${fabric} ${category} designed for ${occasion} with a ${style} look.`;
+  const name = joinParts([input.color, input.fabric, input.categoryName || input.productType || 'Product']);
+  return `${name}${input.occasion ? ` for ${normalizeText(input.occasion).toLowerCase()} styling` : ''}.`;
 }
 
 export function generateFullDescription(input = {}) {
-  const category = normalizeText(input.categoryName || input.productType || 'collection').toLowerCase();
-  const color = normalizeText(input.color || 'Elegant').toLowerCase();
-  const fabric = normalizeText(input.fabric || 'premium fabric').toLowerCase();
-  const occasion = normalizeText(input.occasion || 'special occasions').toLowerCase();
-  const style = normalizeText(input.style || 'versatile').toLowerCase();
-  const fit = normalizeText(input.fit || 'comfortable').toLowerCase();
-  return [
-    `This ${color} ${fabric} ${category} is designed for ${occasion} styling.`,
-    `It combines a clean finish with comfortable wear and a refined ${style} appeal.`,
-    `The ${fit} fit makes it suitable for celebrations, styling upgrades, and repeated use.`,
-    `Pair it with matching accessories to create a polished and confident look.`,
-  ].join(' ');
+  return [generateShortDescription(input), input.style && `Style: ${normalizeText(input.style)}.`, input.fit && `Fit: ${normalizeText(input.fit)}.`].filter(Boolean).join(' ');
 }
 
 export function generateTags(input = {}) {
@@ -274,18 +259,18 @@ export function generateTags(input = {}) {
 }
 
 export function generateHighlights(input = {}) {
-  const fabric = normalizeText(input.fabric || 'premium fabric');
-  const color = normalizeText(input.color || 'elegant');
-  const occasion = normalizeText(input.occasion || 'special occasions').toLowerCase();
-  const work = normalizeText(input.work || input.workPattern || 'clean');
-  const fit = normalizeText(input.fit || 'comfortable');
+  const fabric = normalizeText(input.fabric || '');
+  const color = normalizeText(input.color || '');
+  const occasion = normalizeText(input.occasion || '').toLowerCase();
+  const work = normalizeText(input.work || input.workPattern || '');
+  const fit = normalizeText(input.fit || '');
   const sizeRange = normalizeText(input.sizeRange || '');
   return unique([
-    `Premium ${fabric.toLowerCase()} finish`,
-    `Elegant ${color.toLowerCase()} styling`,
-    `${work} detailing for a polished look`,
-    `Comfortable ${fit.toLowerCase()} fit`,
-    `Perfect for ${occasion}`,
+    fabric && `Material: ${fabric}`,
+    color && `Colour: ${color}`,
+    work && `${work} detailing`,
+    fit && `Fit: ${fit}`,
+    occasion && `Suggested for ${occasion}`,
     sizeRange && `Available in ${sizeRange}`,
   ]).slice(0, 6);
 }
@@ -328,14 +313,14 @@ export function generateCaption(input = {}) {
   const productName = normalizeText(input.productName || 'Elegant Product');
   const category = normalizeText(input.categoryName || input.productType || 'Collection');
   const occasion = normalizeText(input.occasion || 'special occasions').toLowerCase();
-  const sizes = Array.isArray(input.sizes) ? input.sizes.join(', ') : normalizeText(input.sizes || 'S, M, L, XL');
+  const sizes = Array.isArray(input.sizes) ? input.sizes.join(', ') : normalizeText(input.sizes || '');
   return [
     'New arrival at Jassi General Store ✨',
     '',
     productName,
     `Category: ${category}`,
     `Perfect for ${occasion}.`,
-    `Available Sizes: ${sizes}`,
+    ...(sizes ? [`Available Sizes: ${sizes}`] : []),
     '',
     'Order now from Jassi General Store.',
     '',
@@ -406,12 +391,12 @@ function normalizeProductType(value) {
   if (text.includes('lehenga')) return 'lehenga';
   if (text.includes('gown')) return 'gown';
   if (text.includes('dress')) return 'dress';
-  return 'suit';
+  return 'other';
 }
 
 function generateSizes(sizeRange) {
   const text = normalizeText(sizeRange || '');
-  if (!text) return ['S', 'M', 'L', 'XL'];
+  if (!text) return [];
   return unique(
     text
       .split(/[,/|]/)

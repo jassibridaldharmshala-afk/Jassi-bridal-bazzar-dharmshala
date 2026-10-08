@@ -13,6 +13,7 @@ import { isUnavailable, wishlistId, wishlistOptions, wishlistPrice, wishlistStoc
 import './Wishlist.css';
 import '../../styles/MobileShoppingTheme.css';
 
+const cardPrice = product => product.commerceMode === 'RENTAL_ONLY' ? (product.rentalPreview?.dailyRatePaise ?? Number.MAX_SAFE_INTEGER) / 100 : wishlistPrice(product).price;
 const money = value => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 export default function Wishlist({ navigate }) {
@@ -29,11 +30,11 @@ export default function Wishlist({ navigate }) {
       const categoryName = typeof product.category === 'string' ? product.category : product.category?.name;
       return (!query || [product.name, product.brand, categoryName, ...(product.colors || [])].join(' ').toLowerCase().includes(query))
         && (!category || categoryName === category)
-        && (filter !== 'stock' || wishlistStock(product) > 0)
-        && (filter !== 'sale' || (!isUnavailable(product) && wishlistPrice(product).discount > 0));
+        && (filter !== 'stock' || (product.commerceMode !== 'RENTAL_ONLY' && wishlistStock(product) > 0))
+        && (filter !== 'sale' || (product.commerceMode !== 'RENTAL_ONLY' && !isUnavailable(product) && wishlistPrice(product).discount > 0));
     });
-    if (sort === 'low') rows.sort((a, b) => wishlistPrice(a).price - wishlistPrice(b).price);
-    if (sort === 'high') rows.sort((a, b) => wishlistPrice(b).price - wishlistPrice(a).price);
+    if (sort === 'low') rows.sort((a, b) => cardPrice(a) - cardPrice(b));
+    if (sort === 'high') rows.sort((a, b) => cardPrice(b) - cardPrice(a));
     if (sort === 'discount') rows.sort((a, b) => wishlistPrice(b).discount - wishlistPrice(a).discount);
     return rows;
   }, [wishlist.items, search, category, filter, sort]);
@@ -80,7 +81,7 @@ export default function Wishlist({ navigate }) {
         <footer className="sc-wishlist__footer"><button onClick={() => navigate(shop)}>Continue shopping <ArrowRight size={16} /></button></footer>
       </>}
     </div>
-    {selected && <MoveToBag product={selected} cart={cart} onClose={() => setSelected(null)} onMoved={moved} onBag={() => navigate('/cart')} />}
+    {selected && <MoveToBag product={selected} cart={cart} onClose={() => setSelected(null)} onMoved={moved} onBag={() => navigate('/cart')} onRental={() => navigate(productHref(selected, storeSlug))} />}
   </section>;
 }
 
@@ -88,20 +89,24 @@ function ProductImage({ product }) {
   const [failed, setFailed] = useState(false); const src = getPrimaryImageUrl(product.images || []);
   return src && !failed ? <img src={src} alt={product.name} loading="lazy" onError={() => setFailed(true)} /> : <span className="sc-wishlist__image-empty"><ImageOff size={30} /><span>Image unavailable</span></span>;
 }
-function Price({ product, variant }) {
+function Price({ product, variant, saleSelection = false }) {
   const { price, original, discount } = wishlistPrice(product, variant);
-  return <div className="sc-wishlist__price"><strong>{money(price)}</strong>{original > price && <del>{money(original)}</del>}{discount > 0 && <span>{discount}% off</span>}</div>;
+  const rental = product.commerceMode === 'RENTAL_ONLY', mixed = product.commerceMode === 'SALE_AND_RENTAL';
+  if (rental) return <div className="sc-wishlist__price"><strong>{product.rentalPreview?.dailyRatePaise ? `Rent from ${money(product.rentalPreview.dailyRatePaise / 100)} / day` : 'Rental pricing & dates'}</strong></div>;
+  return <><div className="sc-wishlist__price"><strong>{mixed ? 'Sale · ' : ''}{money(price)}</strong>{original > price && <del>{money(original)}</del>}{discount > 0 && <span>{discount}% off</span>}</div>{mixed && !saleSelection && <p className="sc-wishlist__rental-price">{product.rentalPreview?.dailyRatePaise ? `Rent from ${money(product.rentalPreview.dailyRatePaise / 100)} / day` : 'Rental pricing & dates'}</p>}</>;
 }
 function WishlistCard({ product, pending, moved, onRemove, onMove, onBag, onOpen }) {
   const unavailable = isUnavailable(product); const stock = wishlistStock(product); const options = wishlistOptions(product);
+  const rental = product.commerceMode === 'RENTAL_ONLY', mixed = product.commerceMode === 'SALE_AND_RENTAL';
   return <article className={`sc-wish-card${unavailable ? ' is-unavailable' : ''}`} aria-label={product.name}>
-    <div className="sc-wish-card__visual"><button className="sc-wish-card__image" onClick={onOpen} disabled={unavailable} aria-label={`View ${product.name}`}><ProductImage product={product} /></button><button className="sc-wish-card__remove" onClick={onRemove} disabled={pending} aria-label={`Remove ${product.name} from wishlist`}>{pending ? <LoaderCircle size={17} className="sc-wishlist__spin" /> : <X size={18} />}</button>{!unavailable && stock === 0 && <span className="sc-wish-card__badge is-sold">Out of stock</span>}{!unavailable && stock > 0 && stock <= 5 && <span className="sc-wish-card__badge">Only {stock} left</span>}</div>
-    <div className="sc-wish-card__details"><p className="sc-wish-card__brand">{unavailable ? 'NO LONGER AVAILABLE' : product.brand || 'Jassi General Store'}</p><button onClick={onOpen} disabled={unavailable} className="sc-wish-card__name" title={product.name}>{product.name}</button>{!unavailable && <Price product={product} />}<p className="sc-wish-card__options">{unavailable ? 'You can remove this saved item.' : [options.sizes.length === 1 ? options.sizes[0] || 'One size' : options.sizes.length ? `${options.sizes.length} sizes` : 'View size details', options.colors.filter(Boolean).length > 1 ? `${options.colors.length} colours` : options.colors[0]].filter(Boolean).join(' · ')}</p></div>
-    <button className="sc-wish-card__move" onClick={moved ? onBag : onMove} disabled={pending || unavailable || stock === 0}>{moved ? 'View in bag' : unavailable ? 'Unavailable' : stock === 0 ? 'Out of stock' : 'Move to bag'}{!unavailable && stock !== 0 && <ShoppingBag size={16} />}</button>
+    <div className="sc-wish-card__visual"><button className="sc-wish-card__image" onClick={onOpen} disabled={unavailable} aria-label={`View ${product.name}`}><ProductImage product={product} /></button><button className="sc-wish-card__remove" onClick={onRemove} disabled={pending} aria-label={`Remove ${product.name} from wishlist`}>{pending ? <LoaderCircle size={17} className="sc-wishlist__spin" /> : <X size={18} />}</button>{!unavailable && !rental && stock === 0 && <span className="sc-wish-card__badge is-sold">{mixed ? 'Sale out of stock' : 'Out of stock'}</span>}{!unavailable && !rental && stock > 0 && stock <= 5 && <span className="sc-wish-card__badge">Only {stock} left</span>}</div>
+    <div className="sc-wish-card__details"><p className="sc-wish-card__brand">{unavailable ? 'NO LONGER AVAILABLE' : product.brand || 'Jassi General Store'}</p><button onClick={onOpen} disabled={unavailable} className="sc-wish-card__name" title={product.name}>{product.name}</button>{!unavailable && <Price product={product} />}<p className="sc-wish-card__options">{unavailable ? 'You can remove this saved item.' : [product.rentalPreview?.fitting?.adjustable ? 'Adjustable fitting' : options.sizes.length === 1 ? options.sizes[0] || 'One size' : options.sizes.length ? `${options.sizes.length} sizes` : rental ? 'Fitting details' : 'View size details', options.colors.filter(Boolean).length > 1 ? `${options.colors.length} colours` : options.colors[0]].filter(Boolean).join(' · ')}</p></div>
+    <button className="sc-wish-card__move" onClick={rental ? onOpen : moved ? onBag : onMove} disabled={pending || unavailable || (!rental && stock === 0)}>{rental ? 'Check rental dates' : moved ? 'View in bag' : unavailable ? 'Unavailable' : stock === 0 ? 'Out of stock' : 'Move to bag'}{!unavailable && !rental && stock !== 0 && <ShoppingBag size={16} />}</button>
+    {mixed && !unavailable && <button type="button" className="sc-wish-card__rental" disabled={pending} onClick={onOpen}>Check rental dates →</button>}
   </article>;
 }
 
-function MoveToBag({ product: saved, cart, onClose, onMoved, onBag }) {
+function MoveToBag({ product: saved, cart, onClose, onMoved, onBag, onRental }) {
   const dialog = useRef(null); const mounted = useRef(true); const submitting = useRef(false);
   const [product, setProduct] = useState(saved); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
@@ -128,7 +133,7 @@ function MoveToBag({ product: saved, cart, onClose, onMoved, onBag }) {
   const variant = options.managed && size !== null && color !== null ? findProductVariant(product, { size, color }) : null;
   const bagLoading = cart.loading || cart.hydrated === false;
   const stock = wishlistStock(product, options.managed ? { size, color } : undefined);
-  const validSelection = ready && size !== null && color !== null && (!options.managed || variant) && stock !== 0 && !isUnavailable(product);
+  const validSelection = product.commerceMode !== 'RENTAL_ONLY' && ready && size !== null && color !== null && (!options.managed || variant) && stock !== 0 && !isUnavailable(product);
   const alreadyInBag = validSelection && cart.items?.some(item => wishlistId(item.product) === wishlistId(product) && (variant ? String(item.variantId || '') === String(variant._id) : item.size === size && (item.color || '') === color));
   const availableSize = value => ready && (!options.managed || activeVariants(product).some(row => row.size === value && row.stock > 0));
   const availableColor = value => ready && (!options.managed || activeVariants(product).some(row => row.color === value && row.stock > 0));
@@ -157,9 +162,9 @@ function MoveToBag({ product: saved, cart, onClose, onMoved, onBag }) {
   const columns = getSizeChartColumns(product).filter(column => product.sizeChart?.rows?.some(row => Number(row[column.key]) > 0));
   return <dialog ref={dialog} className="sc-wish-dialog" aria-labelledby="wishlist-size-title" onCancel={event => { event.preventDefault(); if (!busy) onClose(); }} onClick={event => { if (event.target === event.currentTarget && !busy) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }}>
     <header><div><p>MAKE IT YOURS</p><h2 id="wishlist-size-title">Move to bag</h2></div><button onClick={onClose} disabled={busy} aria-label="Close size selection"><X size={21} /></button></header>
-    <div className="sc-wish-dialog__body"><div className="sc-wish-dialog__product"><div><ProductImage product={product} /></div><section><p>{product.brand || 'Jassi General Store'}</p><h3>{product.name}</h3>{!isUnavailable(product) && <Price product={product} variant={variant} />}<small>Inclusive of applicable taxes</small></section></div>
+    <div className="sc-wish-dialog__body"><div className="sc-wish-dialog__product"><div><ProductImage product={product} /></div><section><p>{product.brand || 'Jassi General Store'}</p><h3>{product.name}</h3>{!isUnavailable(product) && <Price product={product} variant={variant} saleSelection />}<small>Inclusive of applicable taxes</small></section></div>
       {loading ? <p className="sc-wish-dialog__loading" role="status"><LoaderCircle size={18} className="sc-wishlist__spin" />Checking price and availability…</p> : <>
-        {isUnavailable(product) || wishlistStock(product) === 0 ? <p className="sc-wish-dialog__error">This item is currently unavailable. It will stay in your wishlist.</p> : <>
+        {product.commerceMode === 'RENTAL_ONLY' ? <div className="sc-wish-dialog__error"><p>This item is now available for rental only. Choose rental dates to continue.</p><button type="button" className="sc-wishlist__outline" onClick={onRental}>Open rental dates</button></div> : isUnavailable(product) || wishlistStock(product) === 0 ? <p className="sc-wish-dialog__error">This item is currently unavailable. It will stay in your wishlist.</p> : <>
           <fieldset><legend>Select size {size !== null && <span>— {size || 'One size'}</span>}</legend><div className="sc-wish-dialog__choices">{options.sizes.map(value => <button key={value} disabled={busy || !availableSize(value)} aria-pressed={size === value} onClick={() => selectSize(value)} aria-label={`Size ${value || 'One size'}${!availableSize(value) ? ', out of stock' : ''}`}>{value || 'One size'}</button>)}</div>{!options.sizes.length && <p>Size details are not available yet. Please check the product page.</p>}</fieldset>
           {options.colors.some(Boolean) && <fieldset><legend>Select colour {color !== null && <span>— {color}</span>}</legend><div className="sc-wish-dialog__choices sc-wish-dialog__colors">{options.colors.map(value => <button key={value} disabled={busy || !availableColor(value)} aria-pressed={color === value} onClick={() => selectColor(value)} aria-label={`Colour ${value || 'As shown'}${!availableColor(value) ? ', out of stock' : ''}`}>{value || 'As shown'}</button>)}</div></fieldset>}
           {columns.length > 0 && <details className="sc-wish-dialog__guide"><summary>Size guide <span>Garment measurements ({product.sizeChart.unit || 'in'})</span></summary><div><table><thead><tr><th>Size</th>{columns.map(column => <th key={column.key}>{column.shortLabel}</th>)}</tr></thead><tbody>{product.sizeChart.rows.map(row => <tr key={row.size}><th>{row.size}</th>{columns.map(column => <td key={column.key}>{row[column.key] || '—'}</td>)}</tr>)}</tbody></table></div></details>}

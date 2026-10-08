@@ -37,6 +37,22 @@ test('an incomplete bulk receipt continues the multipart upload with the origina
   expect(mockRawQuery.mock.calls[0][0].headers['Idempotency-Key']).toBe(mockRawQuery.mock.calls[2][0].headers['Idempotency-Key']);
 });
 
+test('grouped draft upload serializes assignments and cover changes use a different retry key', async () => {
+  const files = [new File(['front'], 'front.webp', { type: 'image/webp' }), new File(['back'], 'back.webp', { type: 'image/webp' })];
+  const photoGroups = [{ name: 'Lehenga', photoIndexes: [0, 1], coverIndex: 1 }];
+  mockRawQuery.mockResolvedValueOnce({ error: { status: 500 } }).mockResolvedValue({ data: { success: true } });
+  await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files, groupMode: 'grouped', photoGroups }));
+  const firstRequest = mockRawQuery.mock.calls[0][0];
+  expect(firstRequest.body.get('groupMode')).toBe('grouped');
+  expect(JSON.parse(firstRequest.body.get('photoGroups'))).toEqual(photoGroups);
+  expect(firstRequest.body.getAll('images').map((file) => file.name)).toEqual(['front.webp', 'back.webp']);
+  await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files, groupMode: 'grouped', photoGroups })).unwrap();
+  expect(mockRawQuery.mock.calls[1][0].body).toEqual({ resumeUpload: true });
+  expect(mockRawQuery.mock.calls[1][0].headers['Idempotency-Key']).toBe(firstRequest.headers['Idempotency-Key']);
+  await testStore.dispatch(samiraApi.endpoints.bulkUploadProductDrafts.initiate({ files, groupMode: 'grouped', photoGroups: [{ ...photoGroups[0], coverIndex: 0 }] })).unwrap();
+  expect(mockRawQuery.mock.calls[2][0].headers['Idempotency-Key']).not.toBe(firstRequest.headers['Idempotency-Key']);
+});
+
 test('Smart Fill suggestions do not refetch catalog subscriptions or block the mobile screen', async () => {
   mockRawQuery.mockResolvedValue({ data: [] });
   const catalog = testStore.dispatch(samiraApi.endpoints.request.initiate({ path: '/admin/products' }));
@@ -300,4 +316,16 @@ test('compact home feed is expanded transparently and simultaneous subscribers s
   expect((await second).data.products).toEqual([product]);
   expect(mockRawQuery).toHaveBeenCalledTimes(1);
   first.unsubscribe(); second.unsubscribe();
+});
+test('editing rental offers refreshes cached product prices, while calendar reads leave them cached', async () => {
+  mockRawQuery.mockResolvedValue({ data: [] });
+  const subscription = testStore.dispatch(samiraApi.endpoints.getProducts.initiate({ store: 'boutique' }));
+  await subscription;
+  mockRawQuery.mockClear();
+  await testStore.dispatch(samiraApi.endpoints.mutate.initiate({ path: '/admin/rentals/calendar', body: { items: [] }, silent: true }));
+  expect(mockRawQuery).toHaveBeenCalledTimes(1);
+  mockRawQuery.mockClear();
+  await testStore.dispatch(samiraApi.endpoints.mutate.initiate({ path: '/admin/rentals/listings', body: { dailyRatePaise: 75000 }, silent: true }));
+  await waitFor(() => expect(mockRawQuery).toHaveBeenCalledTimes(2));
+  subscription.unsubscribe();
 });

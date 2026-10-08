@@ -102,7 +102,8 @@ export function applyVisionSuggestion(form, suggestion = {}, locks = {}, categor
     next.category = String(matched._id);
     next.categoryName = clip(matched.name, 80);
   }
-  if (!String(next.subCategory || '').trim() && suggestion.subCategory) {
+  const categoryCompatible = !matched || String(next.category) === String(matched._id);
+  if (categoryCompatible && !String(next.subCategory || '').trim() && suggestion.subCategory) {
     next.subCategory = clip(suggestion.subCategory, 80);
   }
   if (!locks.copy) {
@@ -114,6 +115,15 @@ export function applyVisionSuggestion(form, suggestion = {}, locks = {}, categor
   if (!String(next.colors || '').trim() && suggestion.colors?.length) next.colors = joinList(suggestion.colors);
   if (!locks.copy && suggestion.tags?.length) next.tags = joinList(suggestion.tags);
   else if (!String(next.tags || '').trim() && suggestion.tags?.length) next.tags = joinList(suggestion.tags);
+  for (const key of ['highlights', 'careInstructions', 'metaTitle', 'metaDescription', 'metaKeywords']) {
+    if (!String(next[key] || '').trim() && suggestion[key]) next[key] = Array.isArray(suggestion[key]) ? suggestion[key].join(', ') : suggestion[key];
+  }
+  next.attributeValues = { ...next.attributeValues };
+  if (categoryCompatible) for (const [key, value] of Object.entries(suggestion.attributeValues || {})) if (!String(next.attributeValues[key] || '').trim()) next.attributeValues[key] = value;
+  if (!next.metaTitle && next.name) next.metaTitle = next.name.slice(0, 60);
+  if (!next.metaDescription) next.metaDescription = (next.shortDescription || next.description || '').slice(0, 160);
+  if (!next.metaKeywords) next.metaKeywords = next.tags || '';
+  if (suggestion.sizingMode === 'free-size' && !next.sizes) next.sizingMode = 'free-size';
   return next;
 }
 
@@ -203,5 +213,10 @@ export function buildQuickAddPayload(form) {
     shortDescription: String(form.shortDescription || '').trim(),
     description: String(form.description || '').trim(),
     highlights: splitList(form.highlights),
+    careInstructions: String(form.careInstructions || '').trim(),
+    metaTitle: String(form.metaTitle || '').trim(),
+    metaDescription: String(form.metaDescription || '').trim(),
+    metaKeywords: String(form.metaKeywords || '').trim(),
+    attributeValues: form.attributeValues || {},
   };
 }

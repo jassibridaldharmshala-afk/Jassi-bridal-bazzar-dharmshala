@@ -15,6 +15,30 @@ const product = { _id: 'kurti', name: 'Rose cotton kurti', category: 'Kurtis', p
   { _id: 'm-blue', size: 'M', color: 'Blue', stock: 3, price: 1099 },
   { _id: 'l-rose', size: 'L', color: 'Rose', stock: 0 },
 ] };
+test('saved rental-only items show rental pricing and choose dates without a sale bag action', () => {
+  mockWishlist.items = [{ ...product, commerceMode: 'RENTAL_ONLY', stock: 0, variants: [], rentalPreview: { dailyRatePaise: 75000, fitting: { adjustable: true } } }];
+  const navigate = jest.fn(); render(<Wishlist navigate={navigate} />);
+  expect(screen.getByText('Rent from ₹750 / day')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Move to bag' })).not.toBeInTheDocument();
+  expect(screen.queryByText('Out of stock')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Check rental dates' }));
+  expect(navigate).toHaveBeenCalledWith(expect.stringContaining('/product'));
+  expect(mockCart.addToCartConfirmed).not.toHaveBeenCalled();
+});
+test('saved mixed items keep a rental action when sale stock is empty', () => {
+  mockWishlist.items = [{ ...product, commerceMode: 'SALE_AND_RENTAL', stock: 0, variants: [], rentalPreview: { dailyRatePaise: 75000 } }];
+  const navigate = jest.fn(); render(<Wishlist navigate={navigate} />);
+  expect(screen.getByText('Sale · ₹899')).toBeInTheDocument(); expect(screen.getByText('Rent from ₹750 / day')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Out of stock' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Check rental dates →' })); expect(navigate).toHaveBeenCalledTimes(1);
+});
+test('a product changed to rental-only during a wishlist sale review cannot enter the sale bag', async () => {
+  api.post.mockResolvedValue([{ ...product, commerceMode: 'RENTAL_ONLY' }]);
+  const navigate = jest.fn(); render(<Wishlist navigate={navigate} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Move to bag' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Open rental dates' }));
+  expect(navigate).toHaveBeenCalledTimes(1); expect(mockCart.addToCartConfirmed).not.toHaveBeenCalled();
+});
 beforeEach(() => {
   jest.clearAllMocks(); mockUser = { _id: 'user' };
   Object.assign(mockWishlist, { items: [product], loading: false, error: '', pendingIds: [], refresh: jest.fn(), removeFromWishlist: jest.fn(async p => { mockWishlist.items = mockWishlist.items.filter(row => row._id !== p._id); return { ok: true }; }), addToWishlist: jest.fn(async p => { mockWishlist.items = [...mockWishlist.items, p]; return { ok: true }; }) });

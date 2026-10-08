@@ -4,6 +4,7 @@ import api from '../../services/api';
 import ImageUploader from './ImageUploader';
 import VideoUploader from './VideoUploader';
 import ProductSmartFill from './ProductSmartFill';
+import ProductRentalPricing, { pricingFromOffer, rentalPricingError } from './ProductRentalPricing';
 import ProductPreviewModal from './ProductPreviewModal';
 import BarcodeScanner from './BarcodeScanner';
 import CompleteLookPicker from './CompleteLookPicker';
@@ -24,6 +25,9 @@ import {
   reconcileSizeChartRows,
   resolveSizingMode,
   SIZE_CHART_PROFILES,
+  usesGarmentSizing,
+  automaticSizing,
+  sizeAttribute,
 } from '../../utils/productSizing';
 
 const DRAFT_PREFIX = 'samira-admin-product-draft';
@@ -90,6 +94,8 @@ const emptyProduct = {
   isActive: true,
   trackVariants: false,
   commerceMode: 'SALE_ONLY',
+  rentalPricing: null,
+  rentalOffers: [],
   variantOptionValues: {},
   variants: [],
 };
@@ -180,7 +186,7 @@ export default function ProductForm({
     api.get('/catalog-configuration').then((value) => { if (alive) setStructure(value); }).catch((error) => { if (alive) setStructureError(error.message); });
     return () => { alive = false; };
   }, []);
-  const productForSizing = (source) => structure?.features?.sizing === false
+  const productForSizing = (source) => !usesGarmentSizing(structure, source)
     ? { ...withCategoryName(source, categories), sizingMode: 'free-size', sizeChartProfile: 'free-size' }
     : withCategoryName(source, categories);
 
@@ -219,6 +225,7 @@ export default function ProductForm({
         ...emptyProduct,
         ...product,
         ...mergedDraft,
+        rentalPricing: pricingFromOffer(product.rentalOffers?.[0]),
         category: mergedDraft.category ?? (product.category?._id || product.category || ''),
         sizes: mergedDraft.sizes || (product.sizes || []).join(', '),
         sizingMode: mergedDraft.sizingMode || product.sizingMode || 'auto',
@@ -312,7 +319,8 @@ export default function ProductForm({
     const timer = window.setTimeout(async () => {
       try {
         setAutosaveStatus('Syncing draft…');
-        const response = await api.put(`${apiPrefix}/product-drafts/autosave`, { ...buildDraftPayload(form), autosaveKey }, { silent: true });
+        const sizingDefaults = structure && !usesGarmentSizing(structure, form) ? { sizingMode: 'free-size', sizeChartProfile: 'free-size' } : {};
+        const response = await api.put(`${apiPrefix}/product-drafts/autosave`, { ...buildDraftPayload(form, sizingDefaults), autosaveKey }, { silent: true });
         autosaveIdRef.current = String(response?.data?.id || response?.data?._id || autosaveIdRef.current || '');
         setAutosaveStatus('Draft synced across devices');
       } catch {
@@ -320,7 +328,7 @@ export default function ProductForm({
       }
     }, 4000);
     return () => window.clearTimeout(timer);
-  }, [apiPrefix, autosaveKey, autosaveReady, cloudDraft, draftReady, form, mediaActivity.images, mediaActivity.videos, mode, recoveryDraft]);
+  }, [apiPrefix, autosaveKey, autosaveReady, cloudDraft, draftReady, form, mediaActivity.images, mediaActivity.videos, mode, recoveryDraft, structure]);
 
   useEffect(() => {
     const name = String(form.name || '').trim();
@@ -440,6 +448,7 @@ export default function ProductForm({
     const categoryLabel = assistant.category || selectedCategory.name || '';
     const suggestions = buildAssistantSuggestions({
       productId,
+      sizingEnabled: automaticSizing(structure),
       categoryId: matchedCategory?._id || form.category || '',
       categoryName: categoryLabel,
       categoryLabel,
@@ -462,7 +471,7 @@ export default function ProductForm({
 
   const applyAssistant = () => {
     if (!assistantSuggestions) return;
-    const nextForm = applyAssistantSuggestions(form, assistantSuggestions, assistantMode, Object.entries(assistantSelection).filter(([, value]) => value).map(([key]) => key));
+    const nextForm = applyAssistantSuggestions(form, assistantSuggestions, assistantMode, Object.entries(assistantSelection).filter(([key, value]) => value && (automaticSizing(structure) || key !== 'sizes')).map(([key]) => key));
     setForm(nextForm);
     if (assistantSelection.caption && assistantSuggestions.caption && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(assistantSuggestions.caption).catch(() => {});
@@ -502,18 +511,19 @@ export default function ProductForm({
     setMessage('');
     try {
       const price = Number(form.price);
-      const originalPrice = Number(form.originalPrice || form.price);
+      const originalPrice = form.commerceMode === 'RENTAL_ONLY' ? price : Number(form.originalPrice || form.price);
       const sizingMode = resolveSizingMode(sizingProduct);
       const selectableSizes = getSelectableSizes(sizingProduct);
       const tracksVariants = form.trackVariants && (sizingMode === 'sized' || getEffectiveVariantConfig(structure, categories, form).enabled);
       const selectedCategory = categories.find((category) => String(category._id) === String(form.category));
       const payload = {
         ...form,
+        rentalPricing: form.commerceMode === 'SALE_ONLY' ? undefined : form.rentalPricing,
         images: prepareImages(form.images),
         videos: prepareVideos(form.videos),
         price,
         originalPrice,
-        salePrice: form.salePrice ? Number(form.salePrice) : null,
+        salePrice: form.commerceMode === 'RENTAL_ONLY' ? null : form.salePrice ? Number(form.salePrice) : null,
         costPrice: Number(form.costPrice || 0),
         gstRate: Number(form.gstRate || 0),
         reorderQuantity: Number(form.reorderQuantity || 0),
@@ -526,11 +536,11 @@ export default function ProductForm({
         },
         restockAt: nullableDate(form.restockAt),
         publishAt: intent === 'publish' ? null : nullableDate(form.publishAt),
-        saleStartAt: nullableDate(form.saleStartAt),
-        saleEndAt: nullableDate(form.saleEndAt),
+        saleStartAt: form.commerceMode === 'RENTAL_ONLY' ? null : nullableDate(form.saleStartAt),
+        saleEndAt: form.commerceMode === 'RENTAL_ONLY' ? null : nullableDate(form.saleEndAt),
         sizes: sizingMode === 'sized' ? selectableSizes : [],
-        sizingMode: structure.features.sizing ? form.sizingMode || 'auto' : 'free-size',
-        sizeChartProfile: structure.features.sizing ? form.sizeChartProfile || 'auto' : 'free-size',
+        sizingMode: usesGarmentSizing(structure, form) ? form.sizingMode || 'auto' : 'free-size',
+        sizeChartProfile: usesGarmentSizing(structure, form) ? form.sizeChartProfile || 'auto' : 'free-size',
         sizeChart: buildSizeChartPayload(sizingProduct),
         colors: splitList(form.colors),
         tags: splitList(form.tags),
@@ -582,6 +592,7 @@ export default function ProductForm({
       const sizingMode = resolveSizingMode(sizingProduct);
       const tracksVariants = form.trackVariants && (sizingMode === 'sized' || getEffectiveVariantConfig(structure, categories, form).enabled);
       const payload = buildDraftPayload(form, {
+        sizingMode: sizingProduct.sizingMode || 'auto', sizeChartProfile: sizingProduct.sizeChartProfile || 'auto',
         sizes: sizingMode === 'sized' ? getSelectableSizes(sizingProduct) : [],
         variants: tracksVariants ? form.variants : [],
         stock: tracksVariants ? form.variants.reduce((sum, variant) => sum + Math.max(0, Number(variant.stock || 0)), 0) : Number(form.stock || 0),
@@ -617,9 +628,9 @@ export default function ProductForm({
     .every((attribute) => String(form.attributeValues?.[attribute.key] ?? '').trim());
   const sizeChartReady = effectiveSizingMode !== 'sized'
     || (selectableSizes.length > 0 && getSizeChartValidation(sizingProduct).valid);
-  const pricingReady = Number(form.price) > 0
-    && Number(form.originalPrice) > 0
-    && Number(form.price) <= Number(form.originalPrice);
+  const pricingReady = Number(form.price) > 0 && (form.commerceMode === 'RENTAL_ONLY'
+    || (Number(form.originalPrice) > 0 && Number(form.price) <= Number(form.originalPrice)))
+    && (form.commerceMode === 'SALE_ONLY' || !rentalPricingError(form.rentalPricing));
   const inventoryReady = Number.isSafeInteger(Number(form.stock)) && Number(form.stock) >= 0
     && (!form.trackVariants || (form.variants?.length > 0 && !validateVariants(form.variants)));
   const checklist = [
@@ -723,7 +734,8 @@ export default function ProductForm({
       {!!duplicateReview.conflicts.length && <div className="product-duplicate-warning" role="status"><strong>{duplicateReview.conflicts.some((item) => item.blocking) ? 'Resolve duplicate catalog values' : 'Similar product found'}</strong>{duplicateReview.conflicts.map((item) => <p key={item.id}><span>{item.name}</span> matches {item.reasons.join(' and ')}. <a href={`${apiPrefix}/products/edit?id=${item.id}`}>Review product</a></p>)}</div>}
 
       <Section id="product-pricing" step="02" title="Category, Pricing and Inventory" note="Where it sits in the catalog and how it is sold.">
-        <label className="admin-field"><span>Available for</span><select className="admin-field__control" value={form.commerceMode || 'SALE_ONLY'} onChange={event => setForm(current => ({ ...current, commerceMode: event.target.value }))}><option value="SALE_ONLY">Sale only</option><option value="RENTAL_ONLY">Rental only</option><option value="SALE_AND_RENTAL">Sale and rental</option></select><small>Rental rates and physical pieces are configured in Rental studio. Sale stock remains separate.</small></label>
+        <label className="admin-field"><span>Available for</span><select className="admin-field__control" value={form.commerceMode || 'SALE_ONLY'} onChange={event => setForm(current => ({ ...current, commerceMode: event.target.value }))}><option value="SALE_ONLY">Sale only</option><option value="RENTAL_ONLY">Rental only</option><option value="SALE_AND_RENTAL">Sale and rental</option></select><small>Choose sale, rental or both for this item.</small></label>
+        {form.commerceMode !== 'SALE_ONLY' && <div className="admin-form-hint lg:col-span-2"><h3>Sale + rental inventory</h3><p>Set rental pricing below. Track rental pieces and dates in Rental Studio. Sale stock is counted separately; use zero sale stock for rental-only items.</p></div>}
         <label className="admin-field">
           <span>Category<em>*</em></span>
           <select
@@ -763,13 +775,14 @@ export default function ProductForm({
         <Input label="Occasions (comma-separated)" value={form.occasion} onChange={(value) => update('occasion', value)} placeholder="Wedding, Party, Daily wear" />
         <small className="text-slate-500">Use consistent occasion names. Homepage shortcuts use this store’s published products.</small>
         {viewMode === 'advanced' && <Input label="Fabric" value={form.fabric} onChange={(value) => update('fabric', value)} placeholder="Silk" />}
-        <Input field="originalPrice" label="Original price" type="number" min="0.01" step="0.01" value={form.originalPrice} onChange={(value) => update('originalPrice', value)} error={errors.originalPrice} placeholder="2499" />
-        <Input field="price" label="Selling price" type="number" min="0.01" step="0.01" value={form.price} onChange={(value) => update('price', value)} error={errors.price} placeholder="1299" />
+        {form.commerceMode !== 'RENTAL_ONLY' && <Input field="originalPrice" label="Original price" type="number" min="0.01" step="0.01" value={form.originalPrice} onChange={(value) => update('originalPrice', value)} error={errors.originalPrice} placeholder="2499" />}
+        <Input field="price" label={form.commerceMode === 'RENTAL_ONLY' ? 'Reference item value' : 'Selling price'} type="number" min="0.01" step="0.01" value={form.price} onChange={(value) => update('price', value)} error={errors.price} placeholder={form.commerceMode === 'RENTAL_ONLY' ? 'Enter item value' : '1299'} />
+        {form.commerceMode !== 'SALE_ONLY' && <ProductRentalPricing value={form.rentalPricing} offers={form.rentalOffers} onChange={value => update('rentalPricing', value)} error={errors.rentalPricing} apiPrefix={apiPrefix} />}
         {viewMode === 'advanced' && <Input field="costPrice" label="Cost price" type="number" min="0" step="0.01" value={form.costPrice || 0} onChange={(value) => update('costPrice', value)} error={errors.costPrice} placeholder="700" />}
         {viewMode === 'advanced' && <Input field="gstRate" label="GST rate (%)" type="number" min="0" max="100" step="0.01" value={form.gstRate || 0} onChange={(value) => update('gstRate', value)} error={errors.gstRate} placeholder="5" />}
         {viewMode === 'advanced' && <Input label="HSN code" value={form.hsnCode || ''} onChange={(value) => update('hsnCode', value)} placeholder="6204" />}
         {viewMode === 'advanced' && <div className="admin-field"><Input field="barcode" label="Barcode / GTIN" value={form.barcode || ''} onChange={(value) => update('barcode', value)} error={errors.barcode} placeholder="Scan or enter barcode" /><BarcodeScanner disabled={saving} onDetected={handleBarcode} /></div>}
-        <Input field="stock" label={form.trackVariants ? 'Total stock (calculated from variants)' : 'Stock quantity'} type="number" min="0" step="1" value={form.stock} onChange={(value) => update('stock', value)} error={errors.stock} placeholder="20" disabled={form.trackVariants} />
+        <Input field="stock" label={form.trackVariants ? 'Total sale stock (calculated from variants)' : 'Sale stock quantity'} type="number" min="0" step="1" value={form.stock} onChange={(value) => update('stock', value)} error={errors.stock} placeholder="0" disabled={form.trackVariants} />
         {viewMode === 'advanced' && <Input field="lowStockAlert" label="Low stock alert" type="number" min="0" step="1" value={form.lowStockAlert} onChange={(value) => update('lowStockAlert', value)} error={errors.lowStockAlert} placeholder="5" />}
         {viewMode === 'advanced' && <Input field="reorderQuantity" label="Suggested reorder quantity" type="number" min="0" step="1" value={form.reorderQuantity || 0} onChange={(value) => update('reorderQuantity', value)} error={errors.reorderQuantity} placeholder="10" />}
         {viewMode === 'advanced' && <Input field="shippingWeightKg" label="Packed unit weight (kg, 0 uses store default)" type="number" min="0" max="1000" step="0.01" value={form.shippingWeightKg || 0} onChange={value => update('shippingWeightKg', value)} error={errors.shippingWeightKg} placeholder="0.5" />}
@@ -866,7 +879,7 @@ export default function ProductForm({
           />
           <p className="mt-2 text-xs font-semibold text-slate-500">{form.videos.length}/2 videos uploaded.</p>
         </div>}
-        {structure?.features?.sizing !== false && <><label className="admin-field">
+        {usesGarmentSizing(structure, form) && <><label className="admin-field">
           <span>Customer sizing</span>
           <select value={form.sizingMode || 'auto'} onChange={(event) => update('sizingMode', event.target.value)} className="admin-field__control">
             <option value="auto">Automatic from product category</option>
@@ -974,9 +987,9 @@ export default function ProductForm({
         <Input label="Supplier SKU" value={form.supplierSku || ''} onChange={(value) => update('supplierSku', value)} placeholder="Supplier item code" />
         <Input label="Expected restock" type="datetime-local" value={form.restockAt || ''} onChange={(value) => update('restockAt', value)} />
         <Input field="publishAt" label="Publish on" type="datetime-local" value={form.publishAt || ''} onChange={(value) => update('publishAt', value)} error={errors.publishAt} />
-        <Input field="salePrice" label="Scheduled sale price" type="number" min="0.01" step="0.01" value={form.salePrice || ''} onChange={(value) => update('salePrice', value)} error={errors.salePrice} placeholder="Lower than regular selling price" />
+        {form.commerceMode !== 'RENTAL_ONLY' && <><Input field="salePrice" label="Scheduled sale price" type="number" min="0.01" step="0.01" value={form.salePrice || ''} onChange={(value) => update('salePrice', value)} error={errors.salePrice} placeholder="Lower than regular selling price" />
         <Input field="saleStartAt" label="Sale starts" type="datetime-local" value={form.saleStartAt || ''} onChange={(value) => update('saleStartAt', value)} error={errors.saleStartAt} />
-        <Input field="saleEndAt" label="Sale ends" type="datetime-local" value={form.saleEndAt || ''} onChange={(value) => update('saleEndAt', value)} error={errors.saleEndAt} />
+        <Input field="saleEndAt" label="Sale ends" type="datetime-local" value={form.saleEndAt || ''} onChange={(value) => update('saleEndAt', value)} error={errors.saleEndAt} /></>}
         <div className="admin-form-hint lg:col-span-2"><h3>Shipping weight preview</h3><p>Actual: {Number(form.shippingWeightKg || 0).toFixed(2)} kg · Volumetric: {chargeableWeight.volumetric.toFixed(2)} kg · Courier chargeable weight: <strong>{chargeableWeight.chargeable.toFixed(2)} kg</strong>. The final rate also depends on destination PIN code and your selected courier.</p></div>
         <label className="admin-field lg:col-span-2"><span>Manufacturer / importer details</span><textarea value={form.manufacturerDetails || ''} onChange={(event) => update('manufacturerDetails', event.target.value)} className="admin-field__control" placeholder="Name and address shown where legally required" /></label>
         <Input label="Warranty / guarantee" value={form.warranty || ''} onChange={(value) => update('warranty', value)} placeholder="Example: 6 months manufacturer warranty" />
@@ -1020,7 +1033,7 @@ export default function ProductForm({
         <Input label="Style / Type" value={assistant.style} onChange={(value) => updateAssistant('style', value)} placeholder="Ethnic, Party Wear, Daily Wear" />
         <Input label="Work / Pattern" value={assistant.workPattern} onChange={(value) => updateAssistant('workPattern', value)} placeholder="Embroidered, Printed, Zari" />
         <Input label="Fit" value={assistant.fit} onChange={(value) => updateAssistant('fit', value)} placeholder="Regular, Relaxed, Slim" />
-        <Input label="Size range" value={assistant.sizeRange} onChange={(value) => updateAssistant('sizeRange', value)} placeholder="S, M, L, XL" />
+        {automaticSizing(structure) && <Input label="Size range" value={assistant.sizeRange} onChange={(value) => updateAssistant('sizeRange', value)} placeholder="S, M, L, XL" />}
         <Input label="Price segment" value={assistant.priceSegment} onChange={(value) => updateAssistant('priceSegment', value)} placeholder="Budget, Premium, Luxury" />
         <Input label="Target customer / usage" value={assistant.targetCustomer} onChange={(value) => updateAssistant('targetCustomer', value)} placeholder="Wedding guest, festive wear" />
         <div className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4">
@@ -1526,7 +1539,7 @@ function getActiveAttributeDefinitions(structure, categories = [], form = {}) {
   chain.forEach((layer) => (layer.attributes || []).forEach((item) => {
     if (typeof item === 'object' && item.key) merged.set(item.key, { ...(merged.get(item.key) || {}), ...item });
   }));
-  return Array.from(merged.values()).filter((item) => item.active !== false).sort((left, right) => Number(left.sortOrder || 0) - Number(right.sortOrder || 0));
+  return Array.from(merged.values()).filter((item) => item.active !== false && (usesGarmentSizing(structure, form) || !sizeAttribute(item.key))).sort((left, right) => Number(left.sortOrder || 0) - Number(right.sortOrder || 0));
 }
 
 function getEffectiveVariantConfig(structure, categories = [], form = {}) {
@@ -1632,9 +1645,10 @@ function validate(form, sizingProduct = form, attributes = []) {
   if (form.name.trim().length < 3) errors.name = 'Product name must be at least 3 characters.';
   if (!form.sku.trim()) errors.sku = 'SKU is required.';
   if (!form.category) errors.category = 'Category is required.';
-  if (!Number.isFinite(Number(form.originalPrice)) || Number(form.originalPrice) <= 0) errors.originalPrice = 'Original price is required.';
-  if (!Number.isFinite(Number(form.price)) || Number(form.price) <= 0) errors.price = 'Selling price is required.';
-  if (Number(form.price) > Number(form.originalPrice)) errors.price = 'Selling price cannot exceed original price.';
+  if (form.commerceMode !== 'RENTAL_ONLY' && (!Number.isFinite(Number(form.originalPrice)) || Number(form.originalPrice) <= 0)) errors.originalPrice = 'Original price is required.';
+  if (!Number.isFinite(Number(form.price)) || Number(form.price) <= 0) errors.price = form.commerceMode === 'RENTAL_ONLY' ? 'Reference item value is required.' : 'Selling price is required.';
+  if (form.commerceMode !== 'SALE_ONLY' && rentalPricingError(form.rentalPricing)) errors.rentalPricing = rentalPricingError(form.rentalPricing);
+  if (form.commerceMode !== 'RENTAL_ONLY' && Number(form.price) > Number(form.originalPrice)) errors.price = 'Selling price cannot exceed original price.';
   if (!Number.isSafeInteger(Number(form.stock)) || Number(form.stock) < 0) errors.stock = 'Stock must be a whole number of zero or more.';
   if (!Number.isSafeInteger(Number(form.lowStockAlert)) || Number(form.lowStockAlert) < 0) errors.lowStockAlert = 'Use a whole number of zero or more.';
   if (!Number.isFinite(Number(form.costPrice || 0)) || Number(form.costPrice || 0) < 0) errors.costPrice = 'Cost price must be zero or more.';
@@ -1642,9 +1656,9 @@ function validate(form, sizingProduct = form, attributes = []) {
   if (!Number.isSafeInteger(Number(form.reorderQuantity || 0)) || Number(form.reorderQuantity || 0) < 0) errors.reorderQuantity = 'Use a whole number of zero or more.';
   if (!Number.isFinite(Number(form.shippingWeightKg || 0)) || Number(form.shippingWeightKg || 0) < 0 || Number(form.shippingWeightKg || 0) > 1000) errors.shippingWeightKg = 'Packed unit weight must be between 0 and 1000 kg.';
   if (Object.values(form.packageDimensions || {}).some((value) => !Number.isFinite(Number(value || 0)) || Number(value || 0) < 0 || Number(value || 0) > 1000)) errors.packageDimensions = 'Package dimensions must be between 0 and 1000 cm.';
-  for (const key of ['publishAt', 'saleStartAt', 'saleEndAt']) if (form[key] && Number.isNaN(new Date(form[key]).getTime())) errors[key] = 'Choose a valid date and time.';
-  if (form.saleStartAt && form.saleEndAt && new Date(form.saleStartAt) >= new Date(form.saleEndAt)) errors.saleEndAt = 'Sale end must be after sale start.';
-  const hasScheduledSale = Boolean(form.salePrice || form.saleStartAt || form.saleEndAt);
+  for (const key of form.commerceMode === 'RENTAL_ONLY' ? ['publishAt'] : ['publishAt', 'saleStartAt', 'saleEndAt']) if (form[key] && Number.isNaN(new Date(form[key]).getTime())) errors[key] = 'Choose a valid date and time.';
+  if (form.commerceMode !== 'RENTAL_ONLY' && form.saleStartAt && form.saleEndAt && new Date(form.saleStartAt) >= new Date(form.saleEndAt)) errors.saleEndAt = 'Sale end must be after sale start.';
+  const hasScheduledSale = form.commerceMode !== 'RENTAL_ONLY' && Boolean(form.salePrice || form.saleStartAt || form.saleEndAt);
   if (hasScheduledSale) {
     if (!Number.isFinite(Number(form.salePrice)) || Number(form.salePrice) <= 0) errors.salePrice = 'Enter the scheduled sale price.';
     else if (Number(form.salePrice) >= Number(form.price)) errors.salePrice = 'Scheduled sale price must be below the regular selling price.';
@@ -1731,12 +1745,13 @@ function buildDraftPayload(form, overrides = {}) {
   const payload = {
     ...form,
     ...overrides,
+    rentalPricing: form.commerceMode === 'SALE_ONLY' ? null : form.rentalPricing,
     images: prepareImages(form.images),
     videos: prepareVideos(form.videos),
     price: Number(form.price || 0),
     sellingPrice: Number(form.price || 0),
-    originalPrice: Number(form.originalPrice || form.price || 0),
-    salePrice: form.salePrice ? Number(form.salePrice) : undefined,
+    originalPrice: form.commerceMode === 'RENTAL_ONLY' ? Number(form.price || 0) : Number(form.originalPrice || form.price || 0),
+    salePrice: form.commerceMode === 'RENTAL_ONLY' ? undefined : form.salePrice ? Number(form.salePrice) : undefined,
     costPrice: Number(form.costPrice || 0),
     gstRate: Number(form.gstRate || 0),
     stock: overrides.stock ?? Number(form.stock || 0),
@@ -1754,8 +1769,8 @@ function buildDraftPayload(form, overrides = {}) {
     variants: overrides.variants ?? (form.trackVariants ? form.variants : []),
     restockAt: nullableDate(form.restockAt),
     publishAt: nullableDate(form.publishAt),
-    saleStartAt: nullableDate(form.saleStartAt),
-    saleEndAt: nullableDate(form.saleEndAt),
+    saleStartAt: form.commerceMode === 'RENTAL_ONLY' ? null : nullableDate(form.saleStartAt),
+    saleEndAt: form.commerceMode === 'RENTAL_ONLY' ? null : nullableDate(form.saleEndAt),
     returnWindowDays: form.returnWindowDays === '' ? undefined : Number(form.returnWindowDays),
   };
   if (!payload.category) delete payload.category;

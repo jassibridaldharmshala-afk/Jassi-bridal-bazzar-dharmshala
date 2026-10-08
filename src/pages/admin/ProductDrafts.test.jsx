@@ -38,6 +38,16 @@ const draft = {
   readiness: { state: 'review', score: 87, issues: [], warnings: ['Add packed weight'] },
 };
 
+test('photo draft editor keeps sale and rental prices separate', async () => {
+  render(<ProductDrafts route="/admin/product-drafts" />);
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Review' }))[0]);
+  fireEvent.change(screen.getByLabelText('Available for'), { target: { value: 'SALE_AND_RENTAL' } });
+  fireEvent.change(screen.getByLabelText('Rental price per day (₹)'), { target: { value: '600' } });
+  expect(screen.getByLabelText(/Selling price/)).toHaveValue(1000);
+  expect(screen.getByLabelText('Rental price per day (₹)')).toHaveValue(600);
+  expect(normalizeDraftBody({ ...draft, commerceMode: 'SALE_AND_RENTAL', rentalPricing: { dailyRatePaise: 60000, depositPaise: 100000 } })).toEqual(expect.objectContaining({ price: 1000, rentalPricing: { dailyRatePaise: 60000, depositPaise: 100000 } }));
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(window, 'confirm').mockReturnValue(true);
@@ -55,6 +65,67 @@ beforeEach(() => {
   mockUpload = jest.fn(() => ({ unwrap: async () => ({ success: true, data: { drafts: [{}] } }) }));
 });
 afterEach(() => jest.restoreAllMocks());
+
+test('creates three drafts from product photo groups with 4, 6 and 2 views', async () => {
+  URL.createObjectURL = jest.fn(() => 'blob:photo-preview');
+  URL.revokeObjectURL = jest.fn();
+  mockQuery.data.meta.photoGrouping = { version: 1, maxPhotos: 30 };
+  mockUpload.mockImplementation(() => ({ unwrap: async () => ({ success: true, data: { drafts: [{}, {}, {}] } }) }));
+  render(<ProductDrafts />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Create from photos' }));
+  fireEvent.click(screen.getByRole('radio', { name: /Several products, grouped photos/ }));
+  const photos = Array.from({ length: 12 }, (_, index) => new File([`photo-${index}`], `photo-${index}.webp`, { type: 'image/webp' }));
+  fireEvent.change(screen.getByLabelText('Choose product photos'), { target: { files: photos } });
+  for (const [start, count] of [[0, 4], [4, 6], [10, 2]]) {
+    for (let index = start; index < start + count; index += 1) fireEvent.click(screen.getByRole('checkbox', { name: `Select photo ${index + 1}: photo-${index}.webp` }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create product group' }));
+  }
+  expect(screen.getByRole('region', { name: 'Product group 1' })).toHaveTextContent('4 photos');
+  expect(screen.getByRole('region', { name: 'Product group 2' })).toHaveTextContent('6 photos');
+  expect(screen.getByRole('region', { name: 'Product group 3' })).toHaveTextContent('2 photos');
+  fireEvent.change(screen.getByLabelText('Product name for group 1'), { target: { value: 'Red lehenga' } });
+  const secondPhoto = screen.getByLabelText('Select photo 2: photo-1.webp').closest('figure');
+  fireEvent.click(within(secondPhoto).getByRole('button', { name: 'Make cover' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Create 3 drafts' }));
+  await waitFor(() => expect(mockUpload).toHaveBeenCalledWith({ files: photos, groupMode: 'grouped', apiPrefix: '/admin', photoGroups: [
+    { name: 'Red lehenga', photoIndexes: [0, 1, 2, 3], coverIndex: 1 },
+    { name: '', photoIndexes: [4, 5, 6, 7, 8, 9], coverIndex: 4 },
+    { name: '', photoIndexes: [10, 11], coverIndex: 10 },
+  ] }));
+  expect(await screen.findByText('3 product drafts created.')).toBeInTheDocument();
+});
+
+test('removing a photo preserves other assignments and a failed grouped upload can retry', async () => {
+  URL.createObjectURL = jest.fn(() => 'blob:photo-preview'); URL.revokeObjectURL = jest.fn();
+  mockQuery.data.meta.photoGrouping = { version: 1 };
+  mockUpload.mockImplementationOnce(() => ({ unwrap: async () => { throw new Error('Network interrupted'); } }));
+  render(<ProductDrafts route="/seller/product-drafts" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Create from photos' }));
+  fireEvent.click(screen.getByRole('radio', { name: /Several products, grouped photos/ }));
+  const photos = Array.from({ length: 3 }, (_, index) => new File(['photo'], `view-${index}.webp`, { type: 'image/webp' }));
+  fireEvent.change(screen.getByLabelText('Choose product photos'), { target: { files: photos } });
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select photo 1: view-0.webp' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Select photo 2: view-1.webp' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Create product group' }));
+  expect(screen.getByRole('button', { name: 'Create one draft' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Remove photo 1: view-0.webp' }));
+  fireEvent.change(screen.getByLabelText('Product group for photo 2: view-2.webp'), { target: { value: screen.getByLabelText('Product group for photo 1: view-1.webp').value } });
+  fireEvent.click(screen.getByRole('button', { name: 'Create one draft' }));
+  await screen.findByText('Network interrupted');
+  expect(screen.getByRole('region', { name: 'Product group 1' })).toHaveTextContent('2 photos');
+  fireEvent.click(screen.getByRole('button', { name: 'Create one draft' }));
+  await waitFor(() => expect(mockUpload).toHaveBeenCalledTimes(2));
+  expect(mockUpload.mock.calls[0][0]).toEqual(mockUpload.mock.calls[1][0]);
+  expect(mockUpload.mock.calls[1][0]).toMatchObject({ apiPrefix: '/seller', files: [photos[1], photos[2]], photoGroups: [{ photoIndexes: [0, 1], coverIndex: 0 }] });
+});
+
+test('grouped uploads stay unavailable when the server has not advertised support', async () => {
+  render(<ProductDrafts />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Create from photos' }));
+  expect(screen.getByRole('radio', { name: /Several products, grouped photos/ })).toBeDisabled();
+  expect(screen.getByRole('radio', { name: /One product, multiple photos/ })).toBeEnabled();
+  expect(screen.getByRole('radio', { name: /One draft per photo/ })).toBeEnabled();
+});
 
 test.each(['/admin/product-drafts', '/seller/product-drafts'])('adds multiple photos to an existing draft from its card on %s', async (route) => {
   const original = { url: '/uploads/a.jpg', publicId: 'original', primary: true, sourceFrame: { viewType: 'front' } };

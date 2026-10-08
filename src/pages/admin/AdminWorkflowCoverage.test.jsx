@@ -91,6 +91,19 @@ test('late product reads cannot replace another selected edit target', async () 
   expect(screen.getByDisplayValue('Current green saree')).toBeInTheDocument();
 });
 
+test('mixed commerce product saves the sale price and selected rental price together', async () => {
+  const rentalOffers = [{ _id: 'offer-1', title: 'Bridal saree', active: true, revision: 3, dailyRatePaise: 75000, depositPaise: 200000 }];
+  api.get.mockImplementation(async path => path === '/catalog-configuration' ? { industry: 'boutique', features: { sizing: false }, attributes: [] } : path.includes('duplicate-check') ? { conflicts: [] } : { name: 'Bridal saree', description: 'Bridal saree with an embroidered border.', sku: 'BRIDAL-1', category: 'cat', price: 5000, originalPrice: 6000, stock: 2, lowStockAlert: 5, commerceMode: 'SALE_AND_RENTAL', rentalOffers, sizes: [], colors: [], tags: [], images: [{ url: '/uploads/saree.jpg', primary: true }] });
+  api.put.mockResolvedValue({});
+  render(<ProductForm mode="Update" productId="prod1" />);
+  const rate = await screen.findByLabelText('Rental price per day (₹)');
+  expect(rate).toHaveValue(750);
+  fireEvent.change(rate, { target: { value: '900' } });
+  fireEvent.change(screen.getByLabelText(/Selling price/), { target: { value: '5500' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Update Product' }));
+  await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/products/prod1', expect.objectContaining({ price: 5500, rentalPricing: expect.objectContaining({ listingId: 'offer-1', revision: 3, dailyRatePaise: 90000, depositPaise: 200000 }) })));
+});
+
 test('category editing retries reads, preserves both images and only removes the chosen image', async () => {
   api.get.mockRejectedValueOnce(new Error('Category unavailable')).mockResolvedValueOnce({ name: 'Sarees', slug: 'sarees', image: '/uploads/category.jpg', socialImage: '/uploads/category-social.jpg', isActive: true });
   api.put.mockResolvedValue({});
