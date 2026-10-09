@@ -40,20 +40,19 @@ test('linked product setup resolves the exact product and registers only the own
   fireEvent.change(screen.getByLabelText('Rental price per day (₹)'), { target: { value: '500' } });
   fireEvent.change(screen.getByLabelText(/^Refundable security deposit/), { target: { value: '1000' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save price & continue' }));
-  await screen.findByRole('heading', { name: 'Register actual pieces' });
+  await screen.findByRole('heading', { name: 'How many do you own?' });
   expect(api.post).toHaveBeenCalledWith('/admin/rentals/listings', expect.objectContaining({ productId: 'product1', title: 'Bridal lehenga', active: false, dailyRatePaise: 50000, depositPaise: 100000, requirements: [{ productId: 'product1', poolKey: 'product-product1', label: 'Bridal lehenga', quantity: 1 }] }));
-  fireEvent.change(screen.getByLabelText('New physical pieces to register (owner counted)'), { target: { value: '3' } });
+  fireEvent.change(screen.getByLabelText('Quantity to add'), { target: { value: '3' } });
   await waitFor(() => expect(dirty).toHaveBeenLastCalledWith(true));
-  fireEvent.click(screen.getByRole('button', { name: 'Generate codes & register pieces' }));
-  await screen.findByText(/3 registered/);
+  fireEvent.click(screen.getByRole('button', { name: 'Save quantity & continue' }));
+  await screen.findByRole('heading', { name: 'Confirm & start rentals' });
   expect(api.post).toHaveBeenCalledWith('/admin/rentals/setup/offer1/pieces', expect.objectContaining({ quantity: 3, revision: 1, componentIndex: 0, operationId: expect.any(String) }));
   await waitFor(() => expect(dirty).toHaveBeenLastCalledWith(false));
-  fireEvent.click(screen.getByRole('button', { name: 'Review activation' }));
-  expect(screen.getByRole('button', { name: 'Activate rental offer' })).toBeEnabled();
-  fireEvent.click(screen.getByRole('button', { name: /1.*Price & fitting/ }));
+  expect(screen.getByRole('button', { name: 'Start accepting rentals' })).toBeEnabled();
+  fireEvent.click(screen.getByRole('button', { name: /1.*Product & price/ }));
   fireEvent.change(screen.getByLabelText('Rental price per day (₹)'), { target: { value: '600' } });
-  fireEvent.click(screen.getByRole('button', { name: /3.*Review & activate/ }));
-  expect(screen.getByRole('button', { name: 'Activate rental offer' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: /3.*Confirm/ }));
+  expect(screen.getByRole('button', { name: 'Start accepting rentals' })).toBeDisabled();
   expect(screen.getByText(/Save price changes in step 1/)).toBeInTheDocument();
 });
 

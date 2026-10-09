@@ -1,0 +1,63 @@
+{
+  "completedUtc": "2026-10-09 17:17:39 UTC",
+  "request": "Simplify rental setup, identify products by their catalogue photos, reuse saved details and add reviewed AI help.",
+  "implemented": [
+    "Three steps: Product & price, Quantity, Confirm.",
+    "Catalogue photo cards with name/SKU, multiple views and original-photo link; missing or failed photos have a visible fallback.",
+    "Reuse an existing rental offer's saved price, deposit and revision; require explicit choice when more than one offer exists.",
+    "Main inputs are use-day rent, refundable security and actual quantity. Advance/fitting/fees/rack/condition/manual codes and bundled options are collapsed.",
+    "AI setup help uses existing photos and owner notes through the existing protected Smart Fill API. Only title and owner-evidenced rental terms can be applied after review.",
+    "Quantity registration generates unique codes and remains idempotent. Complete every component before continuing for bundled sets.",
+    "Keep the selected product visible on quantity and confirmation; activate through existing backend readiness checks, then open Orders → Rental bookings.",
+    "Scope product/offer metadata to the selected store; ignore stale workspace reads after a shop switch."
+  ],
+  "retainedSafeguards": [
+    "Real physical inventory stays merchant-entered and separate from sale stock.",
+    "AI does not invent rent, deposit, actual stock or measurements.",
+    "Optional sizes remain optional; existing saved fitting and policy settings are reused.",
+    "Store membership, inventory/catalogue permissions, listing revision, transaction readiness, licence and activation checks remain enforced.",
+    "No original product images are overwritten."
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 7,
+      "tests": 40,
+      "passed": 40,
+      "log": ".tmp/rental-setup-easy-tests.log"
+    },
+    "backend": {
+      "tests": 17,
+      "passed": 17,
+      "skipped": 0,
+      "cancelled": 0,
+      "log": ".tmp/rental-setup-easy-backend.log",
+      "database": "isolated local replica set",
+      "providers": "mocked"
+    },
+    "strictCIProductionBuild": true,
+    "node": "20.20.2",
+    "buildLog": ".tmp/rental-setup-easy-build.log",
+    "uiWidths": [
+      390,
+      820,
+      1440
+    ],
+    "visualReport": "review-notes/rental-easy-setup-visual-qa.json",
+    "browserErrors": 0,
+    "horizontalOverflow": false,
+    "browserAPI": "isolated fixtures",
+    "photoFixture": "Bundled logo images, not actual bridal product originals.",
+    "countsAreScopedAndNotAddedToPriorRuns": true
+  },
+  "deployment": {
+    "deployed": false,
+    "servicesToRedeploy": [
+      "frontend",
+      "canonical backend/"
+    ],
+    "realGeminiCall": false,
+    "realPaymentOrOTPCall": false,
+    "liveDatabaseOrInventoryVerified": false,
+    "notesFallback": "Explicit rental terms in owner notes remain supported if photo AI is unconfigured."
+  }
+}

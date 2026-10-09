@@ -8,7 +8,7 @@ import { automaticSizing } from '../../utils/productSizing';
 
 const financial = key => ['sellingPrice', 'price', 'originalPrice'].includes(key) || key.startsWith('rentalPricing.');
 
-export default function ProductSmartFill({ form, categories, structure, onApply, apiPrefix = '/admin', priceField = 'price', seo = true, disabled = false }) {
+export default function ProductSmartFill({ form, categories, structure, onApply, apiPrefix = '/admin', priceField = 'price', seo = true, disabled = false, rentalSetup = false }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState('');
@@ -46,7 +46,7 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
     try {
       const result = await api.post(`${apiPrefix}/products/smart-fill`, smartRequest(baseline, notes, chosen), { silent: true, signal: controller.signal });
       if (controller.signal.aborted) return;
-      const rows = suggestionRows(result, baseline, { categories, structure, priceField, seo });
+      const rows = suggestionRows(result, baseline, { categories, structure, priceField, seo }).filter(row => !rentalSetup || row.key === 'name' || row.key.startsWith('rentalPricing.'));
       setPreview({ rows, similarProducts: result.similarProducts || [], warnings: result.warnings || [], mode: result.mode, inputs });
       setSelected(rows.filter(row => row.empty && !financial(row.key)).map(row => row.key));
       if (!rows.length && !result.warnings?.length) setNotice('No additional fields to fill from these inputs. Your existing details are unchanged.');
@@ -63,36 +63,36 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
   const apply = () => {
     if (!patch.length || disabled) return;
     onApply(patch); setUndo(patch); setPreview(null);
-    setNotice('Reviewed details added to your form. Check stock and any missing information, then save as usual.');
+    setNotice(rentalSetup ? 'Reviewed rental details added. Check the charges, then save price & continue.' : 'Reviewed details added to your form. Check stock and any missing information, then save as usual.');
   };
 
-  return <section className="product-smart-fill" aria-label="Smart product fill">
+  return <section className="product-smart-fill" aria-label={rentalSetup ? "Smart rental setup" : "Smart product fill"}>
     <button type="button" className="product-smart-fill__toggle" aria-expanded={open} aria-controls={uid} onClick={() => setOpen(value => !value)}>
       <span className="product-smart-fill__icon"><Sparkles size={20} /></span>
-      <span><strong>Smart fill</strong><small>Turn photos and supplier notes into product details</small></span>
+      <span><strong>{rentalSetup ? 'AI setup help' : 'Smart fill'}</strong><small>{rentalSetup ? 'Use existing photos and your notes to reduce typing' : 'Turn photos and supplier notes into product details'}</small></span>
       <ChevronDown size={18} className={open ? 'is-open' : ''} />
     </button>
     {open && <div id={uid} className="product-smart-fill__body">
-      <p>Use clear views of one product. Review suggested details before adding them to your form.</p>
+      <p>{rentalSetup ? "Your catalogue photos are already selected. Add rental terms in your notes and review the suggestions." : "Use clear views of one product. Review suggested details before adding them to your form."}</p>
       {!!photos.length && <div>
         <p className="product-smart-fill__label">Product photos <span>{chosen.length}/{maxPhotos} selected</span></p>
         <div className="product-smart-fill__photos">{photos.map((url, index) => <button key={url} type="button" disabled={busy || disabled || (!chosen.includes(url) && chosen.length >= maxPhotos)} aria-pressed={chosen.includes(url)} aria-label={`Use product photo ${index + 1}`} onClick={() => togglePhoto(url)}>
           <img src={normalizeImageUrl(url)} alt={`Product view ${index + 1}`} loading="lazy" /><span>{chosen.includes(url) ? 'Selected' : 'Select'}</span>
         </button>)}</div>
       </div>}
-      <label className="product-smart-fill__label" htmlFor={uid + '-notes'}>Supplier notes or product details</label>
-      <textarea id={uid + '-notes'} rows={4} maxLength={7000} value={notes} disabled={busy || disabled} onChange={event => setNotes(event.target.value)} placeholder={'Paste details in English, Hindi or Hinglish. For example:\nName: Wine embroidered saree\nFabric: Georgette\nSelling price: Rs 1299\nMRP: Rs 1999'} />
-      <p className="product-smart-fill__hint">{status?.enabled === false ? 'Photo AI is not configured. You can still fill explicitly stated details from notes.' : 'Fills category, design, colours, specifications, descriptions, highlights, tags and SEO from your photos and notes.'} Stock stays manual; prices, materials and care need stated details. {!automaticSizing(structure) ? 'Photo AI never guesses measurements. Use the optional owner-measured fitting templates in Rental pricing. Labelled notes can suggest daily rent, deposit, advance, fitting instructions and exact included items; review every value.' : 'Available sizes need stated details.'}</p>
+      <label className="product-smart-fill__label" htmlFor={uid + '-notes'}>{rentalSetup ? 'Your rental terms or product notes (optional)' : 'Supplier notes or product details'}</label>
+      <textarea id={uid + '-notes'} rows={4} maxLength={7000} value={notes} disabled={busy || disabled} onChange={event => setNotes(event.target.value)} placeholder={rentalSetup ? 'Daily rent: Rs 500\nSecurity deposit: Rs 1000\nBooking advance: 30%\nIncluded items: Lehenga, blouse, dupatta\nFitting instructions: Fitting appointment before pickup' : 'Paste details in English, Hindi or Hinglish. For example:\nName: Wine embroidered saree\nFabric: Georgette\nSelling price: Rs 1299\nMRP: Rs 1999'} />
+      <p className="product-smart-fill__hint">{rentalSetup ? <>{status?.enabled === false ? "Photo AI is not configured; labelled notes still work." : "Photo AI can suggest an offer title."} Rent, deposit, advance and set contents come only from your stated notes and require your selection. Quantity and measurements stay manual.</> : <>{status?.enabled === false ? 'Photo AI is not configured. You can still fill explicitly stated details from notes.' : 'Fills category, design, colours, specifications, descriptions, highlights, tags and SEO from your photos and notes.'} Stock stays manual; prices, materials and care need stated details. {!automaticSizing(structure) ? 'Photo AI never guesses measurements. Use the optional owner-measured fitting templates in Rental pricing. Labelled notes can suggest daily rent, deposit, advance, fitting instructions and exact included items; review every value.' : 'Available sizes need stated details.'}</>}</p>
       <div className="product-smart-fill__actions">
-        <button type="button" className="admin-btn" disabled={busy || disabled} onClick={analyze}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}{busy ? 'Reading product details…' : 'Suggest details'}</button>
+        <button type="button" className="admin-btn" disabled={busy || disabled} onClick={analyze}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}{busy ? 'Reading product details…' : rentalSetup ? 'Suggest rental details' : 'Suggest details'}</button>
         {busy && <button type="button" className="admin-btn-ghost" onClick={() => { request.current?.abort(); request.current = null; setBusy(false); setNotice('Analysis cancelled.'); }}>Cancel</button>}
         {undo && !busy && <button type="button" className="admin-btn-ghost" disabled={disabled} onClick={() => { onApply(undo, true); setUndo(null); setNotice('Smart Fill changes undone. Any later manual edits have been kept.'); }}><Undo2 size={15} />Undo last fill</button>}
       </div>
       {error && <p role="alert" className="product-smart-fill__warning">{error}</p>}
       {notice && <p role="status" className="product-smart-fill__notice">{notice}</p>}
       {preview && <div className="product-smart-fill__review">
-        <div className="product-smart-fill__review-heading"><strong>Review suggestions</strong><p>Check the source evidence and explicitly select any sale price, MRP or owner-stated rental terms before applying.</p><span>{preview.mode === 'ai' ? 'Photos & context' : 'From your notes'}</span></div>
-        {preview.similarProducts?.length > 0 && <section><strong>Similar products to review</strong><p>Choose whether this is a separate design or edit an existing product. Nothing is merged automatically.</p>{preview.similarProducts.map(product => <p key={product._id}><a href={`${apiPrefix}/products?edit=${encodeURIComponent(product._id)}`} target="_blank" rel="noopener noreferrer">{product.name} · {product.sku}</a> — {product.reason}</p>)}</section>}{preview.warnings.map(warning => <p key={warning} role="status" className="product-smart-fill__warning">{warning}</p>)}
+        <div className="product-smart-fill__review-heading"><strong>Review suggestions</strong><p>{rentalSetup ? "Select only the title or rental terms you agree with. Nothing is saved or activated here." : "Check the source evidence and explicitly select any sale price, MRP or owner-stated rental terms before applying."}</p><span>{preview.mode === 'ai' ? 'Photos & context' : 'From your notes'}</span></div>
+        {!rentalSetup && preview.similarProducts?.length > 0 && <section><strong>Similar products to review</strong><p>Choose whether this is a separate design or edit an existing product. Nothing is merged automatically.</p>{preview.similarProducts.map(product => <p key={product._id}><a href={`${apiPrefix}/products?edit=${encodeURIComponent(product._id)}`} target="_blank" rel="noopener noreferrer">{product.name} · {product.sku}</a> — {product.reason}</p>)}</section>}{preview.warnings.map(warning => <p key={warning} role="status" className="product-smart-fill__warning">{warning}</p>)}
         {stale && <p role="status" className="product-smart-fill__warning">Your photos or notes changed. Suggest details again before applying.</p>}
         {!!preview.rows.length && <>
           <label className="product-smart-fill__choice"><input type="checkbox" checked={replace} disabled={disabled || stale} onChange={event => { setReplace(event.target.checked); if (!event.target.checked) setSelected(preview.rows.filter(row => row.empty && !financial(row.key)).map(row => row.key)); }} />Allow replacing selected existing details</label>

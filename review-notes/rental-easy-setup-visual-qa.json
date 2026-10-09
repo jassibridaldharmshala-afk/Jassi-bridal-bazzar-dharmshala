@@ -1,0 +1,43 @@
+{
+  "api": "isolated fixtures",
+  "photoFixture": "bundled logo images, not actual shop product originals",
+  "realProvidersCalled": false,
+  "results": [
+    {
+      "width": 390,
+      "cataloguePhotoChoice": true,
+      "savedRentalPriceReused": true,
+      "originalPhotoLink": true,
+      "optionalSettingsCollapsed": true,
+      "reviewedAIFromExistingPhotosAndOwnerNotes": true,
+      "actualQuantityAndGeneratedCodes": true,
+      "activationAndOrdersHandoff": true,
+      "noHorizontalOverflow": true,
+      "pageErrors": []
+    },
+    {
+      "width": 820,
+      "cataloguePhotoChoice": true,
+      "savedRentalPriceReused": true,
+      "originalPhotoLink": true,
+      "optionalSettingsCollapsed": true,
+      "reviewedAIFromExistingPhotosAndOwnerNotes": true,
+      "actualQuantityAndGeneratedCodes": true,
+      "activationAndOrdersHandoff": true,
+      "noHorizontalOverflow": true,
+      "pageErrors": []
+    },
+    {
+      "width": 1440,
+      "cataloguePhotoChoice": true,
+      "savedRentalPriceReused": true,
+      "originalPhotoLink": true,
+      "optionalSettingsCollapsed": true,
+      "reviewedAIFromExistingPhotosAndOwnerNotes": true,
+      "actualQuantityAndGeneratedCodes": true,
+      "activationAndOrdersHandoff": true,
+      "noHorizontalOverflow": true,
+      "pageErrors": []
+    }
+  ]
+}

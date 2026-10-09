@@ -67,16 +67,16 @@ test('guided setup blocks activation, registers the exact component piece, then 
   api.get.mockImplementation(path => Promise.resolve(path.includes('/setup/') ? setup() : path.includes('/manage/products') ? { rows: [{ _id: 'product1', name: 'Bridal outfit' }], total: 1, page: 1, pages: 1 } : { rows: [offer], total: 1, page: 1, pages: 1 }));
   api.post.mockImplementation((path, input) => { if (path.endsWith('/assets')) { count++; return Promise.resolve({ _id: 'piece1' }); } return Promise.resolve({ ...offer, ...input }); });
   render(<RentalSetupWizard base="/admin/rentals" initialListingId="offer1" configuration={{ policy }} readiness={{ transactions: true }} run={work => work()} onTab={jest.fn()} />);
-  fireEvent.click(await screen.findByRole('button', { name: /3.*Review & activate/ }));
-  expect(screen.getByRole('button', { name: 'Activate rental offer' })).toBeDisabled();
-  fireEvent.click(screen.getByRole('button', { name: /2.*Physical pieces/ }));
+  fireEvent.click(await screen.findByRole('button', { name: /3.*Confirm/ }));
+  expect(screen.getByRole('button', { name: 'Start accepting rentals' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: /2.*Quantity/ }));
   fireEvent.change(screen.getByLabelText('Unique physical piece code'), { target: { value: 'OUTFIT-01' } });
   fireEvent.click(screen.getByRole('button', { name: 'Register this piece' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/rentals/assets', expect.objectContaining({ productId: 'product1', poolKey: 'outfit', code: 'OUTFIT-01' })));
   await screen.findByText(/1 registered/);
-  fireEvent.click(screen.getByRole('button', { name: 'Review activation' }));
-  expect(screen.getByRole('button', { name: 'Activate rental offer' })).toBeEnabled();
-  fireEvent.click(screen.getByRole('button', { name: 'Activate rental offer' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue with registered pieces' }));
+  expect(screen.getByRole('button', { name: 'Start accepting rentals' })).toBeEnabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Start accepting rentals' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/rentals/listings', expect.objectContaining({ _id: 'offer1', revision: 0, active: true })));
 });
 test('piece timeline displays booked and cleaning intervals and opens only linked bookings', async () => {

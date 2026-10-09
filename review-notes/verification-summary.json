@@ -441,5 +441,23 @@
       "countsAreScopedAndNotAddedToPriorRuns": true,
       "deployed": false
     }
+  },
+  "rentalEasySetup": {
+    "completedUtc": "2026-10-09 17:17:39 UTC",
+    "details": "review-notes/rental-easy-setup-review.json",
+    "frontendSuites": 7,
+    "frontendTests": 40,
+    "backendTests": 17,
+    "allScopedTestsPassed": true,
+    "strictCIProductionBuild": true,
+    "uiWidths": [
+      390,
+      820,
+      1440
+    ],
+    "browserApi": "isolated fixtures",
+    "backendProductionCodeChanged": true,
+    "countsAreScopedAndNotAddedToPriorRuns": true,
+    "deployed": false
   }
 }

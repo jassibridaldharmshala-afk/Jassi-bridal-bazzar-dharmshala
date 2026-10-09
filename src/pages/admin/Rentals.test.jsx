@@ -61,3 +61,19 @@ test('rescheduling a use-day booking sends the explicitly agreed occasion dates 
   fireEvent.click(screen.getByRole('button', { name: 'Apply operation' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/rentals/bookings/booking1/reschedule', expect.objectContaining({ useDates: ['2030-02-10', '2030-02-11'], acceptPricePaise: 900000, pickupAt: '2030-02-09T04:30:00.000Z', returnDueAt: '2030-02-12T04:30:00.000Z' }), { silent: true }));
 });
+
+test('switching shops clears the previous rental product and ignores a late workspace response', async () => {
+  let resolveOld, resolveNew, calls = 0;
+  api.get.mockImplementation(path => {
+    if (path === '/seller/rentals') { calls++; return new Promise(resolve => { if (calls === 1) resolveOld = resolve; else resolveNew = resolve; }); }
+    return Promise.resolve({ rows: [], total: 0, pages: 1, page: 1 });
+  });
+  const view = render(<Rentals route="/seller/rentals?tab=setup&storeId=shopA" />);
+  await waitFor(() => expect(calls).toBe(1));
+  view.rerender(<Rentals route="/seller/rentals?tab=setup&storeId=shopB" />);
+  await waitFor(() => expect(calls).toBe(2));
+  resolveNew({ ...workspace, configuration: { ...workspace.configuration, mode: 'SALE_ONLY' } });
+  expect(await screen.findByText('Rental booking is switched off')).toBeInTheDocument();
+  resolveOld(workspace);
+  await waitFor(() => expect(screen.getByText('Rental booking is switched off')).toBeInTheDocument());
+});
