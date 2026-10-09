@@ -1,4 +1,4 @@
-import { clearRentalContactSessions, readRentalContactDraft, saveRentalContactDraft } from './rentalContactDraft';
+import { clearRentalContactSessions, readRentalContactDraft, saveRentalContactDraft, readGuestRentalContact, saveGuestRentalContact } from './rentalContactDraft';
 import { readRentalSession, saveRentalSession } from './rentalPlan';
 const user = { _id: 'customer-one', isPhoneVerified: true };
 beforeEach(() => sessionStorage.clear());
@@ -40,4 +40,12 @@ test('corrupt stored contact types are normalized before rendering', () => {
   const result = readRentalContactDraft('bridal', user);
   expect(result.customer).toEqual({ name: '', email: '', whatsappConsent: false });
   expect(result.details.deliveryAddress.city).toBe(''); expect(result.details.pickupContact.name).toBe('');
+});
+
+test('same-browser guest drafts expire in 30 minutes and exclude OTP, phone, amounts and consent to rental policy', () => {
+  saveGuestRentalContact('bridal', { customer: { name: 'Guest', phone: '9876543210', otp: '123456' }, price: 100, accepted: true, details: { deliveryAddress: { city: 'Dharamshala' } } });
+  expect(readGuestRentalContact('bridal').customer).toEqual({ name: 'Guest', email: '', whatsappConsent: false });
+  expect(readGuestRentalContact('other')).toBeNull(); expect(JSON.stringify(readGuestRentalContact('bridal'))).not.toContain('123456');
+  const key = 'rental-guest-contact:bridal:'; const value = JSON.parse(sessionStorage.getItem(key)); value.savedAt -= 1800001; sessionStorage.setItem(key, JSON.stringify(value));
+  expect(readGuestRentalContact('bridal')).toBeNull(); expect(sessionStorage.getItem(key)).toBeNull();
 });

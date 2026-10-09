@@ -97,7 +97,7 @@ export function AuthProvider({ children, navigate }) {
   const sendOtp = useCallback((phone) => api.post('/auth/send-otp', { phone }), []);
   const resendOtp = useCallback((phone) => api.post('/auth/resend-otp', { phone }), []);
 
-  const verifyOtp = useCallback(async ({ phone, otp, redirectTo = '/profile' }) => {
+  const verifyOtp = useCallback(async ({ phone, otp, redirectTo = '/profile', navigateOnSuccess = true }) => {
     let data = await api.post('/auth/verify-otp', { phone, otp });
     persist(data);
 
@@ -114,7 +114,7 @@ export function AuthProvider({ children, navigate }) {
 
     resetSessionCache();
     setToast(`Welcome ${data.user.name}`);
-    navigate(redirectTo || '/profile');
+    if (navigateOnSuccess) navigate(redirectTo || '/profile');
     return data;
   }, [navigate, persist, resetSessionCache, setToast]);
 

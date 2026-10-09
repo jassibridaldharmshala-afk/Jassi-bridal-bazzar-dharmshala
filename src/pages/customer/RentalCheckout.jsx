@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { useStorefront } from '../../context/StorefrontContext';
 import { useRentalBag } from '../../context/RentalBagContext';
 import { rentalDetailHref } from '../../utils/rentalShopping';
@@ -10,13 +9,13 @@ import api from '../../services/api';
 import RentalShop from './RentalShop';
 import RentalShoppingCheckout from './RentalShoppingCheckout';
 export default function RentalCheckout({ navigate, route = '/rental-book' }) {
-  const { storeSlug } = useStorefront(); const { user } = useAuth();
+  const { storeSlug } = useStorefront();
   if (/\/rental-book$/.test(route.split('?')[0])) {
     const params = new URLSearchParams(route.split('?')[1] || '');
     if (params.get('product') || params.get('listing')) return <RentalLinkEntry key={route + ':' + storeSlug} params={params} navigate={navigate} />;
     return <RentalShop route={route} navigate={navigate} />;
   }
-  return <RentalShoppingCheckout key={storeSlug + ':' + (user?._id || user?.id || 'guest')} navigate={navigate} />;
+  return <RentalShoppingCheckout key={storeSlug || 'default'} navigate={navigate} />;
 }
 function RentalLinkEntry({ params, navigate }) {
   const { storeSlug } = useStorefront(); const bag = useRentalBag(); const [error, setError] = useState('');

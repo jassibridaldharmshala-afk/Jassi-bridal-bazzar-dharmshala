@@ -459,5 +459,134 @@
     "backendProductionCodeChanged": true,
     "countsAreScopedAndNotAddedToPriorRuns": true,
     "deployed": false
+  },
+  "latestUpdatedAt": "2026-10-09 18:35 UTC",
+  "customerRentalCheckoutFollowup": {
+    "recordedAt": "2026-10-09 18:35 UTC",
+    "report": "review-notes/rental-checkout-review.json",
+    "frontend": {
+      "suites": 9,
+      "tests": 45,
+      "passed": 45,
+      "failed": 0,
+      "log": ".tmp/rental-checkout-fix-tests.log"
+    },
+    "backend": {
+      "tests": 77,
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "log": ".tmp/rental-checkout-fix-backend.log",
+      "scope": "Rental shopping/journey/lifecycle/pricing/details API and service suites; isolated local MongoDB replica sets and mocked provider/licence prerequisites."
+    },
+    "build": {
+      "ci": true,
+      "result": "passed",
+      "log": ".tmp/rental-checkout-fix-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        820,
+        1440
+      ],
+      "realLocalApi": true,
+      "isolatedReplicaSets": true,
+      "guestOtpLogin390": true,
+      "bookingInvoiceAndStaffReviewedCancellation": true,
+      "pageErrors": 0,
+      "overflow": false,
+      "safariEngineTested": false,
+      "report": "review-notes/rental-checkout-real-api-qa.json"
+    },
+    "countNote": "Scoped follow-up counts overlap historical project runs; they are not added to prior full-run totals.",
+    "deployed": false,
+    "liveProviderChecks": "Pending; public deployed configuration currently reports online payments disabled."
+  },
+  "rentalProductLinkFollowup": {
+    "date": "2026-10-10",
+    "frontend": {
+      "suites": 7,
+      "tests": 33,
+      "passed": 33,
+      "log": ".tmp/rental-product-link-frontend.log"
+    },
+    "backend": {
+      "files": 7,
+      "tests": 82,
+      "passed": 82,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "log": ".tmp/rental-product-link-backend.log"
+    },
+    "finalSchemaRegression": {
+      "tests": 9,
+      "passed": 9,
+      "overlapsBackendTotal": true,
+      "log": ".tmp/rental-product-link-final-regression.log"
+    },
+    "build": {
+      "ci": true,
+      "passed": true,
+      "log": ".tmp/rental-product-link-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        1440
+      ],
+      "realLocalApi": true,
+      "isolatedReplicaSet": true,
+      "normalProductCreate": true,
+      "legacyRepair": true,
+      "existingPiecesDifferentPools": true,
+      "searchSortFilters": true,
+      "bookingInvoiceCancellation": true,
+      "overflow": false,
+      "pageErrors": 0,
+      "reports": [
+        "review-notes/rental-product-link-real-api-qa-390.json",
+        "review-notes/rental-product-link-real-api-qa-1440.json"
+      ],
+      "safariEngineTested": false
+    },
+    "report": "review-notes/rental-product-link-review.json",
+    "deployed": false,
+    "countNote": "Scoped follow-up counts are not added to historical full-project totals or overlapping reruns."
+  },
+  "mobileRentalCheckout20261010": {
+    "status": "Implemented and verified locally",
+    "frontend": {
+      "suites": 10,
+      "tests": 87,
+      "passed": 87
+    },
+    "backend": {
+      "tests": 94,
+      "passed": 94
+    },
+    "ciBuild": true,
+    "node": "20.20.2",
+    "browserWidths": [
+      320,
+      360,
+      390,
+      430,
+      1440
+    ],
+    "paymentPlans": [
+      "ADVANCE",
+      "FULL",
+      "PICKUP"
+    ],
+    "realLocalApi": true,
+    "isolatedReplicaSet": true,
+    "externalProvidersMocked": true,
+    "safariEngineTested": false,
+    "deployed": false,
+    "report": "review-notes/mobile-rental-checkout-review.json",
+    "countNote": "Final scoped counts; do not sum with historical project totals or overlapping runs."
   }
 }

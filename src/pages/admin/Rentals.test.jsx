@@ -6,6 +6,16 @@ jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn(), put: j
 const booking = { _id: 'booking1', number: 'R-EXAMPLE', revision: 3, status: 'READY', customer: { name: 'Bride', phone: '9000000001' }, policy: { timezone: 'Asia/Kolkata', deliveryModes: ['STORE_PICKUP'] }, schedule: { pickupAt: '2030-01-10T04:30Z', returnDueAt: '2030-01-12T04:30Z' }, quote: { rentalPaise: 200000, depositPaise: 500000, dueNowPaise: 560000, items: [{ listingId: 'listing1', title: 'Lehenga', quantity: 1, rentPaise: 200000, depositPaise: 500000 }] }, financial: { balancePaise: 0 }, allocations: [{ assetId: 'asset1', code: 'LEHENGA-001', label: 'Lehenga M' }], requests: [], events: [], ledger: [], assessments: [] };
 const workspace = { configuration: { mode: 'SALE_AND_RENTAL', policy: { timezone: 'Asia/Kolkata' } }, listings: [], assets: [], bookings: { rows: [booking], page: 1, pages: 1, total: 1 }, jobs: [], blocks: [], counts: {}, overdue: 0, readiness: { transactions: true } };
 
+test('a physical piece opens the exact linked product setup and keeps the selected store', async () => {
+  const piece = { _id: 'piece1', productId: 'product1', code: 'LEHENGA-001', label: 'Orange Lehenga', status: 'READY' };
+  api.get.mockImplementation(async path => path.includes('/manage/assets') ? { rows: [piece], page: 1, total: 1, pages: 1 } : { ...workspace, assets: [piece] });
+  const navigate = jest.fn();
+  render(<Rentals route="/seller/rentals?tab=pieces&storeId=shopA" navigate={navigate} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'View linked product' }));
+  expect(navigate).toHaveBeenCalledWith('/seller/rentals?tab=setup&productId=product1&storeId=shopA');
+  expect(screen.getByText(/Ready means the piece is in usable condition/)).toBeInTheDocument();
+});
+
 test('direct settings links render and saving rental mode refreshes the studio warning without reloading', async () => {
   const configuration = { mode: 'SALE_AND_RENTAL', revision: 1, policy: { timezone: 'Asia/Kolkata', deliveryModes: ['STORE_PICKUP'], closedWeekdays: [], closedDates: [], cancellationRules: [], lateFeePerDayPaise: 0, deliveryFeePaise: 0, returnFeePaise: 0, terms: 'Existing shop terms' } };
   api.get.mockImplementation(async path => path.endsWith('/configuration') ? configuration : path.includes('/manage/') ? { rows: [], total: 0, pages: 1 } : path.includes('/daily-desk') ? { counts: {} } : path.includes('/bookings?') ? { rows: [], total: 0, pages: 1, page: 1 } : { ...workspace, configuration });

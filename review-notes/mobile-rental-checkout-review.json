@@ -1,0 +1,130 @@
+{
+  "task": "Three-stage mobile rental checkout using the user's design references",
+  "status": "Implemented; local verification passed",
+  "implementation": {
+    "flow": "Dates → Contact → Review; shared desktop state with a two-column desktop layout",
+    "billing": "Only explicit useDates are billed. 17 October is one shop-local calendar day, 12:00 AM–11:59 PM. Pickup/return transit dates do not automatically become paid dates. Full custody/preparation/cleaning availability remains authoritative.",
+    "dates": "Actual API shop slots, holidays, timezone and configured policy. Invalid saved 11 PM selections require correction. Duplicate, impossible, out-of-period and outside-hours dates are rejected.",
+    "contact": "Verified-account shortcut; inline send/verify/resend OTP, backend digit count/cooldown/expiry metadata, paste/autofill, changed-number invalidation. Only a backend-verified phone account can reserve.",
+    "state": "Same-store session drafts retain dates, selected items, quantities and contact/address fields; guest contacts and phone entry expire after 30 minutes. OTP digits stay in memory. Account-provider remount uses a five-minute code-free handoff, followed by a fresh quote. Sensitive fields never enter the URL.",
+    "review": "Actual product photos, title, size/colour, quantity, date timeline, fulfilment and verified contact with edit controls. Itemized rent, services, delivery/collection, refundable security, included tax, total, due-now and pickup balance. Policy consent is unchecked and invalidated after changes.",
+    "payment": "Policy-controlled ADVANCE, FULL and PICKUP plans use existing server pricing, atomic idempotent holds, gateway verification and signed callback recovery. Unknown reservation outcomes retry the exact accepted attempt.",
+    "operations": "Existing booking confirmation, tracking, invoices, admin cancellation review/refund policy, inspection and settlement retained. No fake physical inventory or photo-derived prices added.",
+    "ui": "Warm neutral background, burgundy actions, compact white cards, three-stage progress, responsive item cards, available time pills, fixed mobile total/action, safe-area and visualViewport keyboard handling. Help/privacy controls remain unobstructed."
+  },
+  "sourceFiles": [
+    "src/pages/customer/RentalShoppingCheckout.jsx",
+    "src/pages/customer/RentalCheckout.jsx",
+    "src/components/rentals/RentalCheckoutContact.jsx",
+    "src/components/rentals/RentalCheckoutPlan.jsx",
+    "src/components/rentals/RentalCheckoutFields.jsx",
+    "src/components/rentals/RentalCheckoutSlot.jsx",
+    "src/components/rentals/RentalCheckoutSummary.jsx",
+    "src/components/rentals/RentalShopping.css",
+    "src/context/AuthContext.jsx",
+    "src/utils/rentalContactDraft.js",
+    "backend/controllers/authController.js",
+    "backend/services/rentalService.js"
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 10,
+      "tests": 87,
+      "passed": 87,
+      "failed": 0,
+      "log": ".tmp/mobile-rental-final-tests.log",
+      "coverage": [
+        "Inline OTP success, failure, length, resend cooldown, expiry, paste, middle-digit deletion and refresh",
+        "Changed number cannot reuse old verification, including after refresh",
+        "Pre-OTP phone entry survives refresh",
+        "Verified-account skip and contact handoff across account remount",
+        "Sanitized account/store draft isolation and expiration",
+        "Delivery address required only for delivery and fresh quote after edits",
+        "Fresh quote and unchecked policy after Review refresh",
+        "Changed price/policy rejects reservation without bag consumption",
+        "Unknown hold result recovers the exact request after refresh",
+        "Sale checkout selection/payment recovery retained",
+        "Rental bag, My rentals and existing payment recovery"
+      ]
+    },
+    "backend": {
+      "tests": 94,
+      "passed": 94,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "log": ".tmp/mobile-rental-backend-final.log",
+      "suites": [
+        "auth.test.js",
+        "rentalShopping.integration.test.js",
+        "rentalJourney.integration.test.js",
+        "rentals.unit.test.js",
+        "rentals.integration.test.js"
+      ],
+      "coverage": [
+        "17 October counts once across free pickup/return dates; quantity and security arithmetic",
+        "Separated calendar use days, duplicates, strict dates and shop slots",
+        "Atomic last-piece concurrency and custody/cleaning buffers",
+        "Server quote fingerprint and payment-plan acceptance",
+        "Ownership, store restrictions, transaction and staff boundaries",
+        "Hold expiry, late payments, signed payment verification and duplicate recovery",
+        "Pickup confirmation without fake collection; full payment before handover",
+        "Cancellation, itemized assessment, deposit refund and inventory release"
+      ]
+    },
+    "build": {
+      "node": "20.20.2",
+      "ci": true,
+      "status": "passed",
+      "command": "node scripts/build-production.js",
+      "log": ".tmp/mobile-rental-build.log"
+    },
+    "browser": {
+      "engine": "Headless Chrome; local real Express API and isolated MongoDB replica set",
+      "widths": [
+        320,
+        360,
+        390,
+        430,
+        1440
+      ],
+      "horizontalOverflow": false,
+      "pageErrors": 0,
+      "flows": [
+        "Catalogue → exact offer → rental bag → Dates → inline OTP Contact → fresh Review → pickup booking → invoice → customer cancellation request → staff approval",
+        "FULL payment with two real fixture offers and a long title; invalid signature rejected while HELD, correct signature confirms, duplicate verification records one collection",
+        "ADVANCE payment with server due-now amount, captured confirmation and preserved pickup balance"
+      ],
+      "refreshAndBack": "Name, dates, challenge metadata and rental bag restored; no OTP persisted; edit paths require review again",
+      "keyboard": "390px resized visual viewport keeps focused OTP input above the fixed action footer; actual iPhone keyboard/Safari unverified",
+      "reports": [
+        "review-notes/mobile-rental-checkout-real-api-qa-320.json",
+        "review-notes/mobile-rental-checkout-real-api-qa-360.json",
+        "review-notes/mobile-rental-checkout-real-api-qa-390.json",
+        "review-notes/mobile-rental-checkout-real-api-qa-430.json",
+        "review-notes/mobile-rental-checkout-real-api-qa-1440.json",
+        "review-notes/mobile-rental-checkout-full-real-api-qa-390.json",
+        "review-notes/mobile-rental-checkout-advance-real-api-qa-390.json"
+      ]
+    },
+    "countNote": "These are final applicable scoped runs, not a full-project total. Repeated and historical overlapping runs are not summed."
+  },
+  "screenshots": {
+    "dates": "review-notes/mobile-rental-checkout-dates-390.png",
+    "contact": "review-notes/mobile-rental-checkout-contact-390.png",
+    "review": "review-notes/mobile-rental-checkout-review-390.png",
+    "desktop": "review-notes/mobile-rental-checkout-review-1440.png",
+    "multipleItems": "review-notes/mobile-rental-checkout-full-review-390.png"
+  },
+  "limits": [
+    "No deployed Render changes, real SMS, live gateway charges/refunds, bank settlement, hosted licence validation or physical shop operation were performed.",
+    "Local gateway and OTP are test fixtures; production licensing and provider checks remain enforced.",
+    "Real iPhone Safari, keyboard and hardware safe-area acceptance still need a device check.",
+    "Actual business prices, physical inventory, shop contact/policy and deployment provider configuration remain merchant-owned."
+  ],
+  "deployment": {
+    "frontend": true,
+    "backend": true,
+    "deployed": false
+  }
+}

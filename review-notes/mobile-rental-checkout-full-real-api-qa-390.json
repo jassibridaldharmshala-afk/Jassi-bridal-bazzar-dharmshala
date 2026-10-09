@@ -1,0 +1,196 @@
+{
+  "backend": "Real Express app on isolated local MongoDB replica set",
+  "photo": "Unchanged public store product photo copied only for QA",
+  "externalProviders": "Local mock gateway/OTP and isolated licence fixture; no external SMS/payment or provider account",
+  "safariEngineTested": false,
+  "results": [
+    {
+      "width": 390,
+      "normalProductApiCreate": true,
+      "existingPiecesFromDifferentPool": true,
+      "legacyOfferRepairVisible": true,
+      "noStudioOfferCreated": true,
+      "realLocalApi": true,
+      "isolatedReplicaSet": true,
+      "catalogueSearchSortAndFilters": true,
+      "bagQuantityControls": true,
+      "guestOtpLogin": true,
+      "invalidSavedTimeCorrection": true,
+      "actualShopSlots": true,
+      "privacyAndHelpInline": true,
+      "quoteOneUseDay": true,
+      "paymentMode": "FULL",
+      "multipleItemsAndLongTitle": true,
+      "mockGatewayServerVerification": true,
+      "invalidSignatureRejectedBeforeConfirmation": true,
+      "duplicateVerificationSingleCollection": true,
+      "bookingConfirmedOnce": true,
+      "invoice": true,
+      "customerCancellationRequestAndStaffApproval": true,
+      "overflow": false,
+      "errors": [],
+      "apiCalls": [
+        {
+          "endpoint": "/api/rentals/configuration",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/payment-methods",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/catalogue",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/quote",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/configuration",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/configuration",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/payment-methods",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/catalogue",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/quote",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/payment-methods",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/configuration",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/catalogue",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/quote",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/slots",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/quote",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/quote",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/bookings",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/bookings/:id/payment",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/bookings/:id/verify",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/payment-methods",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/bookings/:id",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/configuration",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/bookings/:id/requests",
+          "method": "POST",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/bookings/:id",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "endpoint": "/api/rentals/payment-methods",
+          "method": "GET",
+          "status": 200
+        }
+      ]
+    }
+  ]
+}

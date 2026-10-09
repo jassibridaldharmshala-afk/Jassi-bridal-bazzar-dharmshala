@@ -1,0 +1,47 @@
+{
+  "source": "User attachment 668b4c66-99d6-4080-bed0-8cb3ad345cc0 and three mobile design references",
+  "status": "Implemented and verified locally; hosted acceptance pending",
+  "requirements": [
+    "Dates, Contact, Review steps with compact burgundy mobile UI and real application data",
+    "Calendar use days only; pickup/return do not automatically add rent",
+    "Actual shop slots, timezone, closed days and date restrictions",
+    "Server availability across full custody interval and requested quantities",
+    "Current quote, fees, deposit, tax and due-now/balance labels",
+    "Verified-account shortcut and inline OTP request/verify/resend/change-number flow",
+    "Existing address requirements, no mandatory address for store pickup",
+    "Back/edit/refresh state without OTP persistence or sensitive URL parameters",
+    "Explicit unchecked rental-policy acceptance and fresh server revalidation",
+    "Existing atomic idempotent booking, payment verification and pending recovery",
+    "Real booking confirmation and admin consistency; expiry/cancellation inventory release retained",
+    "320, 360, 390, 430px mobile plus desktop, long names and multiple items",
+    "Accessible controls, inline failures, safe areas and unobstructed help/privacy actions",
+    "Tests, CI build and screenshots of all three implemented screens",
+    "Local test facilities only; disclose live-provider and Safari limits"
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 10,
+      "tests": 87,
+      "passed": 87
+    },
+    "backend": {
+      "tests": 94,
+      "passed": 94
+    },
+    "ciProductionBuild": "passed on Node 20.20.2",
+    "browserWidths": [
+      320,
+      360,
+      390,
+      430,
+      1440
+    ],
+    "paymentPlans": [
+      "PICKUP",
+      "ADVANCE",
+      "FULL"
+    ],
+    "report": "review-notes/mobile-rental-checkout-review.json",
+    "liveSmsPaymentAndSafariVerified": false
+  }
+}

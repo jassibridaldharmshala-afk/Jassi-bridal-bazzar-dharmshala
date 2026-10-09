@@ -38,6 +38,13 @@ export const USER_MANUAL_GUIDES = [
     'Choose an available payment method. COD and prepaid availability can differ by pincode and order value.',
     'Select Place order once and wait for the final confirmation screen.',
   ], ['Do not refresh or press Back while an online payment confirmation is processing. A failed attempt can be resumed safely.'], [{ label: 'Manage addresses', path: '/profile/addresses' }, { label: 'View orders', path: '/orders' }], 'payment COD UPI Razorpay address order summary'),
+  guide('rental-checkout', 'Rentals', 'Book a rental', 'Choose your occasion, collection times and payment arrangement.', ['/rental-checkout'], [
+    'Review the rental item and choose each day when you will use it. Only these use days attract rent.',
+    'Check the suggested pickup and return dates. Choose an available shop time for each; closed or full times cannot be selected.',
+    'Select Check availability to see the final rent, refundable security and any services. Sign in when you are ready to book.',
+    'Choose an offered advance, full payment or pay-at-pickup option. The total updates when you change the plan.',
+    'Review the dates and rental terms, then book once. My rentals contains confirmation, invoice, payments and cancellation requests.',
+  ], ['Pickup and return days add no rent unless selected as use days. An unpaid online hold is confirmed only after payment. Pay-at-pickup is available only when the shop offers it.'], [{ label: 'Rental bag', path: '/rental-cart' }, { label: 'My rentals', path: '/rentals' }], 'rental use days slots pickup return booking advance security'),
   guide('account-access', 'Account', 'Login or signup', 'Access your account securely with the mobile number and one-time password.', ['/login', '/register', '/admin/login'], [
     'Enter the mobile number linked to your account and accept the terms.',
     'Request the OTP, then enter the code before it expires.',

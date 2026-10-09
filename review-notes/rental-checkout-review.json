@@ -1,0 +1,95 @@
+{
+  "recordedAt": "2026-10-09 18:35 UTC",
+  "request": "Repair the customer rental flow and mobile checkout shown in the three iPhone screenshots.",
+  "sourceFixes": [
+    "Separate pickup/return dates from real available shop times; invalid saved 11 PM times require an explicit correction.",
+    "Public shop slots work when date-first catalogue browsing is disabled. Rental-disabled shops, lead time, closed dates and capacity checks remain enforced.",
+    "Return slot search supports legitimate return dates beyond the pickup booking advance window.",
+    "Guest rental selections survive the real OTP account-provider remount; quantities and boutique/account separation remain protected.",
+    "Compact item photo, estimated rent/security and final server total are visible. Rent remains charged only for the selected use days.",
+    "Date, quantity, payment-plan and delivery-address edits require a fresh quote/review.",
+    "Delivery/collection address appears in the final review. Simplified checkout explicitly uses the same address for collection.",
+    "Help and analytics privacy controls appear inline on rental shopping pages and rental product detail, clear of booking actions.",
+    "Disabled online payments have an explicit explanation; enabled pay-at-pickup bookings still work.",
+    "Rental request/upload limits return a typed JSON message with retry guidance; existing limits remain unchanged."
+  ],
+  "verification": {
+    "node": "20.20.2",
+    "frontend": {
+      "suites": 9,
+      "tests": 45,
+      "passed": 45,
+      "failed": 0,
+      "log": ".tmp/rental-checkout-fix-tests.log",
+      "scope": "Affected customer rental, bag adoption, payment recovery, details/calendar and help/privacy suites. Not a new whole-project total."
+    },
+    "backend": {
+      "tests": 77,
+      "passed": 77,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "log": ".tmp/rental-checkout-fix-backend.log",
+      "scope": "Rental shopping/journey/lifecycle/pricing/details API and service suites; isolated local MongoDB replica sets and mocked provider/licence prerequisites."
+    },
+    "build": {
+      "ci": true,
+      "result": "passed",
+      "log": ".tmp/rental-checkout-fix-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        820,
+        1440
+      ],
+      "engine": "Installed headless Chrome; touch viewport at 390px",
+      "api": "Real local Express app and isolated local MongoDB replica set, fresh server per viewport.",
+      "report": "review-notes/rental-checkout-real-api-qa.json",
+      "verified": [
+        "Rental catalogue search, sorting and rent filters",
+        "Sale stock zero still allows rental selection",
+        "Product detail to rental bag and quantity controls",
+        "Correction of saved out-of-hours times",
+        "Actual shop slot API and authoritative quote",
+        "Guest OTP login and same bag/dates restored at 390px",
+        "Enabled pay-at-pickup confirmation creates exactly one booking",
+        "One use day costs INR 1000 rent plus INR 500 security; pickup/return days add no rent",
+        "Stored invoice/receipt panel renders",
+        "Customer cancellation request reaches the backend and staff approval is reflected in the customer view",
+        "No page errors or horizontal overflow"
+      ],
+      "onlineGateway": "Covered by mocked frontend/backend tests. No real provider checkout/capture/refund.",
+      "safariEngineTested": false,
+      "screenshots": [
+        "review-notes/rental-checkout-dates-390.png",
+        "review-notes/rental-checkout-payment-390.png",
+        "review-notes/rental-checkout-booked-390.png",
+        "review-notes/rental-checkout-payment-1440.png"
+      ]
+    }
+  },
+  "liveReadOnlyFindings": {
+    "frontend": "https://jassi-bridal-bazzar-dharmshalas.onrender.com/",
+    "backend": "https://jassi-bridal-bazzar-dharmshala-backend.onrender.com",
+    "scope": "Public configuration, catalogue, slots and read-only quote. No authenticated commerce mutation.",
+    "dateFirstEnabled": false,
+    "shopHours": "10:00–18:00 Asia/Kolkata",
+    "originalSlotsResponse": "VALIDATION_ERROR: Date-first shopping is disabled.",
+    "onlinePayments": false,
+    "enabledDeliveryModes": [
+      "STORE_PICKUP"
+    ],
+    "publicQuote": "A selected occasion day with pickup/return around it quoted INR 1000 rent, INR 500 security and zero due now under the enabled PICKUP plan."
+  },
+  "deployment": {
+    "deployed": false,
+    "required": "Redeploy both frontend and canonical backend/ to apply these changes.",
+    "prerequisites": [
+      "Enable/configure the online provider and intended payment methods to offer advance/full online payment.",
+      "Verify real OTP delivery and a controlled hosted rental booking/payment/return/refund with authorized staff.",
+      "Test the updated date/time controls on the actual iPhone Safari device."
+    ],
+    "note": "Local regressions do not certify production licence validity, hosted provider delivery, real charges/refunds or physical item readiness."
+  }
+}

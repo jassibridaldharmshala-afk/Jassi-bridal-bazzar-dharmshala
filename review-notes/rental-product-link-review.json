@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-10",
+  "issue": "Normal product/draft rental prices and already registered physical pieces were not connected to storefront rental discovery.",
+  "changes": [
+    "Product-created rental offers are enabled by default, with public readiness and date availability still required.",
+    "Generated single-product inventory links reuse only exact product/variant/size/colour pieces from the same store across existing pools.",
+    "Untouched legacy generated drafts are repaired in bounded transactional batches at backend startup; reviewed pauses and custom bundles are preserved.",
+    "Product editor offers a rental visibility checkbox, linked quantities and setup reasons.",
+    "Physical piece cards open the exact linked product setup while preserving store scope.",
+    "Quotes, holds, calendars and accepted-inventory replacements share the matching rules; existing physical reservations prevent duplicate allocation.",
+    "Custom Studio pools and sale stock remain independent; no assets or business prices are invented."
+  ],
+  "verification": {
+    "node": "20.20.2",
+    "frontend": {
+      "suites": 7,
+      "tests": 33,
+      "passed": 33,
+      "log": ".tmp/rental-product-link-frontend.log"
+    },
+    "backend": {
+      "files": 7,
+      "tests": 82,
+      "passed": 82,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "log": ".tmp/rental-product-link-backend.log"
+    },
+    "finalSchemaRegression": {
+      "tests": 9,
+      "passed": 9,
+      "overlapsBackendTotal": true,
+      "log": ".tmp/rental-product-link-final-regression.log"
+    },
+    "build": {
+      "ci": true,
+      "passed": true,
+      "log": ".tmp/rental-product-link-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        1440
+      ],
+      "realLocalApi": true,
+      "isolatedReplicaSet": true,
+      "normalProductCreate": true,
+      "legacyRepair": true,
+      "existingPiecesDifferentPools": true,
+      "searchSortFilters": true,
+      "bookingInvoiceCancellation": true,
+      "overflow": false,
+      "pageErrors": 0,
+      "reports": [
+        "review-notes/rental-product-link-real-api-qa-390.json",
+        "review-notes/rental-product-link-real-api-qa-1440.json"
+      ],
+      "safariEngineTested": false
+    }
+  },
+  "production": {
+    "deployed": false,
+    "requires": [
+      "Redeploy canonical backend/ and frontend.",
+      "Backend startup repairs only untouched legacy generated drafts. Reviewed/paused offers require the product editor visibility checkbox.",
+      "Published rental mode, real positive rent and matching physical pieces are required; investigate Setup pending reasons for any remaining product."
+    ],
+    "liveProvidersTested": false
+  },
+  "countNote": "Scoped follow-up counts are not added to historical full-project totals or overlapping reruns."
+}

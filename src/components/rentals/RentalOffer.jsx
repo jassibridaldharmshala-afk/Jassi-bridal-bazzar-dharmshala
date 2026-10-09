@@ -36,5 +36,6 @@ export default function RentalOffer({ productId, commerceMode, navigate }) {
     {data.readiness?.bookable === false && <RentalContact contact={data.contact} navigate={navigate} />}
     <button type="button" className="rental-shopping-link" aria-expanded={expanded} onClick={() => setExpanded(v => !v)}>{expanded ? 'Hide availability' : 'See date availability'}</button>
     {expanded && <RentalAvailabilityCalendar availabilityOnly key={listing._id} listing={listing} policy={data.policy} storeSlug={storeSlug} onChoose={book} />}
+    <div className="rental-checkout-utilities" data-rental-checkout-utilities />
   </section>;
 }

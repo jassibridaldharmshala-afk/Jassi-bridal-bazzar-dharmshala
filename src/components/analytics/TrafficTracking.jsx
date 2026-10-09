@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+import useRentalCheckoutUtility from '../../hooks/useRentalCheckoutUtility';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import { useStorefront } from '../../context/StorefrontContext';
@@ -7,6 +9,7 @@ import { configureTraffic, updateTrafficRoute, flushTraffic, trafficPreference, 
 import './TrafficTracking.css';
 
 export default function TrafficTracking({ route }) {
+  const utilityTarget = useRentalCheckoutUtility(route);
   const { store, storeSlug, loading, hostResolved } = useStorefront();
   const { user } = useAuth();
   const [config, setConfig] = useState(null); const [preference, setPreference] = useState('unknown');
@@ -57,8 +60,9 @@ export default function TrafficTracking({ route }) {
   const show = open || (config.consentRequired && preference === 'unknown');
   const browserOptOut = navigator.globalPrivacyControl === true || navigator.doNotTrack === '1';
   const privacyLink = route.startsWith('/store/') && storeSlug ? `/store/${encodeURIComponent(storeSlug)}/privacy-policy` : '/privacy-policy';
+  const trigger = !show && <button type="button" className="traffic-privacy__trigger" onClick={() => { setOpen(true); setNotice(''); }} aria-label="Analytics privacy preferences">Privacy preferences</button>;
   return <div className="traffic-privacy">
-    {!show && <button type="button" className="traffic-privacy__trigger" onClick={() => { setOpen(true); setNotice(''); }} aria-label="Analytics privacy preferences">Privacy preferences</button>}
+    {utilityTarget ? createPortal(trigger, utilityTarget) : trigger}
     {show && <section className="traffic-privacy__panel" aria-label="Analytics privacy preferences">
       <div><strong>Your privacy, your choice</strong><p>Allow anonymous traffic analytics to help this store improve your shopping experience. Shopping works either way. No passwords, payment details or form recordings are collected.</p>{config.ga4Enabled && <p>Allowing also enables this store’s Google Analytics integration.</p>}{browserOptOut && <p>Your browser’s privacy signal keeps analytics off. Change that browser preference before enabling analytics.</p>}<a href={privacyLink}>Read privacy policy</a></div>
       <div className="traffic-privacy__actions"><button type="button" disabled={busy} onClick={() => choose(false)}>Decline analytics</button><button type="button" className="traffic-privacy__allow" disabled={busy || browserOptOut} onClick={() => choose(true)}>Allow analytics</button>{preference === 'granted' && <button type="button" disabled={busy} onClick={() => choose(false, true)}>Withdraw & delete my analytics</button>}{open && <button type="button" disabled={busy} onClick={() => setOpen(false)}>Close</button>}</div>

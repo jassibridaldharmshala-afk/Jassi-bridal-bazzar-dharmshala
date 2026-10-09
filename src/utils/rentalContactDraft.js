@@ -1,4 +1,4 @@
-import { readRentalSession, saveRentalSession } from './rentalPlan';
+import { readRentalSession, saveRentalSession, clearRentalSession } from './rentalPlan';
 import { rentalAddressFields } from './rentalDetails';
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const text = (value, limit) => typeof value === 'string' ? value.slice(0, limit) : '';
@@ -13,6 +13,14 @@ function clean(value) {
       alternateContact: contact(details.alternateContact, false), pickupContact: contact(details.pickupContact, true), returnContact: contact(details.returnContact, true),
       occasion: text(details.occasion, 100), fittingInstructions: text(details.fittingInstructions, 1000), deliveryInstructions: text(details.deliveryInstructions, 1000) },
   };
+}
+export function readGuestRentalContact(storeSlug) {
+  const value = readRentalSession('guest-contact', storeSlug);
+  if (value && Date.now() - value.savedAt < 30 * 60 * 1000) return clean(value);
+  clearRentalSession('guest-contact', storeSlug); return null;
+}
+export function saveGuestRentalContact(storeSlug, value) {
+  saveRentalSession('guest-contact', storeSlug, clean(value));
 }
 export function rentalContactScope(user, storeSlug, counter = false) {
   const actor = user?._id || user?.id;

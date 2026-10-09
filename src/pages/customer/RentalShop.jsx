@@ -37,5 +37,5 @@ export default function RentalShop({ navigate, route = '/rental-book' }) {
     <div className="rental-shop__results"><div className="rental-shop__toolbar"><span>{data && loadedKey === filterKey ? `${data.total || 0} rental options` : 'Rental products'}</span><button type="button" className="rental-shop__filter-button" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={17} />Filter</button><select aria-label="Sort rentals" value={sort} onChange={e => change('sort', e.target.value)}><option value="title">Recommended</option><option value="priceLowHigh">Rent: low to high</option><option value="priceHighLow">Rent: high to low</option></select></div>
     {error ? <div className="rental-shop__notice" role="alert"><p>{error}</p><button type="button" onClick={() => setRetry(v => v + 1)}>Retry</button></div> : !data || loadedKey !== filterKey ? <p role="status">Loading rental collection…</p> : <><ProductGrid products={products} navigate={navigate} shoppingMode="rental" priorityCount={4} />{page < data.pages && <button className="rental-shop__more" type="button" disabled={loading} onClick={() => setPage(p => p + 1)}>{loading ? 'Loading…' : 'Show more rentals'}</button>}</>}
     </div></div>
-  </section>;
+  <div className="rental-checkout-utilities" data-rental-checkout-utilities /></section>;
 }

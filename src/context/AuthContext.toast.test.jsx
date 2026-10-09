@@ -11,9 +11,11 @@ jest.mock('../store/apiSlice', () => ({ samiraApi: { util: { resetApiState: () =
 const owner = { id: 'owner', name: 'Owner', role: 'admin', activeMode: 'admin', availableModes: ['customer', 'admin', 'seller'] };
 
 function Actions() {
-  const { switchMode, setToast, notify, logout } = useAuth();
+  const { switchMode, setToast, notify, logout, verifyOtp } = useAuth();
   return <>
     {['customer', 'admin', 'seller'].map(mode => <button key={mode} onClick={() => switchMode(mode)}>{mode}</button>)}
+    <button onClick={() => verifyOtp({ phone: '9000000001', otp: '123456', navigateOnSuccess: false })}>Inline OTP</button>
+    <button onClick={() => verifyOtp({ phone: '9000000001', otp: '123456', redirectTo: '/profile' })}>Login OTP</button>
     <button onClick={logout}>Log out</button>
     <button onClick={() => setToast('Saved successfully')}>Legacy notice</button>
     <button onClick={() => notify('Please review the details', 'warning', 'Review needed')}>Titled notice</button>
@@ -95,4 +97,14 @@ test('logout removes private rental details for this account across boutiques', 
   expect(sessionStorage.getItem('rental-plan:bridal:')).toBe('public planning');
   expect(store.getState().auth.user).toBeNull();
   expect(navigate).toHaveBeenCalledWith('/');
+});
+
+test.each([['Inline OTP', false], ['Login OTP', true]])('%s preserves the authenticated session and respects requested navigation', async (label, shouldNavigate) => {
+  const { store, navigate } = setup(); await act(async () => {});
+  const customer = { id: 'customer', name: 'Priya', phone: '9000000001', role: 'customer', isPhoneVerified: true };
+  api.post.mockResolvedValue({ user: customer, token: 'verified-test-token' });
+  fireEvent.click(screen.getByRole('button', { name: label }));
+  await waitFor(() => expect(store.getState().auth.user).toEqual(customer));
+  expect(localStorage.getItem('samira_token')).toBe('verified-test-token');
+  if (shouldNavigate) expect(navigate).toHaveBeenCalledWith('/profile'); else expect(navigate).not.toHaveBeenCalled();
 });

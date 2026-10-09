@@ -50,3 +50,14 @@ test('decline and internal-admin mode never record a customer visit', async () =
   mockUser = { activeMode: 'admin' }; page.rerender(<TrafficTracking route="/products/one" />);
   await flushTraffic(); expect(global.fetch).not.toHaveBeenCalled(); expect(screen.queryByRole('button', { name: 'Allow analytics' })).not.toBeInTheDocument();
 });
+
+test('checkout privacy trigger is in the utility row while consent controls still work', async () => {
+  const view = render(<><div data-rental-checkout-utilities /><TrafficTracking route="/store/brand-a/rental-checkout" /></>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Decline analytics' }));
+  const trigger = await screen.findByRole('button', { name: 'Analytics privacy preferences' });
+  expect(trigger.parentElement).toHaveAttribute('data-rental-checkout-utilities');
+  fireEvent.click(trigger);
+  expect(screen.getByRole('button', { name: 'Allow analytics' })).toBeInTheDocument();
+  view.rerender(<><div data-rental-checkout-utilities /><TrafficTracking route="/contact" /></>);
+  await waitFor(() => expect(document.querySelector('[data-rental-checkout-utilities]').children).toHaveLength(0));
+});

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BookOpen, CheckCircle2, ChevronDown, CircleHelp, LifeBuoy, Lightbulb, Printer, Search, X } from 'lucide-react';
 import './ContextualHelp.css';
+import useRentalCheckoutUtility from '../../hooks/useRentalCheckoutUtility';
 
 const EMPTY_GUIDE = {
   id: 'loading', area: 'User manual', title: 'Help for this page',
@@ -14,6 +15,7 @@ export default function ContextualHelp({ route = '/', navigate }) {
   const [loadError, setLoadError] = useState('');
   const [view, setView] = useState('current');
   const [query, setQuery] = useState('');
+  const utilityTarget = useRentalCheckoutUtility(route);
   const launcherRef = useRef(null);
   const panelRef = useRef(null);
 
@@ -117,10 +119,11 @@ export default function ContextualHelp({ route = '/', navigate }) {
     </div>
   ) : null;
 
-  return <>
-    <button ref={launcherRef} type="button" className="sc-help-launcher" onClick={() => setOpen(true)} aria-label="Open help for this page" aria-haspopup="dialog" aria-expanded={open}>
+  const launcher = <button ref={launcherRef} type="button" className="sc-help-launcher" onClick={() => setOpen(true)} aria-label="Open help for this page" aria-haspopup="dialog" aria-expanded={open}>
       <CircleHelp size={21} /><span>Help</span>
-    </button>
+    </button>;
+  return <>
+    {utilityTarget ? createPortal(launcher, utilityTarget) : launcher}
     {typeof document !== 'undefined' && overlay ? createPortal(overlay, document.body) : null}
   </>;
 }

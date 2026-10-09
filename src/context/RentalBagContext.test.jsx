@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { RentalBagProvider, useRentalBag } from './RentalBagContext';
@@ -14,4 +15,18 @@ test('guest bag follows sign-in, while other accounts and stores stay separate a
   mockUser = { _id: 'two' }; await act(async () => view.rerender(<RentalBagProvider user={mockUser} storeSlug={mockStore}><Bag /></RentalBagProvider>)); expect(screen.getByText('0')).toBeInTheDocument();
   mockUser = { _id: 'one' }; await act(async () => view.rerender(<RentalBagProvider user={mockUser} storeSlug={mockStore}><Bag /></RentalBagProvider>)); expect(screen.getByText('1')).toBeInTheDocument();
   mockStore = 'b'; await act(async () => view.rerender(<RentalBagProvider user={mockUser} storeSlug={mockStore}><Bag /></RentalBagProvider>)); expect(screen.getByText('0')).toBeInTheDocument();
+});
+
+test('OTP account-provider remount adopts the guest selection once without mixing other accounts', async () => {
+  const guest = render(<StrictMode><RentalBagProvider storeSlug="a"><Bag /></RentalBagProvider></StrictMode>);
+  fireEvent.click(screen.getByText('Add')); fireEvent.click(screen.getByText('Add'));
+  guest.unmount();
+  const signedIn = render(<StrictMode><RentalBagProvider user={{ _id: 'one' }} storeSlug="a"><Bag /></RentalBagProvider></StrictMode>);
+  expect(screen.getByText('2')).toBeInTheDocument();
+  expect(sessionStorage.getItem('rental-bag:a:')).toBeNull();
+  signedIn.unmount();
+  const again = render(<RentalBagProvider user={{ _id: 'one' }} storeSlug="a"><Bag /></RentalBagProvider>);
+  expect(screen.getByText('2')).toBeInTheDocument(); again.unmount();
+  render(<RentalBagProvider user={{ _id: 'two' }} storeSlug="a"><Bag /></RentalBagProvider>);
+  expect(screen.getByText('0')).toBeInTheDocument();
 });
