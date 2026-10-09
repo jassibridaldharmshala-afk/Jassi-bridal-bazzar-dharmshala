@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
+import RentalOrderRows from './RentalOrderRows';
 import { localDateTime, rentalDate, rentalMoney } from '../../utils/rentals';
 import { RentalField, RentalStatus } from './RentalUi';
 import { rentalCopy } from '../../utils/rentalCopy';
 const staffStatus = value => value === 'OUT' ? 'With customer' : rentalCopy(value);
 const followUp = { HELD: 'Review advance payment', CONFIRMED: 'Review preparation', PREPARING: 'Check pieces are ready', READY: 'Review pickup & handover', OUT: 'Review return date', RETURNED: 'Inspect & settle deposit', CLOSED: 'View completed rental', CANCELLED: 'Review cancellation & refunds', EXPIRED: 'Review expired reservation' };
 const views = [['all', 'All bookings'], ['pickups', 'Pickups'], ['returns', 'Returns'], ['overdue', 'Overdue returns'], ['balance', 'Pending balance'], ['refunds', 'Refund available']];
-export default function RentalBookingDesk({ base, timezone, refresh = 0, onOpen }) {
-  const [day, setDay] = useState(localDateTime(new Date(), timezone).slice(0, 10)), [view, setView] = useState('pickups'), [status, setStatus] = useState('');
-  const [search, setSearch] = useState(''), [query, setQuery] = useState(''), [page, setPage] = useState(1), [reload, setReload] = useState(0);
+export default function RentalBookingDesk({ base, timezone, refresh = 0, onOpen, simple = false, initialFilters, onFiltersChange }) {
+  const [day, setDay] = useState(initialFilters?.day || localDateTime(new Date(), timezone).slice(0, 10)), [view, setView] = useState(initialFilters?.view || (simple ? 'all' : 'pickups')), [status, setStatus] = useState(initialFilters?.status || '');
+  const [search, setSearch] = useState(initialFilters?.search || ''), [query, setQuery] = useState(initialFilters?.query || ''), [page, setPage] = useState(initialFilters?.page || 1), [reload, setReload] = useState(0);
   const [data, setData] = useState(null), [desk, setDesk] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState('');
   useEffect(() => {
     let alive = true; setBusy(true); setError('');
@@ -24,7 +25,16 @@ export default function RentalBookingDesk({ base, timezone, refresh = 0, onOpen 
     const timer = setInterval(update, 60000); window.addEventListener('focus', update);
     return () => { clearInterval(timer); window.removeEventListener('focus', update); };
   }, []);
+  useEffect(() => { if (!simple || search.trim() === query) return undefined; const timer = setTimeout(() => { setQuery(search.trim()); setPage(1); }, 250); return () => clearTimeout(timer); }, [simple, search, query]);
+  useEffect(() => { onFiltersChange?.({ day, view, status, search, query, page }); }, [day, view, status, search, query, page, onFiltersChange]);
   const choose = next => { setView(next); setStatus(''); setPage(1); };
+  if (simple) return <section className="rental-card rental-booking-desk" aria-busy={busy}>
+    <header className="rental-order-list-head"><h2>Rental bookings</h2><span>{data ? `${data.total} bookings` : 'Loading…'}</span></header>
+    <div className="rental-order-filters"><RentalField label="Search bookings" value={search} onChange={setSearch} placeholder="Name, mobile or booking number" maxLength={100} /><RentalField label="Show"><select value={view} onChange={e => choose(e.target.value)}>{views.map(([id, label]) => <option key={id} value={id}>{label}{id !== 'all' && desk?.counts?.[id] !== undefined ? ` (${desk.counts[id]})` : ''}</option>)}</select></RentalField><RentalField label="Status"><select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}><option value="">All statuses</option>{['HELD', 'CONFIRMED', 'PREPARING', 'READY', 'OUT', 'RETURNED', 'CLOSED', 'CANCELLED', 'EXPIRED'].map(value => <option key={value} value={value}>{staffStatus(value)}</option>)}</select></RentalField></div>
+    {['pickups', 'returns'].includes(view) && <div className="rental-order-filters__date"><RentalField label={`Date (${timezone})`} type="date" value={day} onChange={value => { setDay(value); setPage(1); }} /><button type="button" className="admin-btn-ghost" onClick={() => { setDay(localDateTime(new Date(), timezone).slice(0, 10)); setPage(1); }}>Today</button></div>}
+    {error && <div role="alert" className="rental-order-error"><p>{error}</p><button type="button" className="admin-btn-ghost" onClick={() => setReload(value => value + 1)}>Retry bookings</button></div>}{busy && <p role="status">Loading rental bookings…</p>}
+    {data && !busy && !error && <><RentalOrderRows rows={data.rows} onOpen={onOpen} />{!data.rows.length && <div className="rental-desk-empty"><strong>No bookings match these filters</strong><p>Change the filters or search for another customer.</p><button type="button" className="admin-btn-ghost" onClick={() => { setSearch(''); setQuery(''); choose('all'); }}>Show all bookings</button></div>}{data.pages > 1 && <nav className="rental-order-pagination" aria-label="Rental booking pages"><button type="button" className="admin-btn-ghost" disabled={page <= 1} onClick={() => setPage(value => value - 1)}>Previous</button><span>Page {data.page} of {data.pages}</span><button type="button" className="admin-btn-ghost" disabled={page >= data.pages} onClick={() => setPage(value => value + 1)}>Next</button></nav>}</>}
+  </section>;
   return <section className="rental-card rental-booking-desk" aria-busy={busy}><header><span className="rental-eyebrow">DAILY OPERATIONS</span><h2>Booking desk</h2><p className="rental-muted">Find customers and bookings, organise pickups and returns, and follow up outstanding amounts.</p></header>
     <div className="rental-desk-date"><RentalField label={`Operations date (${timezone})`} type="date" value={day} onChange={value => { setDay(value); setPage(1); }} /><button type="button" className="rental-button rental-button--secondary" onClick={() => { setDay(localDateTime(new Date(), timezone).slice(0, 10)); setPage(1); }}>Today</button><button type="button" className="rental-button rental-button--secondary" disabled={busy} onClick={() => setReload(v => v + 1)}>Refresh bookings</button></div>
     <nav className="rental-desk-filters" aria-label="Booking desk filters">{views.map(([id, label]) => <button type="button" key={id} className={`rental-desk-filter${view === id ? ' is-selected' : ''}`} aria-pressed={view === id} onClick={() => choose(id)}><span>{label}</span>{id !== 'all' && <strong>{desk?.counts?.[id] ?? '—'}</strong>}</button>)}</nav>

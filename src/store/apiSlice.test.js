@@ -286,6 +286,34 @@ test('explicit catalog scope wins over the previous tab session header, includin
   expect(prepare('').has('x-store-slug')).toBe(false);
 });
 
+test('explicit seller rental order scope overrides a previous store for reads and writes', async () => {
+  mockRawQuery.mockResolvedValue({ data: [] }); await request('/settings');
+  const previous = '500000000000000000000001', linked = '500000000000000000000002';
+  sessionStorage.setItem('samira_seller_store_id', previous);
+  window.history.replaceState(null, '', '/seller/orders?type=rental&storeId=' + linked);
+  try {
+    for (const url of ['/seller/rentals/bookings', '/seller/rentals/bookings/booking1/refund']) {
+      const headers = new Map();
+      mockBaseOptions.prepareHeaders(headers, { getState: testStore.getState, arg: { url } });
+      expect(headers.get('x-store-id')).toBe(linked);
+    }
+    const headers = new Map();
+    mockBaseOptions.prepareHeaders(headers, { getState: testStore.getState, arg: { url: '/seller/rentals?storeId=' + previous } });
+    expect(headers.get('x-store-id')).toBe(previous);
+  } finally { window.history.replaceState(null, '', '/'); }
+});
+
+test('invalid linked seller store IDs retain the existing selected store', async () => {
+  mockRawQuery.mockResolvedValue({ data: [] }); await request('/settings');
+  sessionStorage.setItem('samira_seller_store_id', '500000000000000000000001');
+  window.history.replaceState(null, '', '/seller/orders?type=rental&storeId=invalid');
+  try {
+    const headers = new Map();
+    mockBaseOptions.prepareHeaders(headers, { getState: testStore.getState, arg: '/seller/rentals' });
+    expect(headers.get('x-store-id')).toBe('500000000000000000000001');
+  } finally { window.history.replaceState(null, '', '/'); }
+});
+
 test('product detail, categories and banners carry their own explicit store scope', async () => {
   mockRawQuery.mockResolvedValue({ data: [] });
   await testStore.dispatch(samiraApi.endpoints.getProduct.initiate({ id: 'item', store: 'boutique' }, { subscribe: false }));

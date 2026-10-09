@@ -30,14 +30,15 @@ export default function RentalStudioNavigation({ tab, onTab, permissions = {}, d
   const choose = id => { onTab(id); setMore(false); };
   return <>
     <header className="rental-studio-header">
-      <div><span className="rental-eyebrow">YOUR RENTAL WORKSPACE</span><h1>Rental Studio</h1><p>Know what is booked, what goes out and what comes back.</p></div>
+      <div><span className="rental-eyebrow">YOUR RENTAL WORKSPACE</span><h1>Rental setup & stock</h1><p>Set up your rental products and keep each physical piece ready.</p></div>
       {permissions['inventory.read'] !== false && <button type="button" className="rental-button" disabled={disabled} onClick={() => choose('setup')}>+ Set up a rental product</button>}
     </header>
+    <div className="rental-studio-orders-link"><p>For everyday bookings, payments, pickup and return:</p><a href={(catalogueHref.startsWith('/seller') ? '/seller/orders' : '/admin/orders') + '?' + new URLSearchParams({ type: 'rental', ...(new URLSearchParams(catalogueHref.split('?')[1] || '').get('storeId') ? { storeId: new URLSearchParams(catalogueHref.split('?')[1] || '').get('storeId') } : {}) })}>Open rental orders →</a></div>
     <nav className="rental-studio-nav" aria-label="Rental workspace" style={{ gridTemplateColumns: `repeat(${daily.filter(allowed).length + (availableTools.length ? 1 : 0)}, minmax(0, 1fr))` }}>
       {daily.filter(allowed).map(([id, title, description]) => <button type="button" key={id} title={description} aria-pressed={tab === id && !more} disabled={disabled} onClick={() => choose(id)}><Icon name={id} /><span>{title}</span></button>)}
       {availableTools.length > 0 && <button type="button" aria-expanded={more} aria-controls="rental-studio-tools" aria-pressed={more || advanced} disabled={disabled} onClick={() => setMore(value => !value)}><Icon name="more" /><span>More tools</span></button>}
     </nav>
-    {more && <section id="rental-studio-tools" className="rental-card rental-tool-panel"><header><h2>Choose a rental tool</h2><p className="rental-muted">Daily bookings stay in Daily work. Open these tools when you need them.</p></header><div className="rental-tool-grid">{availableTools.map(([id, title, description]) => <button type="button" key={id} aria-pressed={tab === id} disabled={disabled} onClick={() => choose(id)}><strong>{title}<span aria-hidden="true">↗</span></strong><span>{description}</span></button>)}</div></section>}
+    {more && <section id="rental-studio-tools" className="rental-card rental-tool-panel"><header><h2>Choose a rental tool</h2><p className="rental-muted">Manage everyday bookings in Orders → Rental. Open these tools for setup, stock or reports.</p></header><div className="rental-tool-grid">{availableTools.map(([id, title, description]) => <button type="button" key={id} aria-pressed={tab === id} disabled={disabled} onClick={() => choose(id)}><strong>{title}<span aria-hidden="true">↗</span></strong><span>{description}</span></button>)}</div></section>}
     {configuration.mode === 'SALE_ONLY' && <div className="rental-notice rental-studio-warning" role="status"><div><strong>Rental booking is switched off</strong><p>Enable sale + rental or rental mode in shop settings before opening bookings.</p></div>{permissions.configure !== false && <button type="button" className="rental-button rental-button--secondary" disabled={disabled} onClick={() => choose('settings')}>Open settings</button>}</div>}
     {permissions['inventory.read'] !== false && <details className="rental-card rental-get-started" open={!hasOffers && tab === 'bookings' ? true : undefined}>
       <summary><span><strong>How to set up rentals</strong><small>From your product to your first booking</small></span><span aria-hidden="true">⌄</span></summary>
@@ -47,7 +48,7 @@ export default function RentalStudioNavigation({ tab, onTab, permissions = {}, d
         <li><span>3</span><div><strong>Register actual pieces</strong><p>Count the items you own. Give each one a unique code so bookings and returns can track it.</p></div></li>
         <li><span>4</span><div><strong>Review & activate</strong><p>Complete the setup checks, then activate. Booking dates are checked against real availability.</p></div></li>
       </ol>
-      <div className="rental-guide-footer"><p>After booking: collect advance → prepare → hand over → receive & inspect → settle deposit.</p><button type="button" className="rental-button rental-button--secondary" disabled={disabled} onClick={() => choose('setup')}>Start guided setup</button></div>
+      <div className="rental-guide-footer"><p>After booking: review payment → prepare → hand over → receive & inspect → settle deposit.</p><button type="button" className="rental-button rental-button--secondary" disabled={disabled} onClick={() => choose('setup')}>Start guided setup</button></div>
     </details>}
   </>;
 }

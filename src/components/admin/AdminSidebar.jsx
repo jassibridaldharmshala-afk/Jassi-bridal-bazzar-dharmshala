@@ -18,7 +18,7 @@ export const ADMIN_LINKS = [
   ['Categories', '/admin/categories'],
   ['Variant Groups', '/admin/variant-groups'],
   ['Orders', '/admin/orders'],
-  ['Rental studio', '/admin/rentals'],
+  ['Rental setup & stock', '/admin/rentals'],
   ['Customers', '/admin/customers'],
   ['Coupons', '/admin/coupons'],
   ['Banners', '/admin/banners'],
@@ -42,7 +42,7 @@ const MOBILE_TABS = [
   ['Dashboard', '/admin', LayoutDashboard],
   ['Products', '/admin/products', Package],
   ['Orders', '/admin/orders', ShoppingBag],
-  ['Rentals', '/admin/rentals', CalendarDays],
+  ['Rentals', '/admin/orders?type=rental', CalendarDays],
 ];
 
 export function adminTitleFromPath(path = '/admin') {
@@ -66,6 +66,7 @@ export default function AdminSidebar({ open = false, onClose = () => {}, onOpen 
   const brand = useBrandIdentity();
   const currentPath = useAppPath();
   const activeHref = matchAdminHref(currentPath);
+  const rentalOrders = currentPath === '/admin/orders' && new URLSearchParams(window.location.search).get('type') === 'rental';
 
   const items = useMemo(() => ADMIN_LINKS.map(([label, path]) => ({
     label,
@@ -82,8 +83,8 @@ export default function AdminSidebar({ open = false, onClose = () => {}, onOpen 
       </div>
       <nav className="admin-sidebar__nav">
         {[
-          ['Daily shop work', ['/admin', '/admin/notifications', '/admin/orders', '/admin/rentals', '/admin/returns', '/admin/customers', '/admin/support']],
-          ['Products & stock', ['/admin/products', '/admin/product-drafts', '/admin/social-import', '/admin/reel-import', '/admin/categories', '/admin/variant-groups', '/admin/inventory']],
+          ['Daily shop work', ['/admin', '/admin/notifications', '/admin/orders', '/admin/returns', '/admin/customers', '/admin/support']],
+          ['Products & stock', ['/admin/products', '/admin/product-drafts', '/admin/social-import', '/admin/reel-import', '/admin/categories', '/admin/variant-groups', '/admin/inventory', '/admin/rentals']],
           ['Marketing & content', ['/admin/social', '/admin/coupons', '/admin/banners', '/admin/campaigns', '/admin/reviews', '/admin/subscribers', '/admin/store-content']],
           ['Reports & business', ['/admin/reports', '/admin/traffic', '/admin/business', '/admin/audit']],
           ['Store setup', ['/admin/customization', '/admin/system', '/admin/settings']],
@@ -92,7 +93,7 @@ export default function AdminSidebar({ open = false, onClose = () => {}, onOpen 
         {group.items.map((item) => (
           <a
             key={item.label}
-            href={item.path}
+            href={item.path === '/admin/rentals' ? item.path + '?tab=setup' : item.path}
             onClick={onClose}
             className={`admin-sidebar__link ${item.active ? 'is-active' : ''}`}
             aria-current={item.active ? 'page' : undefined}
@@ -116,7 +117,7 @@ export default function AdminSidebar({ open = false, onClose = () => {}, onOpen 
         {MOBILE_TABS.map(([label, path, Icon]) => {
           const active = path === '/admin'
             ? currentPath === '/admin' || currentPath === '/'
-            : currentPath === path || currentPath.startsWith(`${path}/`);
+            : label === 'Rentals' ? rentalOrders || currentPath === '/admin/rentals' || currentPath.startsWith('/admin/rentals/') : path === '/admin/orders' ? !rentalOrders && (currentPath === path || currentPath.startsWith(`${path}/`)) : currentPath === path || currentPath.startsWith(`${path}/`);
           return (
             <a key={label} href={path} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
               <Icon className="h-4 w-4" />
@@ -149,7 +150,7 @@ function iconForLabel(label) {
     'Reel Product Import': <Video className="h-4 w-4" />,
     Categories: <Tags className="h-4 w-4" />,
     'Variant Groups': <GitBranch className="h-4 w-4" />,
-    'Rental studio': <CalendarDays className="h-4 w-4" />,
+    'Rental setup & stock': <CalendarDays className="h-4 w-4" />,
     Orders: <ShoppingBag className="h-4 w-4" />,
     Customers: <Users className="h-4 w-4" />,
     Coupons: <Ticket className="h-4 w-4" />,

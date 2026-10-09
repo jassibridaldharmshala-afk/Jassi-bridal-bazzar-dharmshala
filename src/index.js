@@ -8,6 +8,7 @@ import './components/rentals/Rentals.css';
 import './pages/customer/Checkout.css';
 import './pages/customer/CheckoutMobile.css';
 import './components/rentals/RentalAdmin.css';
+import './components/rentals/RentalOrders.css';
 import './components/rentals/RentalShopping.css';
 import './components/admin/ProductSmartFill.css';
 import './components/admin/ImageBackgroundEditor.css';

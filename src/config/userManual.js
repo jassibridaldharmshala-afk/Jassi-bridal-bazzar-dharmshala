@@ -148,7 +148,10 @@ export const USER_MANUAL_GUIDES = [
     'Select the correct adjustment reason and add a useful reference or note.',
     'Use receiving, transfer and QC actions to keep each stock bucket accurate.',
   ], ['Never use a stock adjustment to correct an order or refund; use its proper workflow.'], [], 'stock movement reserve receive damaged quarantine'),
-  guide('order-queue', 'Operations', 'Order queue', 'Process paid and COD orders through valid fulfilment steps.', ['/admin/orders', '/seller/orders'], [
+  guide('order-queue', 'Operations', 'Order queue', 'Manage sale deliveries and rental bookings from the same Orders screen.', ['/admin/orders', '/seller/orders'], [
+    'Choose Sale orders for purchases or Rental bookings for rentals. Open a rental booking and complete its next available action.',
+    'Record real payments, mark rentals ready, confirm each piece at handover and return, then inspect and settle security. Invoice, date changes and cancellation are available in the booking.',
+    'Use Rental setup & stock for prices, actual piece codes, cleaning and rental policies. Everyday bookings are managed in Orders → Rental bookings.',
     'Use task cards and filters to find new, late or exceptional orders.',
     'Confirm payment and address information before packing.',
     'Move the order only through the next available status action.',

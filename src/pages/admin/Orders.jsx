@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { AlertTriangle, Clock3, Download, PackageCheck, RotateCcw, Truck, Wallet } from 'lucide-react';
+import AdminOrderTabs from '../../components/admin/AdminOrderTabs';
 import ConfirmModal from '../../components/admin/ConfirmModal';
 import DataTable from '../../components/admin/DataTable';
 import OrderWorkflowActions from '../../components/admin/OrderWorkflowActions';
@@ -8,6 +9,7 @@ import SearchFilterBar from '../../components/admin/SearchFilterBar';
 import StatusBadge from '../../components/admin/StatusBadge';
 import api from '../../services/api';
 import { downloadReceiptPdf } from '../../utils/printReceipt';
+const RentalOrders = lazy(() => import('./RentalOrders'));
 
 const orderStatuses = ['', 'Pending', 'Confirmed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Requested', 'Exchange Requested', 'Returned', 'Refunded'];
 const paymentStatuses = ['', 'Pending', 'Paid', 'Failed', 'Refunded'];
@@ -37,7 +39,11 @@ function readFilters(route) {
   };
 }
 
-export default function Orders({ route = '' }) {
+export default function Orders({ route = '', navigate }) {
+  return new URLSearchParams(route.split('?')[1] || '').get('type') === 'rental' ? <Suspense fallback={<p role="status">Loading rental bookings…</p>}><RentalOrders route={route} navigate={navigate} /></Suspense> : <SaleOrders route={route} />;
+}
+
+function SaleOrders({ route }) {
   const seller = route.startsWith('/seller');
   const apiBase = seller ? '/seller' : '/admin';
   const initial = readFilters(route);
@@ -218,6 +224,7 @@ export default function Orders({ route = '' }) {
       <button type="button" className="admin-btn-ghost" disabled={!filtered.length} onClick={() => setSelected(filtered.map(order => order._id))}>Select visible</button>
       <button type="button" className="admin-btn-ghost inline-flex items-center gap-2" disabled={!filtered.length} onClick={exportVisible}><Download size={15} />Export visible</button>
     </PageHeader>
+    <AdminOrderTabs route={route} mode="sale" />
     <div className="order-task-grid" aria-label="Order task summary">{summaryCards.map(([key, label, Icon]) => <button key={key} type="button" className={`order-task-card ${taskIsActive(key, extra) ? 'is-active' : ''}`} onClick={() => openTask(key)}><span><Icon size={17} />{label}</span><strong>{summary?.[key] ?? '—'}</strong>{key === 'codCollection' && summary?.codCollectionAmount ? <small>₹{Number(summary.codCollectionAmount).toLocaleString('en-IN')} due</small> : null}</button>)}</div>
     {message && <p role="status" className="rounded-xl bg-rose/10 p-3 text-sm font-bold text-rose">{message}</p>}
     {hasFilters && <div className="admin-card flex flex-wrap items-center justify-between gap-3 p-4 text-sm"><span>{taskLabels[new URLSearchParams(extra).get('attention')] || (new URLSearchParams(extra).get('deliveryIssue') ? taskLabels.exceptions : new URLSearchParams(extra).get('returnOpen') ? taskLabels.returns : 'Filtered orders')}</span><button type="button" className="admin-table-action-link" onClick={clearFilters}>Clear all filters</button></div>}

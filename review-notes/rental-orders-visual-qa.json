@@ -1,0 +1,48 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "rentalList": true,
+      "futureBookingsShown": 3,
+      "dateFilter": true,
+      "familiarSaleRentalTabs": true,
+      "focusedBookingDetail": true,
+      "pieceCheckedHandover": true,
+      "invoiceDisclosure": true,
+      "mobileRentalNavigation": true,
+      "setupToolsRetained": true,
+      "horizontalPageOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "width": 820,
+      "rentalList": true,
+      "futureBookingsShown": 3,
+      "dateFilter": true,
+      "familiarSaleRentalTabs": true,
+      "focusedBookingDetail": true,
+      "pieceCheckedHandover": true,
+      "invoiceDisclosure": true,
+      "mobileRentalNavigation": false,
+      "setupToolsRetained": true,
+      "horizontalPageOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "width": 1440,
+      "rentalList": true,
+      "futureBookingsShown": 3,
+      "dateFilter": true,
+      "familiarSaleRentalTabs": true,
+      "focusedBookingDetail": true,
+      "pieceCheckedHandover": true,
+      "invoiceDisclosure": true,
+      "mobileRentalNavigation": false,
+      "setupToolsRetained": true,
+      "horizontalPageOverflow": false,
+      "pageErrors": []
+    }
+  ],
+  "api": "isolated fixtures",
+  "realProvidersCalled": false
+}

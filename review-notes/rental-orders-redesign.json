@@ -1,0 +1,75 @@
+{
+  "completedUtc": "2026-10-09 06:15:16 UTC",
+  "request": "Explain Rental Studio and make everyday rental management as approachable as sale orders, including mobile controls.",
+  "dailyWorkspace": "Orders → Sale orders / Rental bookings",
+  "setupWorkspace": "Rental setup & stock",
+  "implemented": [
+    "Admin and seller order-type tabs preserve explicit store scope and mount only the selected workflow.",
+    "Rental orders default to all bookings, including future reservations, with native search, view and status filters.",
+    "Focused booking summary shows customer, items, use days, pickup/return, payment, refundable security and lifecycle.",
+    "Stage- and permission-aware actions reuse existing protected rental endpoints and operation IDs/revisions.",
+    "Actual payment amount/reference, handover piece checklist, return selection and cancellation note are checked before submitting.",
+    "Single next actions have one save button; scanners, detailed contact, photo proof, courier, invoice and workshop tools are progressively disclosed.",
+    "Mobile Rentals tab opens rental orders; setup sidebar entry opens guided setup; existing physical-stock tools remain available.",
+    "Merchant instructions explain the daily Orders flow and the purpose of rental setup and stock."
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 7,
+      "tests": 54,
+      "passed": 54,
+      "failed": 0,
+      "log": ".tmp/rental-orders-tests.log",
+      "paths": [
+        "src/pages/admin/RentalOrders.test.jsx",
+        "src/pages/admin/Rentals.test.jsx",
+        "src/components/rentals/RentalAdminExperience.test.jsx",
+        "src/components/rentals/RentalOperations.test.jsx",
+        "src/components/rentals/RentalStudio.test.jsx",
+        "src/pages/admin/AdminOperations.test.jsx",
+        "src/pages/seller/SellerOperations.test.jsx"
+      ]
+    },
+    "strictCIProductionBuild": {
+      "passed": true,
+      "node": "20.20.2",
+      "log": ".tmp/rental-orders-build.log"
+    },
+    "browser": {
+      "report": "review-notes/rental-orders-visual-qa.json",
+      "widths": [
+        390,
+        820,
+        1440
+      ],
+      "productionBuild": true,
+      "api": "isolated fixtures",
+      "horizontalPageOverflow": false,
+      "pageErrors": [],
+      "screenshotsInspected": true,
+      "flows": [
+        "All future bookings",
+        "Pickup date filter",
+        "Open booking",
+        "Piece checklist and handover",
+        "Invoice disclosure",
+        "Sale tab",
+        "Mobile rental navigation",
+        "Existing setup tools"
+      ]
+    },
+    "backendProductionCodeChanged": false,
+    "countsAreScopedAndNotAddedToPriorRuns": true
+  },
+  "screenshots": {
+    "mobileList": "review-notes/rental-orders-list-390.png",
+    "mobileActions": "review-notes/rental-orders-action-390.png",
+    "desktopList": "review-notes/rental-orders-list-1440.png",
+    "desktopDetail": "review-notes/rental-orders-detail-1440.png"
+  },
+  "limits": [
+    "Not deployed; frontend redeploy is required for these admin UI changes.",
+    "No live payment, SMS, managed licence, database or real shop inventory acceptance performed.",
+    "Physical piece availability, transactions, payment verification, full payment before handover and existing refund safeguards remain authoritative."
+  ]
+}

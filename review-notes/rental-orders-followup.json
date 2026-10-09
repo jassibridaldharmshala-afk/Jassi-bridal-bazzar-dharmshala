@@ -1,0 +1,115 @@
+{
+  "completedUtc": "2026-10-09 07:02:43 UTC",
+  "scope": "Follow-up review of simplified admin/seller rental orders, cancellation/refund, tenant navigation and mobile usability.",
+  "findings": [
+    {
+      "id": "RO-01",
+      "priority": "P2",
+      "finding": "Header refresh and returning from booking detail could reset search, status, date and page.",
+      "resolution": "Keep the loaded workspace mounted during refresh and retain list filters in same-shop component memory; clear them on shop changes.",
+      "status": "fixed"
+    },
+    {
+      "id": "RO-02",
+      "priority": "P2",
+      "finding": "External payment/status updates could leave an unavailable or outdated action selected.",
+      "resolution": "Reconcile the selected action against the latest booking/permissions, preserve valid manual choices, and reset successful operation fields from the returned booking.",
+      "status": "fixed"
+    },
+    {
+      "id": "RO-03",
+      "priority": "P1",
+      "finding": "Seller rental-order links preserved storeId, but tenant headers and the seller selector could use the previous selected store.",
+      "resolution": "Honor valid explicit request/page store IDs, keep membership-based selection, handle same-path store navigation, and clear selected rental bookings/offers on store switch. Backend tenant authorization remains enforced.",
+      "status": "fixed"
+    },
+    {
+      "id": "RO-04",
+      "priority": "P2",
+      "finding": "Staff rental notifications still opened the older Studio detail and rental alerts could be hidden by order/payment category filters.",
+      "resolution": "Staff booking alerts open scoped Orders → Rental; rental booking/payment/refund alerts use the matching categories. Workshop/customer routes remain appropriate.",
+      "status": "fixed"
+    },
+    {
+      "id": "RO-05",
+      "priority": "P2",
+      "finding": "Required financial/contact/inspection fields could be missing until a failed server operation.",
+      "resolution": "Require actual collection/refund references, valid amounts, original refund receipt, refund reason, named-contact acknowledgement, request choice and piece choice as appropriate. Display payment plan and approved deductions in the summary.",
+      "status": "fixed"
+    },
+    {
+      "id": "RO-06",
+      "priority": "P2",
+      "finding": "Invalid selected-booking responses could leave an empty detail view without an explicit recovery action.",
+      "resolution": "Validate the selected booking response, present Retry/All bookings, and pause mutation until a fresh successful read.",
+      "status": "fixed"
+    },
+    {
+      "id": "RO-07",
+      "priority": "P1",
+      "finding": "The store-fault full-refund option could coexist with manual retained rent.",
+      "resolution": "Disable retention while the full-refund option is selected, submit zero retention, and reject contradictory store-fault/positive-retention input server-side before changing the booking or reservations.",
+      "status": "fixed"
+    }
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 12,
+      "tests": 99,
+      "passed": 99,
+      "failed": 0,
+      "log": ".tmp/rental-orders-followup-tests.log"
+    },
+    "backend": {
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "file": "backend/tests/rentalShopping.integration.test.js",
+      "log": ".tmp/rental-orders-followup-backend.log",
+      "database": "isolated local replica set",
+      "providers": "mocked"
+    },
+    "strictCIProductionBuild": {
+      "passed": true,
+      "node": "20.20.2",
+      "log": ".tmp/rental-orders-followup-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        820,
+        1440
+      ],
+      "report": "review-notes/rental-orders-followup-visual-qa.json",
+      "productionBuild": true,
+      "api": "isolated fixtures",
+      "pageErrors": [],
+      "horizontalPageOverflow": false,
+      "screenshotsInspected": true,
+      "flows": [
+        "Handover piece checklist",
+        "Invoice disclosure",
+        "Filter retention across refresh and booking/back",
+        "Full-refund option disables retention",
+        "Merchant-approved cancellation retention",
+        "Original-receipt refund",
+        "Sale/Rental navigation",
+        "Existing setup tools"
+      ]
+    },
+    "countsAreScopedAndNotAddedToPreviousRuns": true
+  },
+  "optionalImprovements": [
+    "Compact daily pickup/return/balance summary above the rental order list, linked to existing filters.",
+    "Batch invoice printing and printable daily pickup/return lists, retaining per-booking permissions and original invoice snapshots."
+  ],
+  "outstanding": [
+    "Deploy frontend and canonical backend changes.",
+    "Exercise actual OTP delivery, managed installation, transaction-capable hosted database, payment/webhook/refund providers and real physical stock on the intended deployment.",
+    "Confirm actual rental rates, merchant policies and operational responsibility with the shop."
+  ],
+  "deployed": false,
+  "realProvidersCalled": false,
+  "backendProductionCodeChanged": true,
+  "backendChange": "One cancellation input guard in backend/services/rentalService.js; no licence, ownership, payment or inventory guard bypass."
+}

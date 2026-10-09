@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "partialReturnSummary": true,
+      "eligibleInspectionAndCleaningPieces": true,
+      "notesRequired": true,
+      "outstandingPiecesReceivedSeparately": true,
+      "originalReceiptRefundLimit": true,
+      "reservedProviderRefund": true,
+      "settlementClosesAfterConfirmation": true,
+      "horizontalPageOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "width": 820,
+      "partialReturnSummary": true,
+      "eligibleInspectionAndCleaningPieces": true,
+      "notesRequired": true,
+      "outstandingPiecesReceivedSeparately": true,
+      "originalReceiptRefundLimit": true,
+      "reservedProviderRefund": true,
+      "settlementClosesAfterConfirmation": true,
+      "horizontalPageOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "width": 1440,
+      "partialReturnSummary": true,
+      "eligibleInspectionAndCleaningPieces": true,
+      "notesRequired": true,
+      "outstandingPiecesReceivedSeparately": true,
+      "originalReceiptRefundLimit": true,
+      "reservedProviderRefund": true,
+      "settlementClosesAfterConfirmation": true,
+      "horizontalPageOverflow": false,
+      "pageErrors": []
+    }
+  ],
+  "api": "isolated fixtures",
+  "realProvidersCalled": false
+}

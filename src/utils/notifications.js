@@ -11,7 +11,7 @@ export function notificationDestination(item, user) {
   };
   if (admin && user?.activeMode === 'seller') {
     if (metadata.rentalTaskId) return '/seller/rentals?tab=studio' + rentalStoreQuery;
-    if (metadata.rentalBookingId) return `/seller/rentals?id=${encodeURIComponent(metadata.rentalBookingId)}` + rentalStoreQuery;
+    if (metadata.rentalBookingId) return `/seller/orders?type=rental&booking=${encodeURIComponent(metadata.rentalBookingId)}` + rentalStoreQuery;
     if (metadata.socialThreadId || metadata.socialAccountId || metadata.socialPostId) return `/seller/social${socialQuery()}`;
     if (metadata.contactId) return '/seller/inbox';
     if (metadata.orderId || metadata.returnId) return '/seller/orders';
@@ -20,7 +20,7 @@ export function notificationDestination(item, user) {
   if (admin && user?.role !== 'admin') return '';
   if (admin) {
     if (metadata.rentalTaskId) return '/admin/rentals?tab=studio' + rentalStoreQuery;
-    if (metadata.rentalBookingId) return `/admin/rentals?id=${encodeURIComponent(metadata.rentalBookingId)}` + rentalStoreQuery;
+    if (metadata.rentalBookingId) return `/admin/orders?type=rental&booking=${encodeURIComponent(metadata.rentalBookingId)}` + rentalStoreQuery;
     if (metadata.socialThreadId || metadata.socialAccountId || metadata.socialPostId) return `/admin/social${socialQuery()}`;
     if (metadata.returnId) return `/admin/returns?search=${encodeURIComponent(metadata.returnId)}`;
     if (metadata.contactId) return `/admin/support?search=${encodeURIComponent(metadata.contactId)}`;
@@ -36,8 +36,8 @@ export function notificationDestination(item, user) {
 export function notificationCategory(item) {
   const event = item.event || '';
   if (/^(RETURN_|EXCHANGE_)/.test(event)) return 'returns';
-  if (/^(PAYMENT_|REFUND_)/.test(event)) return 'payments';
-  if (/^ORDER_/.test(event) || item.metadata?.orderId) return 'orders';
+  if (/^(?:RENTAL_)?(PAYMENT_|REFUND_)/.test(event)) return 'payments';
+  if (/^ORDER_/.test(event) || item.metadata?.orderId || item.metadata?.rentalBookingId) return 'orders';
   if (/^CONTACT_/.test(event)) return 'support';
   if (/^SOCIAL_/.test(event)) return 'social';
   return 'updates';

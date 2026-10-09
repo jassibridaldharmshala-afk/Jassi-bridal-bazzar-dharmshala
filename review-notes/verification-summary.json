@@ -385,5 +385,61 @@
       "countsAreScopedAndNotAddedToPriorRuns": true,
       "deployed": false
     }
+  },
+  "rentalOrdersRedesign": {
+    "completedUtc": "2026-10-09 06:15:16 UTC",
+    "details": "review-notes/rental-orders-redesign.json",
+    "frontendSuites": 7,
+    "frontendTests": 54,
+    "allScopedTestsPassed": true,
+    "strictCIProductionBuild": true,
+    "uiWidths": [
+      390,
+      820,
+      1440
+    ],
+    "browserApi": "isolated fixtures",
+    "backendProductionCodeChanged": false,
+    "countsAreScopedAndNotAddedToPriorRuns": true,
+    "deployed": false,
+    "followup": {
+      "completedUtc": "2026-10-09 07:02:43 UTC",
+      "details": "review-notes/rental-orders-followup.json",
+      "findingsFixed": 7,
+      "frontendSuites": 12,
+      "frontendTests": 99,
+      "backendTests": 9,
+      "allScopedTestsPassed": true,
+      "strictCIProductionBuild": true,
+      "uiWidths": [
+        390,
+        820,
+        1440
+      ],
+      "browserApi": "isolated fixtures",
+      "backendProductionCodeChanged": true,
+      "countsAreScopedAndNotAddedToPriorRuns": true,
+      "deployed": false
+    },
+    "lifecycleReview": {
+      "completedUtc": "2026-10-09 07:37:49 UTC",
+      "details": "review-notes/rental-orders-lifecycle-review.json",
+      "findingsFixed": 4,
+      "usabilityImprovements": 1,
+      "frontendSuites": 5,
+      "frontendTests": 36,
+      "backendTests": 38,
+      "allScopedTestsPassed": true,
+      "strictCIProductionBuild": true,
+      "uiWidths": [
+        390,
+        820,
+        1440
+      ],
+      "browserApi": "isolated fixtures",
+      "backendProductionCodeChangedThisReview": false,
+      "countsAreScopedAndNotAddedToPriorRuns": true,
+      "deployed": false
+    }
   }
 }

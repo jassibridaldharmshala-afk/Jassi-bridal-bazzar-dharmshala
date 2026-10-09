@@ -35,7 +35,8 @@ const rawBaseQuery = fetchBaseQuery({
         if (/^[a-f\d]{24}$/i.test(targetStoreId || '')) headers.set('x-store-id', targetStoreId);
       }
       if (requestPath.startsWith('/seller/') || requestPath === '/stores/me/current') {
-        const sellerStoreId = sessionStorage.getItem('samira_seller_store_id');
+        const linkedStoreId = queryScope.get('storeId') || new URLSearchParams(window.location.search).get('storeId');
+        const sellerStoreId = /^[a-f\d]{24}$/i.test(linkedStoreId || '') ? linkedStoreId : sessionStorage.getItem('samira_seller_store_id');
         if (sellerStoreId) headers.set('x-store-id', sellerStoreId);
       }
     } catch {

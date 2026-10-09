@@ -1,0 +1,98 @@
+{
+  "completedUtc": "2026-10-09 07:37:49 UTC",
+  "scope": "Second targeted review of admin/seller rental booking lifecycle: partial returns, inspection/cleaning, refund receipts, provider refund status and mobile/desktop operation controls.",
+  "findings": [
+    {
+      "id": "RL-01",
+      "status": "fixed",
+      "finding": "Partial returns remained on Receive even when a returned piece awaited inspection or cleaning, and cleaning selection included uninspected pieces.",
+      "resolution": "Share eligible-piece selection across scanner/checklists/inspection/cleaning/loss actions. Prioritize available inspection and cleaning, retain Receive for outstanding pieces, and reject stale piece choices before submitting. Show piece return counts in the booking summary."
+    },
+    {
+      "id": "RL-02",
+      "status": "fixed",
+      "finding": "Handover, inspection, cleaning release, customer request review and reopening required backend notes, but simple booking controls did not validate those notes before submission.",
+      "resolution": "Require the relevant acknowledgement/condition/decision/review note before enabling the operation. Preserve operation identity and form data for actual network retries."
+    },
+    {
+      "id": "RL-03",
+      "status": "fixed",
+      "finding": "Refund controls could appear before return inspection or in a closed settlement, while refunding a cancelled line in an otherwise active booking was omitted.",
+      "resolution": "Match frontend eligibility to inspected returns, cancellation/expiry and active bookings with cancelled lines. A closed settlement must first be explicitly reopened with a reason."
+    },
+    {
+      "id": "RL-04",
+      "status": "fixed",
+      "finding": "Refund entry checked global entitlement but not the remaining balance of its selected original receipt; unresolved provider refunds were easy to overlook.",
+      "resolution": "Show remaining refundable amount per original receipt, reserve pending/processed refunds and exclude failed ones, disable exhausted receipts, validate the selected receipt limit, display pending provider amount and waiting status, and prevent closing until the server confirms settlement."
+    },
+    {
+      "id": "RL-05",
+      "status": "improved",
+      "finding": "Bookings with no available operation displayed an irrelevant Note and disabled Save update; inspection choices used raw enums.",
+      "resolution": "Hide the empty operation form in the simple booking view and use readable inspection labels while keeping backend enum values unchanged."
+    }
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 5,
+      "tests": 36,
+      "passed": 36,
+      "failed": 0,
+      "log": ".tmp/rental-orders-lifecycle-tests.log"
+    },
+    "backend": {
+      "tests": 38,
+      "passed": 38,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "file": "backend/tests/rentals.integration.test.js",
+      "log": ".tmp/rental-orders-lifecycle-backend.log",
+      "database": "isolated local MongoDB replica set",
+      "providers": "mocked"
+    },
+    "strictCIProductionBuild": {
+      "passed": true,
+      "node": "20.20.2",
+      "log": ".tmp/rental-orders-lifecycle-build.log"
+    },
+    "browser": {
+      "widths": [
+        390,
+        820,
+        1440
+      ],
+      "report": "review-notes/rental-orders-lifecycle-visual-qa.json",
+      "log": ".tmp/rental-orders-lifecycle-browser.log",
+      "api": "isolated fixtures",
+      "productionBuild": true,
+      "pageErrors": [],
+      "horizontalPageOverflow": false,
+      "screenshotsInspected": true,
+      "flows": [
+        "Partial return status",
+        "Eligible inspection and cleaning pieces",
+        "Required condition notes",
+        "Outstanding pieces received separately",
+        "Original receipt refund limit",
+        "Pending provider refund amount reserved",
+        "Settlement closure only after provider confirmation"
+      ]
+    },
+    "countsAreScopedAndNotAddedToPreviousRuns": true,
+    "gitDiffCheck": true
+  },
+  "optionalImprovements": [
+    "Add a dedicated pending customer request filter so cancellation, date-change and dispute requests can be reviewed without opening every booking.",
+    "Use automatic detail refresh on focus/payment updates, reconciling fresh server revisions while protecting unsaved notes and retaining idempotent operations."
+  ],
+  "outstanding": [
+    "Deploy the local frontend changes and the canonical backend guard from the preceding review.",
+    "Validate actual hosted OTP, managed licence, transaction/index readiness, payment/webhook/refund providers and persistent media.",
+    "Confirm actual physical inventory, rental rates, merchant cancellation/deposit policy and staff operational ownership."
+  ],
+  "backendProductionCodeChangedThisReview": false,
+  "deployed": false,
+  "realProvidersCalled": false
+}

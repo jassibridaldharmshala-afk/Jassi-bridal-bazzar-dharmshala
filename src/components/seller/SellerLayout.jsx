@@ -12,7 +12,7 @@ const links = [
   ['Variant Families', '/seller/variant-groups'],
   ['Inventory', '/seller/inventory'],
   ['Orders', '/seller/orders'],
-  ['Rental studio', '/seller/rentals'],
+  ['Rental setup & stock', '/seller/rentals'],
   ['Returns / Exchange', '/seller/returns'],
   ['Customers', '/seller/crm'],
   ['Offers', '/seller/offers'],
@@ -39,7 +39,7 @@ const icons = {
   'Variant Families': GitBranch,
   Inventory: Package,
   Orders: ShoppingBag,
-  'Rental studio': ShoppingBag,
+  'Rental setup & stock': ShoppingBag,
   'Returns / Exchange': RotateCcw,
   Customers: Users,
   Offers: HeartPulse,
@@ -71,23 +71,29 @@ const LINK_PERMISSIONS = { '/seller/content': 'content.read', '/seller/traffic':
 export default function SellerLayout({ children }) {
   const path = useAppPath();
   const { user } = useAuth();
+  const linkedStoreId = new URLSearchParams(window.location.search).get('storeId');
   const stores = useMemo(() => (user?.stores || []).filter((item) => item?.id && item?.status !== 'SUSPENDED'), [user]);
   const [storeId, setStoreId] = useState(() => {
-    const linked = window.location.pathname === '/seller/rentals' ? new URLSearchParams(window.location.search).get('storeId') : '';
+    const linked = window.location.pathname.startsWith('/seller/') ? new URLSearchParams(window.location.search).get('storeId') : '';
     if (linked && stores.some(item => item.id === linked)) { sessionStorage.setItem('samira_seller_store_id', linked); return linked; }
     return sessionStorage.getItem('samira_seller_store_id') || '';
   });
 
   useEffect(() => {
     if (!stores.length) return;
-    const selected = stores.some((item) => item.id === storeId) ? storeId : stores[0].id;
+    const selected = stores.some(item => item.id === linkedStoreId) ? linkedStoreId : stores.some(item => item.id === storeId) ? storeId : stores[0].id;
     if (selected !== storeId) setStoreId(selected);
     sessionStorage.setItem('samira_seller_store_id', selected);
-  }, [storeId, stores]);
+  }, [storeId, stores, path, linkedStoreId]);
 
   const chooseStore = (nextId) => {
     if (!stores.some((item) => item.id === nextId) || nextId === storeId) return;
     sessionStorage.setItem('samira_seller_store_id', nextId);
+    const nextUrl = new URL(window.location.href);
+    if (nextUrl.searchParams.has('storeId')) nextUrl.searchParams.set('storeId', nextId);
+    if (nextUrl.pathname === '/seller/orders') nextUrl.searchParams.delete('booking');
+    if (nextUrl.pathname === '/seller/rentals') ['id', 'listing', 'productId'].forEach(key => nextUrl.searchParams.delete(key));
+    window.history.replaceState(null, '', nextUrl.pathname + nextUrl.search + nextUrl.hash);
     setStoreId(nextId);
     window.location.reload();
   };
@@ -113,7 +119,7 @@ export default function SellerLayout({ children }) {
         {stores.length > 0 && <label className="mt-5 grid gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Active store<select aria-label="Active seller store" value={storeId || stores[0].id} onChange={(event) => chooseStore(event.target.value)} className="h-11 rounded-xl border border-white/15 bg-white/10 px-3 text-sm font-bold normal-case tracking-normal text-white outline-none">{stores.map((item) => <option key={item.id} value={item.id} className="text-slate-900">{item.name} · {item.role}</option>)}</select></label>}
         <nav className="mt-6 grid gap-1.5">
           {items.map((item) => (
-            <a key={item.path} href={item.path} className={`flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-bold ${item.active ? 'bg-[#8a3d59]' : 'text-white/75 hover:bg-white/10'}`}>
+            <a key={item.path} href={item.path === '/seller/rentals' ? item.path + '?tab=setup' : item.path} className={`flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-bold ${item.active ? 'bg-[#8a3d59]' : 'text-white/75 hover:bg-white/10'}`}>
               <span className="flex items-center gap-3">
                 <item.Icon className="h-4 w-4" />
                 {item.label}
@@ -125,7 +131,7 @@ export default function SellerLayout({ children }) {
       </aside>
       {stores.length > 1 && <div className="border-b border-[#e8dcd4] bg-white px-4 pt-3 lg:hidden"><select aria-label="Active seller store" value={storeId || stores[0].id} onChange={(event) => chooseStore(event.target.value)} className="h-10 w-full rounded-xl border border-[#e8dcd4] bg-[#fbf8f4] px-3 text-sm font-bold">{stores.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.role}</option>)}</select></div>}
       <nav className="flex gap-2 overflow-x-auto border-b border-[#e8dcd4] bg-white px-4 py-3 lg:hidden" aria-label="Seller workspace navigation">
-        {items.map(item => <a key={item.path} href={item.path} aria-current={item.active ? 'page' : undefined} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold ${item.active ? 'bg-wine text-white' : 'text-[#75656f]'}`}><item.Icon size={15} />{item.label}</a>)}
+        {items.map(item => <a key={item.path} href={item.path === '/seller/rentals' ? item.path + '?tab=setup' : item.path} aria-current={item.active ? 'page' : undefined} className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold ${item.active ? 'bg-wine text-white' : 'text-[#75656f]'}`}><item.Icon size={15} />{item.label}</a>)}
       </nav>
       <div className="p-4 lg:p-8">{licenceRestricted && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><div><strong>{activeStore.platform.name} subscription {activeStore.platform.status.toLowerCase()}</strong><p className="mt-1 text-xs">{activeStore.platform.renewalMessage || 'Your data is safe. Renew to create products, accept orders and make changes.'}</p></div></div>}{children}</div>
     </div>
