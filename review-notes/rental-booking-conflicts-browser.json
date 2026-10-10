@@ -1,0 +1,38 @@
+[
+  {
+    "width": 320,
+    "isolatedRealApi": true,
+    "ownerBookingLink": true,
+    "otherCustomerPrivate": true,
+    "serverCancellationReleasesCapacity": true,
+    "quoteRetryContinues": true,
+    "noExtraBookingOrPayment": true,
+    "errors": [],
+    "liveProviders": false,
+    "safariEngineTested": false
+  },
+  {
+    "width": 390,
+    "isolatedRealApi": true,
+    "ownerBookingLink": true,
+    "otherCustomerPrivate": true,
+    "serverCancellationReleasesCapacity": true,
+    "quoteRetryContinues": true,
+    "noExtraBookingOrPayment": true,
+    "errors": [],
+    "liveProviders": false,
+    "safariEngineTested": false
+  },
+  {
+    "width": 1440,
+    "isolatedRealApi": true,
+    "ownerBookingLink": true,
+    "otherCustomerPrivate": true,
+    "serverCancellationReleasesCapacity": true,
+    "quoteRetryContinues": true,
+    "noExtraBookingOrPayment": true,
+    "errors": [],
+    "liveProviders": false,
+    "safariEngineTested": false
+  }
+]

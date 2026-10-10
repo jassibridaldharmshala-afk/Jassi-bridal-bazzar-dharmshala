@@ -4,6 +4,7 @@ import { DRAFT_UPLOAD_TIMEOUT, followDraftUpload } from '../services/draftUpload
 import { compressImageFile, isSupportedImageFile, preparePhotoUploads } from '../services/imageCompression';
 import { logout, setCredentials } from './authSlice';
 import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
+import { beginAdminRequest } from '../utils/adminActivity';
 import { getOrCreateSessionId } from '../utils/attribution';
 import { isWebsitePreview } from '../config/websiteDesigner';
 import { expandHomeFeed, storefrontReadOptions } from './storefrontTransport';
@@ -80,6 +81,7 @@ async function baseQueryWithRefresh(args, api, extraOptions) {
   const silent = policy.readOnly || Boolean(typeof args === 'object' && (
     args.silent || (args.silentWhenCached && cachedQuery?.data !== undefined)
   ));
+  const adminCachedRead = Boolean(typeof args === 'object' && args.silentWhenCached && cachedQuery?.data !== undefined);
   if (typeof args === 'object') {
     const { silent: _silent, silentWhenCached: _silentWhenCached, ...requestArgs } = args;
     args = requestArgs;
@@ -89,6 +91,7 @@ async function baseQueryWithRefresh(args, api, extraOptions) {
     if (method !== 'GET') return { error: { status: 403, data: { message: 'Storefront preview is read-only.' } } };
     return rawBaseQuery(args, api, extraOptions);
   }
+  const adminActivity = beginAdminRequest(args, { cached: adminCachedRead });
   if (!silent) startMobileLoader();
   try {
     const requestedSession = sessionCredentials(api);
@@ -108,7 +111,7 @@ async function baseQueryWithRefresh(args, api, extraOptions) {
         // A concurrent refresh, mode switch or sign-in already replaced the
         // token. Never use this old response to invalidate the new session.
         return currentSession.token && currentSession.userId === requestedSession.userId
-          ? rawBaseQuery(args, api, extraOptions)
+          ? await rawBaseQuery(args, api, extraOptions)
           : { error: { status: 409, data: { message: 'Your session changed. Please try again.' } } };
       }
       if (currentSession.token && currentSession.userId) {
@@ -167,6 +170,7 @@ async function baseQueryWithRefresh(args, api, extraOptions) {
     if (creationKey && result.error?.data?.code === 'UPLOAD_RETRY_CONFLICT') forgetUploadRetryKey(creationKey);
     return result;
   } finally {
+    adminActivity.finish();
     if (!silent) stopMobileLoader();
   }
 }
@@ -203,6 +207,8 @@ export const samiraApi = createApi({
     }),
     upload: builder.mutation({
       queryFn: async ({ path, files, fieldName = 'images', silent = false, fields = {}, idempotencyKey }, api, extraOptions, baseQuery) => {
+        const activity = beginAdminRequest({ url: path, method: 'POST' });
+        activity.update('Preparing media');
         try {
           const scope = uploadScope(api.getState().auth);
           const prepared = await preparePhotoUploads(files, { imagesOnly: fieldName === 'images' || fieldName === 'image' });
@@ -212,6 +218,7 @@ export const samiraApi = createApi({
           Object.entries(fields).forEach(([key, value]) => formData.append(key, String(value)));
           return await baseQuery({ url: path, method: 'POST', body: formData, silent, ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}) }, api, extraOptions);
         } catch (error) { return { error: { status: 400, data: { code: 'UPLOAD_IMAGE_INVALID', message: error.message || 'Unable to prepare the photo.' } } }; }
+        finally { activity.finish(); }
       },
       invalidatesTags: (_result, _error, arg) => arg.path.endsWith('/background') || /\/rentals\/bookings\/[^/]+\/proofs(?:\?|$)/.test(arg.path) ? [] : ['AdminProducts', 'Products'],
     }),
@@ -310,6 +317,7 @@ export const samiraApi = createApi({
       async queryFn({ files, groupMode = 'separate', photoGroups, apiPrefix = '/admin', onProgress }, api, extraOptions, baseQuery) {
         const prefix = apiPrefix === '/seller' ? '/seller' : '/admin';
         const path = `${prefix}/product-drafts/bulk-upload`;
+        const activity = beginAdminRequest({ url: path, method: 'POST' });
         let idempotencyKey;
         try {
           if (!['single', 'separate', 'grouped'].includes(groupMode)) throw new Error('Choose a valid product photo grouping option.');
@@ -317,7 +325,10 @@ export const samiraApi = createApi({
           const fields = { groupMode, ...(groupMode === 'grouped' ? { photoGroups: JSON.stringify(photoGroups) } : {}) };
           const scope = uploadScope(api.getState().auth);
           const sameScope = () => !api.signal.aborted && uploadScope(api.getState().auth) === scope;
-          const progress = value => { if (sameScope()) { try { onProgress?.(value); } catch { /* Observers cannot cancel a saved upload. */ } } };
+          const progress = value => { if (sameScope()) {
+            activity.update(value.phase === 'preparing' ? 'Preparing product photos' : value.phase === 'uploading' ? 'Uploading product photos' : value.phase === 'saving-drafts' ? 'Creating product drafts' : 'Processing product photos');
+            try { onProgress?.(value); } catch { /* Observers cannot cancel a saved upload. */ }
+          } };
           progress({ phase: 'preparing', fileCount: files?.length || 0, completedFiles: 0 });
           const follow = result => followDraftUpload({ result, query: args => baseQuery(args, api, extraOptions), path, key: idempotencyKey, signal: api.signal, onProgress: progress, sameScope });
           idempotencyKey = await getDurableUploadRetryKey({ path, files, fields, scope });
@@ -356,6 +367,7 @@ export const samiraApi = createApi({
           finishUploadRetryKey(idempotencyKey);
           return { data: result.data };
         } catch (error) { return { error: { status: 400, data: { message: error.message || 'Unable to prepare the product photos.' } } }; }
+        finally { activity.finish(); }
       },
       invalidatesTags: ['ProductDrafts'],
     }),

@@ -2,6 +2,7 @@ import { samiraApi } from '../store/apiSlice';
 import { store } from '../store/store';
 import { preparePhotoUploads } from './imageCompression';
 import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
+import { beginAdminRequest } from '../utils/adminActivity';
 import { getApiBaseUrl } from '../store/apiBaseUrl';
 import { finishUploadRetryKey, forgetUploadRetryKey, getDurableUploadRetryKey, getRecordRetryKey, hasUploadAttempt, isMediaUpload, isRetrySafeCreation, markUploadAttempt, retainUploadedReceipt, uploadScope } from './uploadRetry';
 
@@ -96,6 +97,8 @@ async function prepareUploadFiles(files, fieldName) {
 }
 
 async function download(path, body) {
+  const activity = beginAdminRequest({ url: path, method: 'POST' });
+  activity.update('Preparing download');
   startMobileLoader();
   try {
     const token = store.getState().auth.token || localStorage.getItem('samira_token');
@@ -110,11 +113,11 @@ async function download(path, body) {
       try { data = await response.json(); } catch { data = { message: 'Unable to download the generated project.' }; }
       throw toCustomerError({ status: response.status, data }, path);
     }
-    return response.blob();
+    return await response.blob();
   } catch (error) {
     if (error?.status) throw error;
     throw toCustomerError({ status: 'FETCH_ERROR', message: error?.message }, path, 'Unable to download the generated project.');
-  } finally { stopMobileLoader(); }
+  } finally { activity.finish(); stopMobileLoader(); }
 }
 
 const api = {
@@ -126,16 +129,22 @@ const api = {
   download,
   file: async (path, { signal } = {}) => {
     if (!/^\/evidence\/[a-f0-9]{24}$/i.test(path)) throw new Error('Choose an authorized private evidence file.');
-    const token = store.getState().auth.token || localStorage.getItem('samira_token');
-    const response = await fetch(`${getApiBaseUrl()}${path}`, { signal, credentials: 'include', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-    if (!response.ok) throw toCustomerError({ status: response.status, message: 'Private evidence could not be loaded. Sign in with an authorized account and retry.' }, path);
-    return response.blob();
+    const activity = beginAdminRequest(path);
+    activity.update('Loading private evidence');
+    try {
+      const token = store.getState().auth.token || localStorage.getItem('samira_token');
+      const response = await fetch(`${getApiBaseUrl()}${path}`, { signal, credentials: 'include', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+      if (!response.ok) throw toCustomerError({ status: response.status, message: 'Private evidence could not be loaded. Sign in with an authorized account and retry.' }, path);
+      return await response.blob();
+    } finally { activity.finish(); }
   },
   upload: async (path, files, { fieldName = 'images', fields, onRequest, silent = false, idempotencyKey } = {}) => {
+    const activity = beginAdminRequest({ url: path, method: 'POST' });
+    activity.update('Preparing media');
     if (!silent) startMobileLoader();
     const control = { cancelled: false, entry: null };
-    onRequest?.({ cancel: () => { control.cancelled = true; control.entry?.cancel(); } });
     try {
+      onRequest?.({ cancel: () => { control.cancelled = true; control.entry?.cancel(); } });
       if (/\/(?:orders|returns)\/evidence\/uploads(?:\?|$)/.test(path)) {
         const selected = Array.from(files || []);
         const invalid = selected.length > 8 || selected.some(file => !file.size || (String(file.type).startsWith('image/') ? file.size > 8 * 1024 * 1024 : !['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type) || file.size > 50 * 1024 * 1024)) || selected.reduce((sum, file) => sum + file.size, 0) > 60 * 1024 * 1024;
@@ -175,6 +184,7 @@ const api = {
           if (entry.cancelled) throw { status: 400, data: { message: 'Upload cancelled.' } }; // eslint-disable-line no-throw-literal
           if (uploadScope(store.getState().auth) !== scope) throw { status: 409, data: { message: 'Your session changed. Please retry the upload.' } }; // eslint-disable-line no-throw-literal
           if (key) markUploadAttempt(key);
+          activity.update('Uploading media');
           entry.request = store.dispatch(samiraApi.endpoints.upload.initiate({ path, files: preparedFiles, fieldName, silent, ...(fields ? { fields } : {}), ...(key ? { idempotencyKey: key } : {}) }));
           try {
             const result = await entry.request.unwrap();
@@ -200,6 +210,7 @@ const api = {
     } catch (error) {
       throw toCustomerError(error, path, 'Upload failed');
     } finally {
+      activity.finish();
       if (!silent) stopMobileLoader();
     }
   },
@@ -214,6 +225,11 @@ function toCustomerError(error, path, fallbackMessage) {
   customerError.status = status;
   customerError.code = code;
   customerError.details = message;
+  // Only the authenticated owner's conflict response contains this link.
+  // Keep arbitrary server error details out of customer UI state.
+  if (code === 'RENTAL_ALREADY_BOOKED' && /^[a-f\d]{24}$/i.test(data.details?.bookingId || '')) {
+    customerError.booking = { id: data.details.bookingId };
+  }
   return customerError;
 }
 

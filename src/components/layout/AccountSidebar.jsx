@@ -2,8 +2,7 @@ import { Bell, CreditCard, Heart, HelpCircle, LayoutDashboard, LogOut, MapPin, P
 
 const links = [
   ['Dashboard', LayoutDashboard, '/profile'],
-  ['Orders', Package, '/orders'],
-  ['My rentals', Package, '/rentals'],
+  ['My Orders', Package, '/orders'],
   ['Notifications', Bell, '/notifications'],
   ['Wishlist', Heart, '/wishlist'],
   ['Addresses', MapPin, '/profile/addresses'],

@@ -51,8 +51,8 @@ test('decline and internal-admin mode never record a customer visit', async () =
   await flushTraffic(); expect(global.fetch).not.toHaveBeenCalled(); expect(screen.queryByRole('button', { name: 'Allow analytics' })).not.toBeInTheDocument();
 });
 
-test('checkout privacy trigger is in the utility row while consent controls still work', async () => {
-  const view = render(<><div data-rental-checkout-utilities /><TrafficTracking route="/store/brand-a/rental-checkout" /></>);
+test.each(['/store/brand-a/rental-checkout', '/orders', '/store/brand-a/orders?type=rental', '/order-detail?id=one'])('privacy trigger is inline and consent controls still work on %s', async route => {
+  const view = render(<><div data-rental-checkout-utilities /><TrafficTracking route={route} /></>);
   fireEvent.click(await screen.findByRole('button', { name: 'Decline analytics' }));
   const trigger = await screen.findByRole('button', { name: 'Analytics privacy preferences' });
   expect(trigger.parentElement).toHaveAttribute('data-rental-checkout-utilities');

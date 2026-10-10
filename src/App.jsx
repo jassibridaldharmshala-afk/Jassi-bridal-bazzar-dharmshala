@@ -18,6 +18,8 @@ import { buildWebsiteCssVariables } from './config/websiteCustomization';
 import { reelProductImportEnabled } from './config/features';
 import { markLoginPromptDismissed } from './utils/loginPromptStorage';
 import MobileOverlayLoader from './components/ui/MobileOverlayLoader';
+import AdminActivityIndicator, { AdminLoadingPlaceholder } from './components/admin/AdminActivityIndicator';
+import { isAdminWorkspace } from './utils/adminActivity';
 import StorefrontSkeleton from './components/ui/StorefrontSkeleton';
 import TrafficTracking from './components/analytics/TrafficTracking';
 import MobileAppCompanion from './components/pwa/MobileAppCompanion';
@@ -302,7 +304,7 @@ function AppShell({ route, navigate }) {
     || /^\/store\/[^/]+\/product$/.test(logicalPath)
     || /\/products\/[^/]+$/.test(logicalPath)
     || /\/product\/[^/]+$/.test(logicalPath);
-  const hideMobileHeader = focusedMobileRoutes.includes(routePath) || isProductPage;
+  const hideMobileHeader = focusedMobileRoutes.includes(routeGuardPath) || isProductPage;
   const loginFallback = (
     <Suspense fallback={<RouteFallback />}>
       <Login route={`/login?redirect=${encodeURIComponent(route)}`} />
@@ -438,12 +440,14 @@ function AppShell({ route, navigate }) {
           </RentalBagProvider>
         </WishlistProvider>
       </CartProvider>
-      {showMobileLoader && <MobileOverlayLoader />}
+      <AdminActivityIndicator enabled={(isAdmin || isSeller) && Boolean(user)} />
+      {showMobileLoader && !isAdmin && !isSeller && <MobileOverlayLoader />}
     </div>
   );
 }
 
 function RouteFallback() {
+  if (isAdminWorkspace()) return <AdminLoadingPlaceholder label="Opening workspace" />;
   // Chunk downloads never cover the header, search, back button or cart.
   return <StorefrontSkeleton label="Loading page" />;
 }

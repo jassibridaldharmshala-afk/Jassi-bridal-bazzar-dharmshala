@@ -31,9 +31,8 @@ import AccountSidebar from '../../components/layout/AccountSidebar';
 import './Profile.css';
 
 const accountLinks = [
-  { title: 'My rentals', subtitle: 'Track bookings, pickup, return and security refunds', icon: Package, action: '/rentals' },
   { title: 'Notifications', subtitle: 'Order, delivery and return updates', icon: Bell, action: '/notifications' },
-  { title: 'Orders', subtitle: 'Check your order status', icon: Package, action: '/orders' },
+  { title: 'My Orders', subtitle: 'Track purchases, rentals, payments and returns', icon: Package, action: '/orders' },
   { title: 'Collections & Wishlist', subtitle: 'All your curated product collections', icon: Heart, action: '/wishlist' },
   { title: 'Addresses', subtitle: 'Save addresses for a hassle-free checkout', icon: MapPin, action: '/profile/addresses' },
   { title: 'Coupons', subtitle: 'Manage coupons for additional discounts', icon: ShieldCheck, action: '/products?discount=20' },
@@ -128,7 +127,7 @@ function DesktopAccountDashboard({
             </header>
 
             <div className="sc-account__stats">
-              <StatCard icon={ShoppingBag} label="Orders" value={orders.length} cta="View all orders" onClick={() => navigate('/orders')} />
+              <StatCard icon={ShoppingBag} label="Purchase orders" value={orders.length} cta="View all orders" onClick={() => navigate('/orders')} />
               <StatCard icon={Heart} label="Wishlist" value={wishlistCount} cta="View wishlist" onClick={() => navigate('/wishlist')} />
               <StatCard icon={MapPin} label="Saved Addresses" value={addresses.length} cta="Manage addresses" onClick={() => navigate('/profile/addresses')} />
               <StatCard icon={TicketPercent} label="Coupons & Rewards" value={coupons.length} cta="View all coupons" onClick={() => navigate('/products?discount=20')} accent="gold" />

@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-10",
+  "status": "Implemented and verified locally; not deployed",
+  "customerEntry": "My Orders",
+  "routes": {
+    "/orders": "Sale history with Sale/Rental navigation",
+    "/orders?type=rental": "Rental booking history",
+    "/rentals": "Compatibility entry to the unified Rental history",
+    "/rentals?id=:bookingId": "Existing owned rental booking detail"
+  },
+  "implemented": [
+    "Responsive Sale and Rental navigation in one customer order page",
+    "Profile and account sidebar use the unified My Orders entry",
+    "Only the selected list is mounted and fetched; search, status filters and paging use server totals",
+    "Rental cards show product photos, use-day billing, pickup/return times, status, security, collections, balance and refund information",
+    "Invoice, payment recovery, cancellation requests and admin-reviewed outcomes reuse existing booking detail actions",
+    "Old rental links and mobile rental cart/wishlist navigation continue to work",
+    "Help and privacy controls are inline and remain functional",
+    "Late responses cannot overwrite a different account/store history",
+    "Sale history and counts now enforce the same tenant scope as order details, including owned default-store legacy orders"
+  ],
+  "verification": {
+    "frontend": {
+      "suites": 7,
+      "tests": 67,
+      "passed": 67,
+      "failed": 0,
+      "log": ".tmp/customer-orders-tests.log",
+      "paths": [
+        "src/pages/customer/MyOrders.commerce.test.jsx",
+        "src/pages/customer/CustomerOrders.test.jsx",
+        "src/pages/customer/MyRentals.test.jsx",
+        "src/components/rentals/RentalPaymentRecovery.test.jsx",
+        "src/pages/customer/RentalShoppingCheckout.test.jsx",
+        "src/components/help/ContextualHelp.checkout.test.jsx",
+        "src/components/analytics/TrafficTracking.test.jsx"
+      ]
+    },
+    "backend": {
+      "tests": 26,
+      "passed": 26,
+      "failed": 0,
+      "log": ".tmp/customer-orders-backend.log",
+      "paths": [
+        "backend/tests/customerOrders.integration.test.js",
+        "backend/tests/pdfAudit.integration.test.js",
+        "backend/tests/rentalShopping.integration.test.js"
+      ]
+    },
+    "productionBuild": {
+      "ci": true,
+      "node": "20.20.2",
+      "passed": true,
+      "log": ".tmp/customer-orders-build.log"
+    },
+    "browser": {
+      "widths": [
+        320,
+        390,
+        1440
+      ],
+      "api": "Real local Express app",
+      "database": "Throwaway local MongoDB replica set",
+      "reports": [
+        "review-notes/customer-orders-browser-320.json",
+        "review-notes/customer-orders-browser-390.json",
+        "review-notes/customer-orders-browser-1440.json"
+      ],
+      "verified": [
+        "Only active list reads",
+        "Customer ownership",
+        "Sale invoice preview",
+        "Rental invoice/receipts",
+        "Search and status filters",
+        "Refresh/deep links",
+        "Customer cancellation request",
+        "Admin decision reflected in history",
+        "Legacy rental entry",
+        "Rental cart navigation on mobile",
+        "Help/privacy inline",
+        "No horizontal overflow or page errors"
+      ]
+    },
+    "counts": "Final scoped results only; repeated runs are not summed."
+  },
+  "deployment": {
+    "frontend": "Redeploy frontend",
+    "backend": "Redeploy canonical backend/ service for sale history tenant filtering"
+  },
+  "limits": [
+    "No live SMS, payment capture/refund, licence validation or persistent storage provider calls.",
+    "Chromium responsive browser checks; actual iPhone Safari not exercised.",
+    "Photos and customer records in browser checks are isolated fixtures."
+  ]
+}

@@ -5,6 +5,13 @@ import { configureTraffic, setTrafficConsent, flushTraffic, resetTrafficRuntime 
 
 const mockUnsubscribe = jest.fn();
 
+test('rental duplicate errors preserve only a validated owner booking link', async () => {
+  mockDispatch.mockReturnValue({ unwrap: () => Promise.reject({ status: 409, data: { code: 'RENTAL_ALREADY_BOOKED', message: 'Already booked.', details: { bookingId: '800000000000000000000001', phone: 'private', allocations: ['private'] } } }) });
+  await expect(api.post('/rentals/quote', {})).rejects.toMatchObject({ code: 'RENTAL_ALREADY_BOOKED', details: 'Already booked.', booking: { id: '800000000000000000000001' } });
+  mockDispatch.mockReturnValue({ unwrap: () => Promise.reject({ status: 409, data: { code: 'OUT_OF_STOCK', message: 'Unavailable.', details: { bookingId: '800000000000000000000001' } } }) });
+  try { await api.post('/rentals/quote', {}); } catch (e) { expect(e.booking).toBeUndefined(); }
+});
+
 test('workflow document AI shows sanitized configuration guidance while unrelated 503 errors stay generic', async () => {
   mockDispatch.mockReturnValue({ unwrap: () => Promise.reject({ status: 503, data: { code: 'AI_KEY_MISSING', message: 'Configure document extraction. Pasted notes still work.' } }) });
   await expect(api.post('/admin/smart-fill/preview', {})).rejects.toMatchObject({ code: 'AI_KEY_MISSING', message: 'Configure document extraction. Pasted notes still work.' });

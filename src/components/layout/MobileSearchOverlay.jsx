@@ -132,7 +132,7 @@ export default function MobileSearchOverlay({ initialValue = '', navigate, onClo
           <div className="p-3">
             <p className="px-1 pb-2 text-[10px] font-black uppercase tracking-[.12em] text-slate-400">Products</p>
             <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white">
-              {results.map((product) => <SearchResult key={product.id || product.slug} product={product} onClick={() => openProduct(product)} />)}
+              {results.map((product) => <SearchResult key={product.id || product.slug} product={product} shoppingMode={shoppingMode} onClick={() => openProduct(product)} />)}
             </div>
             <button type="button" onClick={() => submit()} className="mt-3 h-12 w-full rounded-xl border border-theme-border bg-[#fffaf5] text-[11px] font-black uppercase tracking-[.08em] text-wine">View all results for “{query.trim()}”</button>
           </div>
@@ -144,12 +144,14 @@ export default function MobileSearchOverlay({ initialValue = '', navigate, onClo
   );
 }
 
-function SearchResult({ product, onClick }) {
+function SearchResult({ product, onClick, shoppingMode }) {
   const image = normalizeImageUrl(getPrimaryImageUrl(product.images));
-  const price = Number(product.sellingPrice ?? product.price ?? 0);
+  const rental = shoppingMode === 'rental';
+  const rentalRate = Number(product.rentalPreview?.dailyRatePaise);
+  const price = rental ? rentalRate / 100 : Number(product.sellingPrice ?? product.price ?? 0);
   return <button type="button" onClick={onClick} className="flex w-full items-center gap-3 p-3 text-left">
     <span className="h-16 w-[52px] shrink-0 overflow-hidden rounded-xl bg-blush">{image ? <img src={image} alt="" className="h-full w-full object-cover object-top" /> : null}</span>
-    <span className="min-w-0 flex-1"><strong className="block truncate text-[12px] text-charcoal">{product.name}</strong><small className="mt-1 block truncate text-[10px] text-slate-500">{product.category || product.fabric || 'Collection'}</small><span className="mt-1.5 block text-[12px] font-black text-charcoal">Rs. {price.toLocaleString('en-IN')}</span></span>
+    <span className="min-w-0 flex-1"><strong className="block truncate text-[12px] text-charcoal">{product.name}</strong><small className="mt-1 block truncate text-[10px] text-slate-500">{product.category || product.fabric || 'Collection'}</small><span className="mt-1.5 block text-[12px] font-black text-charcoal">{rental && !(rentalRate > 0) ? 'Check rental availability' : <>Rs. {price.toLocaleString('en-IN')}{rental ? ' / use day' : ''}</>}</span></span>
     <span className="text-lg text-slate-300" aria-hidden="true">›</span>
   </button>;
 }

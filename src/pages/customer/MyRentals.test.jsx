@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import MyRentals from './MyRentals';
 import api from '../../services/api';
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
+jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { _id: 'rental-customer' }, logout: jest.fn() }) }));
 jest.mock('../../context/StorefrontContext', () => ({ useStorefront: () => ({ storeSlug: 'bridal-shop' }) }));
 jest.mock('../../context/BrandIdentityContext', () => ({ useBrandIdentity: () => ({ websiteName: 'Bridal shop' }) }));
 jest.mock('../../components/rentals/RentalProofPanel', () => () => null);

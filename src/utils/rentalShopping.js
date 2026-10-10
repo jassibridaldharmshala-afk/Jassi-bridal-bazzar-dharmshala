@@ -1,7 +1,7 @@
 import { productHref } from './routing';
 import { localDateTime, rentalInstant } from './rentals';
 
-export const rentalShoppingRoute = route => /\/(rental-book|rental-cart|rental-checkout|rental-success|rentals)(?:[/?]|$)/.test(route || '') || new URLSearchParams(String(route || '').split('?')[1] || '').get('mode') === 'rent';
+export const rentalShoppingRoute = route => /\/(rental-book|rental-cart|rental-checkout|rental-success|rentals)(?:[/?]|$)/.test(route || '') || new URLSearchParams(String(route || '').split('?')[1] || '').get('mode') === 'rent' || (/\/orders(?:[/?]|$)/.test(route || '') && new URLSearchParams(String(route || '').split('?')[1] || '').get('type') === 'rental');
 export function rentalDetailHref(product, storeSlug = '', listingId = '') {
   const href = productHref(product, storeSlug);
   return href + (href.includes('?') ? '&' : '?') + new URLSearchParams({ mode: 'rent', ...(listingId ? { listing: listingId } : {}) });

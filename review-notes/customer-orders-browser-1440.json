@@ -1,0 +1,119 @@
+{
+  "width": 1440,
+  "realLocalApi": true,
+  "isolatedReplicaSet": true,
+  "saleAndRentalTabs": true,
+  "onlyActiveListLoads": true,
+  "refreshAndFilters": true,
+  "directAndLegacyEntry": true,
+  "saleInvoice": true,
+  "rentalInvoiceAndCancellationRequest": true,
+  "adminDecisionRefreshesHistory": true,
+  "ownershipRetained": true,
+  "mobileHorizontalOverflow": false,
+  "errors": [],
+  "calls": [
+    {
+      "endpoint": "/api/rentals/configuration",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/orders/my-orders",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/orders/:id",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/orders/:id/receipt",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/orders/:id/delivery",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/configuration",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/payment-methods",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings/:id",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/configuration",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings/:id/requests",
+      "method": "POST",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/orders/my-orders",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/configuration",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/rentals/bookings",
+      "method": "GET",
+      "status": 200
+    }
+  ],
+  "externalProviders": "No live SMS, payments or storage calls",
+  "safariEngineTested": false
+}

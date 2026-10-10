@@ -24,15 +24,77 @@ beforeEach(() => {
   api.post.mockImplementation((path, body) => Promise.resolve(path.includes('/quote') ? quoted(body) : path.endsWith('/bookings?store=bridal-shop') ? { _id: 'booking', status: 'CONFIRMED', quote: quoted(body).quote } : {}));
 });
 async function contactReview() { fireEvent.click(await screen.findByRole('button', { name: 'Review booking' })); await screen.findByRole('button', { name: /Pay at pickup/ }); await waitFor(() => expect(screen.getByLabelText(/I have reviewed/)).toBeEnabled()); }
-async function dates(review = true) {
+async function chooseDates() {
   await screen.findByLabelText('Use day / occasion date');
   fireEvent.change(screen.getByLabelText('Use day / occasion date'), { target: { value: '2030-01-10' } });
   fireEvent.change(screen.getByLabelText('Pickup date'), { target: { value: '2030-01-09' } });
   fireEvent.change(screen.getByLabelText('Return date'), { target: { value: '2030-01-11' } });
   await waitFor(() => expect(screen.getByLabelText('Return time')).toHaveValue('10:00'));
+}
+async function dates(review = true) {
+  await chooseDates();
   fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
   await screen.findByLabelText('Full name'); if (review) await contactReview();
 }
+
+const existingBookingId = '800000000000000000000001';
+const ownerConflict = () => Object.assign(new Error("You've already booked this lehenga for these dates."), { code: 'RENTAL_ALREADY_BOOKED', booking: { id: existingBookingId } });
+
+test('an existing owner booking has a scoped booking link and changed dates require a fresh quote', async () => {
+  const navigate = jest.fn(); api.post.mockRejectedValueOnce(ownerConflict());
+  render(<RentalShoppingCheckout navigate={navigate} />); await chooseDates();
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Already in your bookings');
+  expect(mockBag.consume).not.toHaveBeenCalled(); expect(openRentalPayment).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'View your booking' }));
+  expect(navigate).toHaveBeenCalledWith('/store/bridal-shop/rentals?id=' + existingBookingId);
+  fireEvent.click(screen.getByRole('button', { name: 'Choose other dates' }));
+  expect(screen.queryByRole('button', { name: 'View booking' })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Use day / occasion date'), { target: { value: '2030-01-11' } });
+  fireEvent.change(screen.getByLabelText('Return date'), { target: { value: '2030-01-12' } });
+  await waitFor(() => expect(screen.getByLabelText('Return time')).toHaveValue('10:00'));
+  fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+  await screen.findByLabelText('Full name'); expect(api.post.mock.calls.at(-1)[1].useDates).toEqual(['2030-01-11']);
+});
+
+test('booked dates explain the shortage without someone else\'s booking link; rechecking can recover released capacity', async () => {
+  api.post.mockRejectedValueOnce(Object.assign(new Error('This lehenga is already booked for these dates. Choose other dates.'), { code: 'OUT_OF_STOCK' }));
+  render(<RentalShoppingCheckout navigate={jest.fn()} />); await chooseDates();
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Dates unavailable');
+  expect(screen.queryByRole('button', { name: 'View your booking' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Check dates again' }));
+  await screen.findByLabelText('Full name'); expect(api.post.mock.calls.filter(([path]) => path.includes('/bookings'))).toHaveLength(0);
+});
+
+test.each(['OUT_OF_STOCK', 'RENTAL_ALREADY_BOOKED'])('final %s rejection clears the stale quote and pending attempt without charging or consuming the bag', async code => {
+  api.post.mockImplementation((path, body) => path.includes('/quote') ? Promise.resolve(quoted(body)) : Promise.reject(code === 'RENTAL_ALREADY_BOOKED' ? ownerConflict() : Object.assign(new Error('Already booked for these dates.'), { code })));
+  const navigate = jest.fn(); render(<RentalShoppingCheckout navigate={navigate} />); await dates();
+  fireEvent.click(screen.getByRole('button', { name: /Pay at pickup/ }));
+  await waitFor(() => expect(screen.getByLabelText(/I have reviewed/)).toBeEnabled());
+  fireEvent.click(screen.getByLabelText(/I have reviewed/)); fireEvent.click(screen.getByRole('button', { name: 'Confirm booking' }));
+  await screen.findByRole('alert');
+  expect(screen.queryByRole('button', { name: 'Recover booking' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Confirm booking' })).not.toBeInTheDocument();
+  expect(sessionStorage.getItem('rental-reserve:bridal-shop:customer')).toBeNull();
+  expect(mockBag.consume).not.toHaveBeenCalled(); expect(openRentalPayment).not.toHaveBeenCalled(); expect(navigate).not.toHaveBeenCalled();
+  expect(api.post.mock.calls.filter(([path]) => path.includes('/bookings?'))).toHaveLength(1);
+});
+
+test('guest date planning rechecks identity after OTP and detects an existing booking before payment', async () => {
+  mockUser = null; mockSend.mockResolvedValue({ otpLength: 6, resendAfterSeconds: 60 });
+  mockVerify.mockImplementation(async () => { mockUser = { _id: 'customer', phone: '9000000001', isPhoneVerified: true }; return { user: mockUser }; });
+  api.post.mockImplementationOnce((_path, body) => Promise.resolve(quoted(body))).mockRejectedValueOnce(ownerConflict());
+  render(<RentalShoppingCheckout navigate={jest.fn()} />); await dates(false);
+  fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Priya' } });
+  fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9000000001' } });
+  fireEvent.click(screen.getByLabelText(/I agree to the/)); fireEvent.click(screen.getByRole('button', { name: 'Send OTP' }));
+  fireEvent.change(await screen.findByLabelText('OTP digit 1'), { target: { value: '123456' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
+  await screen.findByRole('button', { name: 'View your booking' });
+  expect(api.post.mock.calls.filter(([path]) => path.includes('/bookings'))).toHaveLength(0);
+  expect(openRentalPayment).not.toHaveBeenCalled();
+});
 
 test('pickup payment uses a fresh accepted quote, preserves only use days, and creates one confirmed booking', async () => {
   const navigate = jest.fn(); render(<RentalShoppingCheckout navigate={navigate} />); await dates();

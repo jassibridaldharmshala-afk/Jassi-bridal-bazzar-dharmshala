@@ -1,20 +1,20 @@
 import RentalCustomerBooking from '../../components/rentals/RentalCustomerBooking';
-import { ArrowLeft, CalendarDays, ChevronRight } from 'lucide-react';
-import { rentalCopy } from '../../utils/rentalCopy';
+import { ArrowLeft } from 'lucide-react';
+import MyOrders from './MyOrders';
+import { useAuth } from '../../context/AuthContext';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import { useBrandIdentity } from '../../context/BrandIdentityContext';
 import { useStorefront } from '../../context/StorefrontContext';
 import { storefrontPath } from '../../utils/routing';
-import RentalWaitlist from '../../components/rentals/RentalWaitlist';
 import { readRentalSession, saveRentalSession, clearRentalSession } from '../../utils/rentalPlan';
-import { openRentalPayment, rentalDate, rentalInstant, rentalMoney, rentalOperation, rentalUrl } from '../../utils/rentals';
-export default function MyRentals({ route = '/rentals', navigate: navigateRoute, success = false }) {
+import { openRentalPayment, rentalInstant, rentalOperation, rentalUrl } from '../../utils/rentals';
+function RentalBookingPage({ route = '/rentals', navigate: navigateRoute, success = false }) {
   const { storeSlug } = useStorefront();
   const navigate = path => navigateRoute(storefrontPath(path, storeSlug));
   const brand = useBrandIdentity(); const bookingId = new URLSearchParams(route.split('?')[1] || '').get('id');
   const actor = bookingId || '';
-  const [data, setData] = useState(null), [booking, setBooking] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false), [page, setPage] = useState(1), [message, setMessage] = useState('');
+  const [booking, setBooking] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false), [message, setMessage] = useState('');
   const [request, setRequest] = useState({ type: 'RETURN_COLLECTION', note: '', pickupAt: '', returnDueAt: '' });
   const [methods, setMethods] = useState([]), [method, setMethod] = useState('');
   const [methodError, setMethodError] = useState(''), [methodsLoading, setMethodsLoading] = useState(false), [contact, setContact] = useState({});
@@ -35,18 +35,18 @@ export default function MyRentals({ route = '/rentals', navigate: navigateRoute,
     if (refreshLock.current === scope) return;
     refreshLock.current = scope;
     try {
-      const value = await api.get(rentalUrl(bookingId ? `/rentals/bookings/${bookingId}` : `/rentals/bookings?page=${page}`, storeSlug), { silent: true, forceRefetch: true });
+      const value = await api.get(rentalUrl(`/rentals/bookings/${bookingId}`, storeSlug), { silent: true, forceRefetch: true });
       if (scope !== generation.current) return;
-      if (bookingId) setBooking(value); else setData(value);
+      setBooking(value);
       setCheckedAt(Date.now()); setError('');
     } catch (e) { if (scope === generation.current) setError(e.details || e.message); }
     finally { if (refreshLock.current === scope) refreshLock.current = null; }
-  }, [bookingId, page, storeSlug]);
+  }, [bookingId, storeSlug]);
   useEffect(() => {
-    generation.current += 1; setBooking(null); setData(null); setCheckedAt(null);
+    generation.current += 1; setBooking(null); setCheckedAt(null);
     load(); paymentOperation.current = readRentalSession('payment', storeSlug, actor)?.bookingId === bookingId ? readRentalSession('payment', storeSlug, actor).operationId : rentalOperation();
     const refresh = () => { if (!document.hidden && !lock.current && navigator.onLine !== false) load(); };
-    const timer = window.setInterval(refresh, bookingId ? 20000 : 45000);
+    const timer = window.setInterval(refresh, 20000);
     window.addEventListener('focus', refresh); window.addEventListener('online', refresh); document.addEventListener('visibilitychange', refresh);
     return () => { generation.current += 1; window.clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', refresh); };
   }, [load, bookingId, actor, storeSlug]);
@@ -62,9 +62,20 @@ export default function MyRentals({ route = '/rentals', navigate: navigateRoute,
     catch (e) { if (scope === generation.current) setError(e.details || e.message); }
     finally { lock.current = false; setBusy(false); }
   };
-  return <main className="rental-shopping-page rental-my-bookings"><header className="rental-shopping-header"><button type="button" aria-label="Back" onClick={() => navigate(bookingId ? '/rentals' : '/profile')}><ArrowLeft size={22} /></button><h1>{bookingId ? 'Rental booking' : 'My bookings'}</h1><button type="button" className="rental-shopping-link" disabled={busy} onClick={() => { load(); loadMethods(); }}>Refresh</button></header>
+  return <main className="rental-shopping-page rental-my-bookings"><header className="rental-shopping-header"><button type="button" aria-label="Back to rental orders" onClick={() => navigate('/orders?type=rental')}><ArrowLeft size={22} /></button><h1>Rental booking</h1><button type="button" className="rental-shopping-link" disabled={busy} onClick={() => { load(); loadMethods(); }}>Refresh</button></header>
     {error && <p role="alert" className="rental-shopping-notice">{error}</p>}{message && <p role="status" className="rental-shopping-notice">{message}</p>}
-    {bookingId ? !booking ? <p role="status">{error ? 'Booking could not be loaded. Use Refresh to retry.' : 'Loading booking…'}</p> : <RentalCustomerBooking key={booking._id} booking={booking} checkedAt={checkedAt} clockNow={clockNow} busy={busy} methods={methods} method={method} setMethod={setMethod} methodError={methodError} methodsLoading={methodsLoading} loadMethods={loadMethods} pay={pay} request={request} setRequest={setRequest} sendRequest={sendRequest} contact={contact} storeSlug={storeSlug} navigate={navigate} onChange={setBooking} success={success} />
-    : !data ? <p role="status">{error ? 'Your bookings could not be loaded. Use Refresh to retry.' : 'Loading your bookings…'}</p> : <><div className="rental-bookings-list">{data.rows.map(b => <button type="button" className="rental-booking-list-card" key={b._id} onClick={() => navigate('/rentals?id=' + b._id)}><span className="rental-booking-list-card__icon"><CalendarDays size={25} /></span><div><span className={'rental-status rental-status--' + b.status.toLowerCase()}>{rentalCopy(b.status)}</span><h2>{b.quote.items.map(i => i.title).join(', ')}</h2><p>{b.number}</p><p>Pickup {rentalDate(b.schedule.pickupAt, b.policy.timezone)}</p><p>Return {rentalDate(b.schedule.returnDueAt, b.policy.timezone)}</p><strong>{rentalMoney(b.quote.totalPaise)}</strong></div><ChevronRight size={19} /></button>)}</div>{!data.rows.length && <section className="rental-shopping-empty"><CalendarDays size={35} /><h2>No bookings yet</h2><p>Choose your rental look and book your occasion.</p><button type="button" className="rental-shopping-primary" onClick={() => navigate('/rental-book')}>Explore rentals</button></section>}{data.pages > 1 && <div className="rental-actions"><button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button><span>Page {page} of {data.pages}</span><button disabled={page >= data.pages} onClick={() => setPage(p => p + 1)}>Next</button></div>}<details className="rental-shopping-card"><summary>Availability alerts</summary><RentalWaitlist storeSlug={storeSlug} navigate={navigate} /></details></>}
+    {!booking ? <p role="status">{error ? 'Booking could not be loaded. Use Refresh to retry.' : 'Loading booking…'}</p> : <RentalCustomerBooking key={booking._id} booking={booking} checkedAt={checkedAt} clockNow={clockNow} busy={busy} methods={methods} method={method} setMethod={setMethod} methodError={methodError} methodsLoading={methodsLoading} loadMethods={loadMethods} pay={pay} request={request} setRequest={setRequest} sendRequest={sendRequest} contact={contact} storeSlug={storeSlug} navigate={navigate} onChange={setBooking} success={success} />}
   <div className="rental-checkout-utilities" data-rental-checkout-utilities /></main>;
+}
+
+export default function MyRentals(props) {
+  const { user } = useAuth();
+  const { storeSlug } = useStorefront();
+  const params = new URLSearchParams((props.route || '/rentals').split('?')[1] || '');
+  const bookingId = params.get('id');
+  if (!bookingId) {
+    params.set('type', 'rental');
+    return <MyOrders {...props} route={'/orders?' + params} />;
+  }
+  return <RentalBookingPage key={[storeSlug, user?._id || user?.id || user?.phone || '', bookingId].join(':')} {...props} />;
 }

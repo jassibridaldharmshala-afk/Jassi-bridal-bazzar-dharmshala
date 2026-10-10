@@ -22,6 +22,7 @@ import RentalCheckoutSummary from '../../components/rentals/RentalCheckoutSummar
 import RentalCheckoutContact from '../../components/rentals/RentalCheckoutContact';
 import RentalCheckoutPlan, { RentalShopArrangement } from '../../components/rentals/RentalCheckoutPlan';
 import RentalContact from '../../components/rentals/RentalContact';
+import RentalBookingConflict from '../../components/rentals/RentalBookingConflict';
 
 export default function RentalShoppingCheckout({ navigate }) {
   const { storeSlug } = useStorefront(); const { user } = useAuth(); const brand = useBrandIdentity(); const bag = useRentalBag();
@@ -38,13 +39,14 @@ export default function RentalShoppingCheckout({ navigate }) {
   const restoreStep = useRef(continuingVerification ? 2 : seed.current?.step || 0);
   const [step, setStep] = useState(0), [quoted, setQuoted] = useState(null), [accepted, setAccepted] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [pending, setPending] = useState(() => actor ? readRentalSession('reserve', storeSlug, actor) : null);
+  const [conflict, setConflict] = useState(null);
   const attempt = useRef(rentalOperation()), lock = useRef(false), alive = useRef(true), quoteGeneration = useRef(0);
   const offers = useRentalOffers(bag.items, storeSlug);
   const bagKey = JSON.stringify(bag.items);
   const [slots, setSlots] = useState({ pickup: null, return: null });
   const errorPanel = useRef(null), reprice = useRef(false), reviewRef = useRef(null);
   const slotStatus = useCallback((kind, status) => setSlots(old => JSON.stringify(old[kind]) === JSON.stringify(status) ? old : { ...old, [kind]: status }), []);
-  useEffect(() => { setQuoted(null); setAccepted(false); setStep(0); quoteGeneration.current += 1; attempt.current = rentalOperation(); }, [bagKey]);
+  useEffect(() => { setQuoted(null); setConflict(null); setError(''); setAccepted(false); setStep(0); quoteGeneration.current += 1; attempt.current = rentalOperation(); }, [bagKey]);
   useEffect(() => { if (error) { errorPanel.current?.focus({ preventScroll: true }); errorPanel.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' }); } }, [error]);
   useEffect(() => { const draft = { customer: { name: form.name, email: form.email, whatsappConsent: form.whatsappConsent }, details }; if (actor) saveRentalContactDraft(storeSlug, user, draft); else saveGuestRentalContact(storeSlug, draft); }, [actor, storeSlug, user, form.name, form.email, form.whatsappConsent, details]);
   useEffect(() => { if (reprice.current) { reprice.current = false; reviewRef.current?.(2); } }, [form.paymentPlan]);
@@ -62,7 +64,7 @@ export default function RentalShoppingCheckout({ navigate }) {
   }, [storeSlug, retry]);
   useEffect(() => {
     if (previousActor.current && previousActor.current !== actor) {
-      quoteGeneration.current++; attempt.current = rentalOperation(); setQuoted(null); setAccepted(false); setStep(1);
+      quoteGeneration.current++; attempt.current = rentalOperation(); setQuoted(null); setConflict(null); setError(''); setAccepted(false); setStep(1);
       setForm(old => ({ ...old, name: user?.name || '', phone: user?.phone || '', email: user?.email || '', whatsappConsent: false }));
       setDetails({ ...editableRentalDetails(null, user), sameAsDelivery: true });
     }
@@ -100,12 +102,20 @@ export default function RentalShoppingCheckout({ navigate }) {
       }
       return next;
     });
-    if (!['name', 'phone', 'email', 'whatsappConsent'].includes(key)) setQuoted(null); setAccepted(false); setError(''); quoteGeneration.current += 1; attempt.current = rentalOperation();
+    if (!['name', 'phone', 'email', 'whatsappConsent'].includes(key)) { setQuoted(null); setConflict(null); } setAccepted(false); setError(''); quoteGeneration.current += 1; attempt.current = rentalOperation();
   };
   const changeDetails = next => { setDetails(next); setAccepted(false); setError(''); quoteGeneration.current += 1; attempt.current = rentalOperation(); };
   const payload = (effectiveDetails = details) => ({ items: bag.items, ...validateRentalCheckoutDates(form, configuration.policy), deliveryMode: form.deliveryMode, paymentPlan: form.paymentPlan, bookingDetails: rentalDetailsPayload(effectiveDetails, form.deliveryMode) });
+  const bookingFailure = e => {
+    setQuoted(null); setAccepted(false);
+    if (['RENTAL_ALREADY_BOOKED', 'OUT_OF_STOCK'].includes(e.code)) {
+      setConflict({ code: e.code, booking: e.booking }); setStep(0);
+    } else setConflict(null);
+    setError(e.details || e.message);
+  };
+  const chooseOtherDates = () => { setStep(0); setError(''); setConflict(null); setQuoted(null); setAccepted(false); requestAnimationFrame(() => checkoutRoot.current?.querySelector('input[type="date"]')?.focus()); };
   const review = async (nextStep = 1, profile = user, restoring = false) => {
-    if (lock.current) return; lock.current = true; setBusy(true); setError(''); setAccepted(false); const generation = ++quoteGeneration.current;
+    if (lock.current) return; lock.current = true; setBusy(true); setError(''); setConflict(null); setAccepted(false); const generation = ++quoteGeneration.current;
     try {
       if (!bag.items.length || offers.rows.length !== bag.items.length) throw new Error('Review your rental bag and remove unavailable items.');
       const effectiveDetails = nextStep === 2 && profile?.isPhoneVerified && form.deliveryMode !== 'STORE_PICKUP' ? { ...details, deliveryAddress: { ...details.deliveryAddress, fullName: details.deliveryAddress?.fullName || form.name || profile.name, mobile: details.deliveryAddress?.mobile || profile.phone } } : details;
@@ -117,7 +127,7 @@ export default function RentalShoppingCheckout({ navigate }) {
       const result = await api.post(rentalUrl('/rentals/quote', storeSlug), request, { silent: true });
       if (!result?.quoteFingerprint || !result.quote) throw new Error('Your total could not be verified. Please retry.');
       if (alive.current && generation === quoteGeneration.current) { setQuoted(result); setStep(nextStep); if (nextStep === 2 && profile?.isPhoneVerified) { clearRentalSession('guest-contact', storeSlug); clearRentalSession('verification-return', storeSlug); clearRentalSession('otp-challenge', storeSlug); clearRentalSession('phone-entry', storeSlug); } if (profile?.isPhoneVerified) setForm(old => ({ ...old, phone: profile.phone })); trackEvent('RENTAL_QUOTE_SUCCESS', { storeSlug }); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-    } catch (e) { if (alive.current && generation === quoteGeneration.current) { setError(e.details || e.message); trackEvent('RENTAL_QUOTE_FAILURE', { storeSlug }); } }
+    } catch (e) { if (alive.current && generation === quoteGeneration.current) { bookingFailure(e); trackEvent('RENTAL_QUOTE_FAILURE', { storeSlug }); } }
     finally { lock.current = false; if (alive.current) setBusy(false); }
   };
   reviewRef.current = review;
@@ -157,7 +167,7 @@ export default function RentalShoppingCheckout({ navigate }) {
       saveRentalSession('reserve', storeSlug, { request }, actor); setPending({ request });
       const booking = await api.post(rentalUrl('/rentals/bookings', storeSlug), request, { silent: true });
       if (alive.current) { trackEvent('RENTAL_HOLD_CREATED', { storeSlug }); await complete(booking, request); }
-    } catch (e) { if (alive.current) { if (['RENTAL_QUOTE_CHANGED', 'OUT_OF_STOCK', 'VALIDATION_ERROR', 'NOT_FOUND', 'CHECKOUT_RESTRICTED', 'FEATURE_NOT_AVAILABLE'].includes(e.code)) { clearRentalSession('reserve', storeSlug, actor); setPending(null); setQuoted(null); setAccepted(false); setStep(0); attempt.current = rentalOperation(); } setError(e.details || e.message); } }
+    } catch (e) { if (alive.current) { if (['RENTAL_ALREADY_BOOKED', 'RENTAL_QUOTE_CHANGED', 'OUT_OF_STOCK', 'VALIDATION_ERROR', 'NOT_FOUND', 'CHECKOUT_RESTRICTED', 'FEATURE_NOT_AVAILABLE'].includes(e.code)) { clearRentalSession('reserve', storeSlug, actor); setPending(null); setQuoted(null); setAccepted(false); setStep(0); attempt.current = rentalOperation(); } bookingFailure(e); } }
     finally { lock.current = false; if (alive.current) setBusy(false); }
   };
 
@@ -175,8 +185,9 @@ export default function RentalShoppingCheckout({ navigate }) {
   const dailyEstimate = offers.rows.reduce((sum, row) => sum + row.dailyRatePaise * (bag.items.find(item => item.listingId === row._id)?.quantity || 0), 0);
   const depositEstimate = offers.rows.reduce((sum, row) => sum + row.depositPaise * (bag.items.find(item => item.listingId === row._id)?.quantity || 0), 0);
   const estimate = useCount ? { days: useCount, rent: dailyEstimate * useCount, deposit: depositEstimate, total: dailyEstimate * useCount + depositEstimate } : null;
-  const action = step === 0 ? 'Continue' : step === 1 ? contactState.label : !quoted ? 'Update total' : form.paymentPlan === 'PICKUP' ? 'Confirm booking' : 'Continue to payment';
-  const button = <button type={step === 1 ? 'submit' : 'button'} form={step === 1 ? 'rental-checkout-contact-form' : undefined} className={mobile ? 'sc-mobile-checkout__primary' : 'rental-shopping-primary'} disabled={working || checkingTimes || !!offers.error || (step === 1 && contactState.disabled) || (step === 2 && !!quoted && !ready)} onClick={step === 1 ? undefined : () => step === 0 ? review(1) : !quoted ? review(2) : book()}>{working ? 'Checking…' : checkingTimes ? 'Loading times…' : action}<ArrowRight size={17} /></button>;
+  const ownBooking = conflict?.code === 'RENTAL_ALREADY_BOOKED' && conflict.booking?.id;
+  const action = ownBooking ? 'View booking' : step === 0 ? conflict ? 'Check dates again' : 'Continue' : step === 1 ? contactState.label : !quoted ? 'Update total' : form.paymentPlan === 'PICKUP' ? 'Confirm booking' : 'Continue to payment';
+  const button = <button type={step === 1 ? 'submit' : 'button'} form={step === 1 ? 'rental-checkout-contact-form' : undefined} className={mobile ? 'sc-mobile-checkout__primary' : 'rental-shopping-primary'} disabled={working || checkingTimes || !!offers.error || (step === 1 && contactState.disabled) || (step === 2 && !!quoted && !ready)} onClick={step === 1 ? undefined : () => ownBooking ? go('/rentals?id=' + ownBooking) : step === 0 ? review(1) : !quoted ? review(2) : book()}>{working ? 'Checking…' : checkingTimes ? 'Loading times…' : action}<ArrowRight size={17} /></button>;
   const planProps = { form, details, contact: configuration.contact, policy: configuration.policy, items: bag.items, offers: offers.rows, storeSlug, navigate, onDates: () => goStep(0), onContact: () => goStep(1) };
   const headings = ['Choose your dates', 'Contact details', 'Review your booking'];
   const subtitles = ['Tell us when you need your rental.', 'Get your booking updates on this number.', 'Check your details before payment.'];
@@ -184,7 +195,7 @@ export default function RentalShoppingCheckout({ navigate }) {
     <nav className="rental-checkout-steps" aria-label="Rental checkout progress">{['Dates', 'Contact', 'Review'].map((label, index) => <button key={label} type="button" aria-current={step === index ? 'step' : undefined} disabled={working || !!pending || index > step} onClick={() => { if (index < step) goStep(index); }}><span>{index < step ? <Check size={13} /> : index + 1}</span>{label}</button>)}</nav>
     <div className="rental-checkout-page-heading"><div className="rental-checkout-title-row"><h1>{headings[step]}</h1>{mobile && step === 0 && <button type="button" className="rental-edit-control" disabled={working} onClick={() => go('/rental-cart')}>Edit bag</button>}</div><p>{subtitles[step]}</p></div>
     <div className="rental-checkout-layout"><div className="rental-checkout-main">
-      {error && <p ref={errorPanel} tabIndex={-1} role="alert" className="rental-shopping-notice">{error}</p>}
+      {error && (conflict ? <RentalBookingConflict ref={errorPanel} conflict={conflict} message={error} onBooking={id => go('/rentals?id=' + id)} onDates={chooseOtherDates} onBrowse={() => go('/rental-book')} /> : <p ref={errorPanel} tabIndex={-1} role="alert" className="rental-shopping-notice">{error}</p>)}
       {offers.error && <div role="alert"><p>{offers.error}</p><button onClick={offers.reload}>Retry bag</button></div>}
       {pending?.request ? <section className="rental-shopping-card"><h2>Check your previous booking</h2><p>Retry checks the same request and protects against duplicate bookings.</p><button className="rental-shopping-primary" disabled={busy} onClick={() => book(true)}>{busy ? 'Checking…' : 'Recover booking'}</button></section> : <fieldset disabled={working} className="rental-checkout-fieldset">
         {step === 0 ? <><section aria-label="Your rental items" className="sc-mobile-checkout__card rental-checkout-items">{!mobile && <div className="rental-checkout-section-heading"><h2>Your rental {bag.items.length === 1 ? 'item' : 'items'}</h2><button type="button" className="rental-edit-control" onClick={() => go('/rental-cart')}>Edit bag</button></div>}<RentalBagItems items={bag.items} offers={offers.rows} storeSlug={storeSlug} navigate={navigate} /></section>
@@ -197,6 +208,6 @@ export default function RentalShoppingCheckout({ navigate }) {
         </>}
       </fieldset>}
     </div>{(!mobile || step !== 2) && <aside className="rental-checkout-summary sc-mobile-checkout__card"><RentalCheckoutSummary data={quoted} estimate={estimate} /><RentalContact contact={configuration.contact} navigate={go} message="Need help? Contact the store." />{!mobile && !pending && button}</aside>}{mobile && step === 2 && <RentalContact contact={configuration.contact} navigate={go} message="Need help? Contact the store." />}<div className="rental-checkout-utilities" data-rental-checkout-utilities /></div>
-    {mobile && !pending && <div className="sc-mobile-checkout__bottom"><div className="sc-mobile-checkout__bottom-inner"><div><small>{step === 2 ? form.paymentPlan === 'PICKUP' ? 'At pickup' : 'Pay now' : quoted ? 'Total' : estimate ? 'Estimated total' : 'Rent / use day'}</small><strong>{quoted ? rentalMoney(step === 2 && form.paymentPlan !== 'PICKUP' ? quoted.quote.dueNowPaise : quoted.quote.totalPaise) : rentalMoney(estimate ? estimate.total : dailyEstimate)}</strong>{(quoted?.quote.depositPaise || depositEstimate) > 0 && <small className="rental-bottom-deposit">{step === 2 && form.paymentPlan !== 'PICKUP' && quoted ? `Balance at pickup ${rentalMoney(quoted.quote.remainingPaise)}` : 'Includes refundable security'}</small>}</div>{button}</div><p className="rental-bottom-next">{step === 0 ? 'Next: contact details' : step === 1 ? 'Next: review your booking' : 'Your dates are reserved only after confirmation.'}</p></div>}
+    {mobile && !pending && <div className="sc-mobile-checkout__bottom"><div className="sc-mobile-checkout__bottom-inner"><div><small>{step === 2 ? form.paymentPlan === 'PICKUP' ? 'At pickup' : 'Pay now' : quoted ? 'Total' : estimate ? 'Estimated total' : 'Rent / use day'}</small><strong>{quoted ? rentalMoney(step === 2 && form.paymentPlan !== 'PICKUP' ? quoted.quote.dueNowPaise : quoted.quote.totalPaise) : rentalMoney(estimate ? estimate.total : dailyEstimate)}</strong>{(quoted?.quote.depositPaise || depositEstimate) > 0 && <small className="rental-bottom-deposit">{step === 2 && form.paymentPlan !== 'PICKUP' && quoted ? `Balance at pickup ${rentalMoney(quoted.quote.remainingPaise)}` : 'Includes refundable security'}</small>}</div>{button}</div><p className="rental-bottom-next">{ownBooking ? 'Manage payment, pickup or cancellation.' : conflict ? 'Choose other dates or check availability again.' : step === 0 ? 'Next: contact details' : step === 1 ? 'Next: review your booking' : 'Your dates are reserved only after confirmation.'}</p></div>}
   </section>;
 }

@@ -7,7 +7,7 @@ import { money, statusTone } from '../../utils/orderPresentation';
 import '../../pages/customer/Profile.css';
 import '../../pages/customer/Orders.css';
 
-export function OrderShell({ title, detail = false, breadcrumb = 'Order details', navigate, children }) {
+export function OrderShell({ title, subtitle, detail = false, breadcrumb = 'Order details', showReturns = true, navigate, children }) {
   const { user, logout } = useAuth();
   return <section className="sc-orders"><div className="sc-orders__shell">
     <nav className="sc-orders__breadcrumb" aria-label="Breadcrumb">
@@ -19,16 +19,16 @@ export function OrderShell({ title, detail = false, breadcrumb = 'Order details'
       <AccountSidebar user={user} logout={logout} navigate={navigate} activePath="/orders" />
       <div className="sc-orders__main">
         <header className="sc-orders__heading"><button className="sc-orders__back" aria-label={detail ? 'Back to orders' : 'Back to account'} onClick={() => navigate(detail ? '/orders' : '/profile')}><ArrowLeft size={21} /></button>
-          <div><h1>{title}</h1></div>
-          <button className="sc-orders__text" onClick={() => navigate('/returns')}>Returns & exchanges</button>
-        </header>{children}
+          <div><h1>{title}</h1>{subtitle && <p className="sc-orders__subtitle">{subtitle}</p>}</div>
+          {showReturns && <button className="sc-orders__text" onClick={() => navigate('/returns')}>Returns & exchanges</button>}
+        </header>{children}<div className="rental-checkout-utilities" data-rental-checkout-utilities />
       </div>
     </div>
   </div></section>;
 }
 export function OrderState({ error, loading, title, children, retry }) {
   return <div className="sc-orders__state" role={error ? 'alert' : loading ? 'status' : undefined}>
-    <Package size={36} strokeWidth={1.4} /><h2>{loading ? 'Loading your orders…' : title}</h2>
+    <Package size={36} strokeWidth={1.4} /><h2>{loading ? title || 'Loading your orders…' : title}</h2>
     {error && <p>{error}</p>}{children}{retry && <button className="sc-orders__button" onClick={retry}>Try again</button>}
   </div>;
 }

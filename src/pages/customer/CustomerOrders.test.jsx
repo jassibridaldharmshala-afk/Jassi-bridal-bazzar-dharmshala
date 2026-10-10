@@ -42,13 +42,13 @@ test('connects search, date, status and pagination to server queries', async () 
   fireEvent.change(screen.getByLabelText('Search orders'), { target: { value: 'silk' } });
   fireEvent.click(screen.getByRole('button', { name: 'Search', exact: true }));
   const cacheOptions = { cacheFirst: true, cacheScope: mockUser._id, forceRefetch: false };
-  await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/orders/my-orders?page=1&limit=12&search=silk', cacheOptions));
+  await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/orders/my-orders?page=1&limit=12&search=silk&store=', cacheOptions));
   fireEvent.change(screen.getByLabelText('Order status'), { target: { value: 'Delivered' } });
-  await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/orders/my-orders?page=1&limit=12&search=silk&status=Delivered', cacheOptions));
+  await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/orders/my-orders?page=1&limit=12&search=silk&status=Delivered&store=', cacheOptions));
   fireEvent.change(screen.getByLabelText('Order date'), { target: { value: '30' } });
   await screen.findByRole('button', { name: 'Next' });
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/orders/my-orders?page=2&limit=12&search=silk&status=Delivered&days=30', cacheOptions));
+  await waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/orders/my-orders?page=2&limit=12&search=silk&status=Delivered&days=30&store=', cacheOptions));
 });
 test('loading errors show retry instead of an empty order history', async () => {
   api.get.mockRejectedValueOnce(new Error('Unable to reach store')).mockResolvedValue({ items: [base], total: 1, totalPages: 1 });

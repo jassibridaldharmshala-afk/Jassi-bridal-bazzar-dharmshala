@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-10",
+  "scope": "Customer rental duplicate detection and overlapping physical-piece reservations",
+  "implemented": [
+    "Identity-aware quote and final hold reject an overlapping reservation of the same offer or matching product/fitting for the same customer.",
+    "An owner conflict links only to that customer's existing booking in the same boutique.",
+    "Guest and other-customer conflicts explain booked dates without exposing another customer's identity or booking reference.",
+    "The final hold rechecks capacity inside the existing store-fenced MongoDB transaction.",
+    "Same-attempt recovery precedes new-booking checks; competing new attempts cannot create an owner duplicate.",
+    "Stale quote and pending attempt are cleared on a definitive booking conflict; no automatic charge or bag consumption occurs.",
+    "Canceled reservations and expired unpaid holds release dates. Alternate fitting selections and additional real pieces remain independently bookable."
+  ],
+  "verification": {
+    "backend": {
+      "passed": 71,
+      "failed": 0,
+      "suites": ["rentalBookingConflicts.integration.test.js", "rentals.integration.test.js", "rentalShopping.integration.test.js", "rentalJourney.integration.test.js"],
+      "environment": "Node 20; isolated transaction-capable MongoDB; managed licence/provider fixtures",
+      "log": ".tmp/rental-conflicts-backend.log"
+    },
+    "frontend": {
+      "passed": 44,
+      "failed": 0,
+      "suites": ["RentalShoppingCheckout.test.jsx", "RentalBookingForm.test.jsx", "RentalPaymentRecovery.test.jsx", "api.test.js"],
+      "log": ".tmp/rental-conflicts-frontend.log"
+    },
+    "productionBuild": { "command": "CI=true Node20 scripts/build-production.js", "log": ".tmp/rental-conflicts-build.log" },
+    "browser": {
+      "report": "review-notes/rental-booking-conflicts-browser.json",
+      "widths": [320, 390, 1440],
+      "api": "Real isolated API; original listing photo retained",
+      "checks": ["owner booking opens", "stranger gets private unavailable-date message", "admin-approved cancellation permits fresh quote", "no extra booking/payment", "no horizontal overflow", "no page exceptions"],
+      "engine": "Chromium; Safari engine not exercised"
+    }
+  },
+  "deployment": {
+    "frontendAndBackendRedeployRequired": true,
+    "hostedDeploymentVerified": false,
+    "liveProvidersExercised": false,
+    "requiresTransactions": true,
+    "capacityUsesMerchantRegisteredPhysicalPieces": true,
+    "saleInventoryRemainsIndependent": true
+  }
+}

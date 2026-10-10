@@ -11,6 +11,7 @@ import RentalOffer from '../../components/rentals/RentalOffer';
 import CompleteLook from '../../components/product/CompleteLook';
 import PublicReviewCard from '../../components/product/PublicReviewCard';
 import Icon from '../../components/layout/Icon';
+import MobileSearchOverlay from '../../components/layout/MobileSearchOverlay';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useRentalBag } from '../../context/RentalBagContext';
@@ -48,6 +49,8 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   const [activeImage, setActiveImage] = useState(0);
   const [openGallery, setOpenGallery] = useState(false);
   const [openSizeChart, setOpenSizeChart] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => setSearchOpen(false), [route]);
   const [deliveryPin, setDeliveryPin] = useState('');
   const [touchStartX, setTouchStartX] = useState(0);
   const [actionMessage, setActionMessage] = useState('');
@@ -712,6 +715,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
           onWriteReview={() => openReviewForm()}
         />
       </div>}
+      {!isDesktop && searchOpen && <MobileSearchOverlay shoppingMode={rentalOnly ? 'rental' : 'buy'} navigate={navigate} storeSlug={storeSlug} onClose={() => setSearchOpen(false)} />}
       {!isDesktop && <div className="lg:hidden">
         <section className="bg-ivory pb-40 md:bg-ivory md:pb-10 md:pt-8">
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-3 md:hidden">
@@ -720,7 +724,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
           <span className="truncate text-[14px] font-semibold text-charcoal">Product Details</span>
         </div>
         <div className="flex items-center gap-0.5 text-slate-800">
-          <button type="button" onClick={() => navigate('/search')} className="grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label="Search"><Icon name="search" className="h-5 w-5" /></button>
+          <button type="button" onClick={() => setSearchOpen(true)} className="grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label="Search"><Icon name="search" className="h-5 w-5" /></button>
           <button type="button" onClick={handleShare} className="grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label="Share product"><Share2 className="h-5 w-5" /></button>
           <button type="button" onClick={() => navigate(rentalOnly ? '/rental-cart' : '/cart')} className="relative grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label={headerBagCount ? `${rentalOnly ? 'Rental bag' : 'Cart'}, ${headerBagCount} items` : rentalOnly ? 'Rental bag' : 'Cart'}><Icon name="bag" className="h-5 w-5" />{headerBagCount > 0 ? <span aria-hidden="true" className="absolute right-0 top-0 rounded-full bg-rose px-1 text-[8px] font-bold leading-4 text-white">{headerBagCount > 99 ? '99+' : headerBagCount}</span> : null}</button>
         </div>

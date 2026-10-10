@@ -1,4 +1,6 @@
 import MobileOverlayLoader from './MobileOverlayLoader';
+import { AdminLoadingPlaceholder } from '../admin/AdminActivityIndicator';
+import { isAdminWorkspace } from '../../utils/adminActivity';
 
 export default function PageState({
   loading = false,
@@ -11,6 +13,7 @@ export default function PageState({
   children,
 }) {
   if (loading) {
+    if (isAdminWorkspace()) return <AdminLoadingPlaceholder label={loadingLabel} />;
     return (
       <>
         <MobileOverlayLoader label={loadingLabel} overlay={false} />

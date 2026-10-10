@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, Save, Sparkles, X } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import useAdminActivity from '../../hooks/useAdminActivity';
 import { normalizeImageUrl } from '../../services/normalize';
 import { uploadScope } from '../../services/uploadRetry';
 import { applySmartPatch, displaySmartValue, fieldValue, sameValue, selectedSmartPatch, smartPhotos, smartRequest, snapshotForm, suggestionRows } from '../../utils/productSmartFill';
@@ -33,6 +34,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
   const lastAnalysisStart = useRef(0);
   const [records, setRecords] = useState(() => drafts.map(draft => ({ id: draftId(draft), baseline: snapshotForm(draft), notes: '', state: 'queued', rows: [], selected: [], replace: false, error: '', warnings: [] })));
   const [busy, setBusy] = useState(''), [notice, setNotice] = useState('');
+  useAdminActivity(Boolean(busy), busy === 'analysis' ? 'Smart Fill in progress' : 'Saving reviewed details', busy === 'analysis' ? 'generating' : 'saving');
   const [status, setStatus] = useState(null), [statusError, setStatusError] = useState('');
   const currentScope = () => batchScope(apiPrefix, authRef.current);
   const valid = controller => alive.current && !controller.signal.aborted && operation.current === controller && currentScope() === initialScope.current;
