@@ -1,4 +1,6 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render as renderUI, screen, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
 import '@testing-library/jest-dom';
 import api from '../../services/api';
 import RentalAvailabilityCalendar from './RentalAvailabilityCalendar';
@@ -6,12 +8,32 @@ import RentalBookingDesk from './RentalBookingDesk';
 import RentalPieceTimeline from './RentalPieceTimeline';
 import RentalSetupWizard from './RentalSetupWizard';
 import { localDateTime } from '../../utils/rentals';
+import authReducer from '../../store/authSlice';
+import { samiraApi } from '../../store/apiSlice';
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
+jest.mock('@reduxjs/toolkit/query/react', () => ({
+  ...jest.requireActual('@reduxjs/toolkit/query/react'),
+  fetchBaseQuery: () => async ({ url, method, body, ...options }) => {
+    const service = jest.requireMock('../../services/api');
+    try { return { data: await (method === 'POST' ? service.post(url, body, options) : service.get(url, options)) }; }
+    catch (error) { return { error: { status: 400, data: { message: error.message } } }; }
+  },
+}));
 const policy = { timezone: 'Asia/Kolkata', minimumDays: 1, maximumDays: 30, maximumAdvanceDays: 180, pickupStart: '10:00', pickupEnd: '18:00', slotMinutes: 60, customerEmail: false, customerWhatsapp: false };
 const today = localDateTime(new Date(), policy.timezone).slice(0, 10), month = today.slice(0, 7);
 const row = { date: today, status: 'AVAILABLE', pickupAt: `${today}T04:30:00.000Z`, returnDueAt: new Date(Date.parse(`${today}T04:30:00.000Z`) + 86400000).toISOString(), rentalPaise: 100000, depositPaise: 200000, dueNowPaise: 230000 };
 const offer = { _id: 'offer1', productId: 'product1', revision: 0, active: false, title: 'Bridal outfit', dailyRatePaise: 100000, depositPaise: 200000, advanceMode: 'STORE', requirements: [{ poolKey: 'outfit', label: 'Outfit', quantity: 1, productId: 'product1' }], fitting: { adjustable: true, alterationsAvailable: true, instructions: '' }, cleaningFeePaise: 0, alterationFeePaise: 0, packages: [] };
-beforeEach(() => { jest.clearAllMocks(); });
+let testStore;
+function render(element) {
+  const wrap = child => <Provider store={testStore}>{child}</Provider>;
+  const view = renderUI(wrap(element));
+  return { ...view, rerender: child => view.rerender(wrap(child)) };
+}
+beforeEach(() => {
+  jest.clearAllMocks();
+  testStore = configureStore({ reducer: { auth: authReducer, [samiraApi.reducerPath]: samiraApi.reducer }, middleware: defaults => defaults().concat(samiraApi.middleware) });
+});
+afterEach(() => { cleanup(); testStore.dispatch(samiraApi.util.resetApiState()); });
 test('complete-set calendar sends every quantity together and discards the previous selection when items change', async () => {
   api.post.mockResolvedValue({ rows: [row] });
   const choose = jest.fn(), items = [{ listingId: 'outfit', quantity: 1 }, { listingId: 'jewellery', quantity: 2 }];
@@ -29,24 +51,24 @@ test('complete-set calendar starts with the booking period and times already cho
   api.post.mockResolvedValue({ rows: [] });
   const start = localDateTime(new Date(Date.now() + 10 * 86400000), policy.timezone).slice(0, 10), end = new Date(Date.parse(`${start}T12:00Z`) + 6 * 86400000).toISOString().slice(0, 10);
   render(<RentalAvailabilityCalendar items={[{ listingId: 'outfit', quantity: 1 }]} policy={policy} initialSchedule={{ pickupAt: `${start}T12:00`, returnDueAt: `${end}T13:00` }} />);
-  await waitFor(() => expect(api.post).toHaveBeenCalledWith('/rentals/calendar', expect.objectContaining({ month: start.slice(0, 7), days: 6, pickupTime: '12:00', returnTime: '13:00' }), expect.anything()));
+  await waitFor(() => expect(api.post).toHaveBeenCalledWith('/rentals/calendar?store=', expect.objectContaining({ month: start.slice(0, 7), days: 6, pickupTime: '12:00', returnTime: '13:00' }), expect.anything()));
   expect(api.post).toHaveBeenCalledTimes(1);
 });
-test('calendar refreshes on focus and minute ticks, clearing stale dates while the new check is pending', async () => {
+test('explicit refresh clears stale dates while pending and does not start a polling loop', async () => {
   jest.useFakeTimers();
   try {
     api.get.mockResolvedValue({ rows: [row] });
     render(<RentalAvailabilityCalendar listing={offer} policy={policy} />);
     await act(async () => {});
-    fireEvent.click(screen.getByRole('button', { name: `${today}: Available` }));
+    fireEvent.click(await screen.findByRole('button', { name: `${today}: Available` }));
     expect(screen.getByRole('button', { name: 'Use these dates' })).toBeInTheDocument();
     let finish; api.get.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
-    fireEvent(window, new Event('focus'));
-    expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument());
     await act(async () => finish({ rows: [] }));
-    expect(screen.getByText(/No available start dates this month/)).toBeInTheDocument();
+    expect(await screen.findByText(/No available start dates this month/)).toBeInTheDocument();
     await act(async () => { jest.advanceTimersByTime(60000); });
-    expect(api.get).toHaveBeenCalledTimes(3);
+    expect(api.get).toHaveBeenCalledTimes(2);
   } finally { jest.useRealTimers(); }
 });
 test('booking desk retains search and view across pagination and opens the chosen booking', async () => {

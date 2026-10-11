@@ -1,4 +1,7 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render as renderUI, screen, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
 import '@testing-library/jest-dom';
 import api from '../../services/api';
 import RentalAvailabilityCalendar from './RentalAvailabilityCalendar';
@@ -6,7 +9,18 @@ import RentalOffer from './RentalOffer';
 import RentalBookingTracker from './RentalBookingTracker';
 import ProductRentalPricing, { pricingFromOffer, rentalPricingError } from '../admin/ProductRentalPricing';
 import { localDateTime } from '../../utils/rentals';
+import authReducer from '../../store/authSlice';
+import { samiraApi } from '../../store/apiSlice';
+import { installRentalAvailabilitySync } from '../../store/rentalAvailabilityCache';
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
+jest.mock('@reduxjs/toolkit/query/react', () => ({
+  ...jest.requireActual('@reduxjs/toolkit/query/react'),
+  fetchBaseQuery: () => async ({ url, method, body, ...options }) => {
+    const service = jest.requireMock('../../services/api');
+    try { return { data: await (method === 'POST' ? service.post(url, body, options) : service.get(url, options)) }; }
+    catch (error) { return { error: { status: error.status || 400, data: { message: error.message } } }; }
+  },
+}));
 let mockViewer;
 jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: mockViewer }) }));
 jest.mock('../../context/StorefrontContext', () => ({ useStorefront: () => ({ storeSlug: 'bridal-shop' }) }));
@@ -14,7 +28,18 @@ const policy = { timezone: 'Asia/Kolkata', minimumDays: 1, maximumDays: 30, maxi
 const listing = { _id: 'offer1', title: 'Bridal look', dailyRatePaise: 75000, depositPaise: 200000, packages: [] };
 const month = localDateTime(new Date(), policy.timezone).slice(0, 7);
 const available = { date: `${month}-10`, status: 'AVAILABLE', pickupAt: `${month}-10T04:30:00.000Z`, returnDueAt: `${month}-12T04:30:00.000Z`, rentalPaise: 150000, depositPaise: 200000, dueNowPaise: 245000 };
-beforeEach(() => { jest.clearAllMocks(); mockViewer = null; });
+let testStore, stopSync;
+function render(element) {
+  const wrap = child => <Provider store={testStore}>{child}</Provider>;
+  const view = renderUI(wrap(element));
+  return { ...view, rerender: child => view.rerender(wrap(child)) };
+}
+beforeEach(() => {
+  jest.clearAllMocks(); mockViewer = null;
+  testStore = configureStore({ reducer: { auth: authReducer, [samiraApi.reducerPath]: samiraApi.reducer }, middleware: defaults => defaults().concat(samiraApi.middleware) });
+  stopSync = installRentalAvailabilitySync(testStore, samiraApi);
+});
+afterEach(() => { cleanup(); stopSync(); testStore.dispatch(samiraApi.util.resetApiState()); });
 
 test('rental pricing edits integer paise independently and chooses the existing offer', () => {
   const onChange = jest.fn();
@@ -65,7 +90,7 @@ test('an existing own booking is visible even when another physical piece remain
   expect(screen.getByText('Booked / held')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument();
   expect(onChoose).not.toHaveBeenCalled();
-  expect(api.get).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ cacheScope: 'buyer1', cache: 'no-store' }));
+  expect(Object.values(testStore.getState().samiraApi.queries)[0].originalArgs.viewer).toBe('buyer1');
 });
 
 test('partly booked inventory shows the remaining quantity and permits booking another real piece', async () => {
@@ -80,30 +105,42 @@ test('partly booked inventory shows the remaining quantity and permits booking a
   expect(screen.queryByRole('link', { name: 'View your booking →' })).not.toBeInTheDocument();
 });
 
-test.each(['same-tab mutation', 'other-tab mutation', 'return to tab'])('calendar refreshes on %s and removes a stale booking action when the last piece is taken', async event => {
+test.each(['same-tab mutation', 'other-tab mutation'])('calendar refreshes on %s and removes a stale booking action when the last piece is taken', async event => {
   api.get.mockResolvedValueOnce({ rows: [available] }).mockResolvedValue({ rows: [{ ...available, status: 'UNAVAILABLE', reason: 'Already booked for these dates.', availability: [capacity({ availableQuantity: 0, bookedQuantity: 3 })] }] });
   render(<RentalAvailabilityCalendar listing={listing} policy={policy} />);
   fireEvent.click(await screen.findByRole('button', { name: `${month}-10: Available` }));
   expect(screen.getByRole('button', { name: 'Use these dates' })).toBeInTheDocument();
-  act(() => window.dispatchEvent(event === 'other-tab mutation' ? new StorageEvent('storage', { key: 'samira:rental-availability-changed' }) : new Event(event === 'same-tab mutation' ? 'samira:rental-availability-changed' : 'focus')));
-  expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument();
+  act(() => event === 'other-tab mutation' ? window.dispatchEvent(new StorageEvent('storage', { key: 'samira:rental-availability-changed', newValue: 'changed' })) : testStore.dispatch(samiraApi.util.invalidateTags(['RentalAvailability'])));
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument());
   expect(await screen.findByText('Unavailable for this period')).toBeInTheDocument();
   expect(screen.getByText('Already booked for these dates.')).toBeInTheDocument();
   expect(api.get).toHaveBeenCalledTimes(2);
 });
 
-test('calendar polls every 30 seconds while visible and pauses in a hidden tab', async () => {
+test('ordinary clicks, focus, reconnect and time passing reuse the calendar without another request', async () => {
   jest.useFakeTimers(); api.get.mockResolvedValue({ rows: [available] });
   const view = render(<RentalAvailabilityCalendar listing={listing} policy={policy} />);
   try {
     await act(async () => {});
     expect(api.get).toHaveBeenCalledTimes(1);
-    await act(async () => { jest.advanceTimersByTime(30000); });
-    expect(api.get).toHaveBeenCalledTimes(2);
-    const visibility = jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
-    await act(async () => { jest.advanceTimersByTime(60000); });
-    expect(api.get).toHaveBeenCalledTimes(2); visibility.mockRestore();
+    fireEvent.click(screen.getByRole('button', { name: `${month}-10: Available` }));
+    act(() => { window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('online')); document.dispatchEvent(new Event('visibilitychange')); });
+    await act(async () => { jest.advanceTimersByTime(180000); });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Use these dates' })).toBeInTheDocument();
   } finally { view.unmount(); jest.useRealTimers(); }
+});
+
+test('strict mode, two calendar views and reopening availability share one cached request', async () => {
+  api.get.mockResolvedValue({ rows: [available] });
+  const calendar = <RentalAvailabilityCalendar listing={listing} policy={policy} />;
+  const view = render(<StrictMode>{calendar}{calendar}</StrictMode>);
+  await screen.findAllByRole('button', { name: `${month}-10: Available` });
+  expect(api.get).toHaveBeenCalledTimes(1);
+  view.unmount();
+  render(calendar);
+  expect(await screen.findByRole('button', { name: `${month}-10: Available` })).toBeEnabled();
+  expect(api.get).toHaveBeenCalledTimes(1);
 });
 test('an old calendar response cannot replace the newly selected month', async () => {
   let finish;

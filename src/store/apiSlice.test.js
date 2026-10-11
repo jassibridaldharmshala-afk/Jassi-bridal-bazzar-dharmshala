@@ -6,6 +6,7 @@ import { startMobileLoader, stopMobileLoader } from '../utils/mobileLoader';
 import { STOREFRONT_READ_TIMEOUT } from './storefrontTransport';
 import { DRAFT_UPLOAD_TIMEOUT } from '../services/draftUploadProgress';
 import { getDurableUploadRetryKey, hasUploadAttempt, retainUploadedReceipt, uploadScope } from '../services/uploadRetry';
+import { RENTAL_CALENDAR_TIMEOUT } from './rentalAvailabilityCache';
 
 test('logout during photo preparation prevents multipart upload under a changed session', async () => {
   const photo = new File(['photo'], 'logout.webp', { type: 'image/webp' });
@@ -369,4 +370,66 @@ test('editing rental offers refreshes cached product prices, while calendar read
   await testStore.dispatch(samiraApi.endpoints.mutate.initiate({ path: '/admin/rentals/listings', body: { dailyRatePaise: 75000 }, silent: true }));
   await waitFor(() => expect(mockRawQuery).toHaveBeenCalledTimes(2));
   subscription.unsubscribe();
+});
+
+const calendarArgs = { listingId: 'offer-one', month: '2026-11', days: 1, quantity: 1, pickupTime: '10:00', returnTime: '10:00', storeSlug: 'boutique', viewer: 'buyer-one', today: '2026-10-11' };
+test('calendar subscribers deduplicate in-flight checks and reuse cached results when reopened', async () => {
+  const pending = defer(); mockRawQuery.mockReturnValue(pending.promise);
+  const first = testStore.dispatch(samiraApi.endpoints.getRentalCalendar.initiate(calendarArgs));
+  const second = testStore.dispatch(samiraApi.endpoints.getRentalCalendar.initiate({ ...calendarArgs }));
+  expect(mockRawQuery).toHaveBeenCalledTimes(1);
+  pending.resolve({ data: { rows: [{ date: '2026-11-01', status: 'AVAILABLE' }] } });
+  await first.unwrap(); await second.unwrap();
+  first.unsubscribe(); second.unsubscribe();
+  const reopened = testStore.dispatch(samiraApi.endpoints.getRentalCalendar.initiate(calendarArgs));
+  expect((await reopened.unwrap()).rows[0].status).toBe('AVAILABLE');
+  expect(mockRawQuery).toHaveBeenCalledTimes(1);
+  expect(mockRawQuery.mock.calls[0][0]).toMatchObject({ timeout: RENTAL_CALENDAR_TIMEOUT, cache: 'no-store' });
+  expect(mockRawQuery.mock.calls[0][0].url).not.toContain('buyer-one');
+  reopened.unsubscribe();
+});
+
+test('calendar cache separates customers, stores, quantities and staff store scope', async () => {
+  mockRawQuery.mockResolvedValue({ data: { rows: [] } });
+  const variants = [calendarArgs, { ...calendarArgs, viewer: 'buyer-two' }, { ...calendarArgs, storeSlug: 'another-shop' }, { ...calendarArgs, quantity: 2 }, { ...calendarArgs, items: [{ listingId: 'offer-one', quantity: 1 }], apiBase: '/admin/rentals', staffStoreId: '111111111111111111111111' }];
+  for (const args of variants) await testStore.dispatch(samiraApi.endpoints.getRentalCalendar.initiate(args, { subscribe: false })).unwrap();
+  expect(mockRawQuery).toHaveBeenCalledTimes(variants.length);
+  expect(mockRawQuery.mock.calls.at(-1)[0]).toMatchObject({ method: 'POST', body: expect.objectContaining({ items: variants.at(-1).items }) });
+  expect(mockRawQuery.mock.calls.at(-1)[0].url).toContain('storeId=111111111111111111111111');
+});
+
+test('advisory reads, unrelated writes and failed changes leave the calendar cache intact', async () => {
+  mockRawQuery.mockResolvedValue({ data: { rows: [] } });
+  const calendar = testStore.dispatch(samiraApi.endpoints.getRentalCalendar.initiate(calendarArgs));
+  await calendar.unwrap(); mockRawQuery.mockClear();
+  for (const path of ['/rentals/calendar', '/rentals/quote', '/cart', '/admin/contact/message/status', '/admin/rentals/bookings/booking/proofs', '/admin/rentals/waitlist']) {
+    await testStore.dispatch(samiraApi.endpoints.mutate.initiate({ path, body: {}, silent: true })).unwrap();
+  }
+  expect(mockRawQuery).toHaveBeenCalledTimes(6);
+  mockRawQuery.mockResolvedValueOnce({ error: { status: 409, data: { message: 'Not saved' } } });
+  await testStore.dispatch(samiraApi.endpoints.mutate.initiate({ path: '/admin/rentals/blocks', body: {}, silent: true }));
+  expect(mockRawQuery).toHaveBeenCalledTimes(7);
+  expect(testStore.getState().samiraApi.queries[calendar.queryCacheKey].status).toBe('fulfilled');
+  calendar.unsubscribe();
+});
+
+test.each(['/rentals/bookings', '/admin/rentals/assets/piece/status', '/admin/rentals/blocks/block', '/admin/rentals/bookings/booking/operation', '/admin/products/product', '/seller/product-drafts/publish-selected'])('successful %s changes refresh subscribed calendars once', async path => {
+  mockRawQuery.mockResolvedValue({ data: { rows: [] } });
+  const calendar = testStore.dispatch(samiraApi.endpoints.getRentalCalendar.initiate(calendarArgs));
+  await calendar.unwrap(); mockRawQuery.mockClear();
+  await testStore.dispatch(samiraApi.endpoints.mutate.initiate({ path, method: 'POST', body: {}, silent: true })).unwrap();
+  await waitFor(() => expect(mockRawQuery).toHaveBeenCalledTimes(2));
+  expect(mockRawQuery.mock.calls[1][0].url).toContain('/rentals/calendar/offer-one?');
+  calendar.unsubscribe();
+});
+
+test('a timed-out or malformed calendar check ends without automatic retry and can be retried explicitly', async () => {
+  mockRawQuery.mockResolvedValueOnce({ error: { status: 'TIMEOUT_ERROR' } }).mockResolvedValueOnce({ data: {} }).mockResolvedValue({ data: { rows: [] } });
+  const calendar = testStore.dispatch(samiraApi.endpoints.getRentalCalendar.initiate(calendarArgs));
+  expect((await calendar).error.status).toBe('TIMEOUT_ERROR');
+  expect(mockRawQuery).toHaveBeenCalledTimes(1);
+  expect((await calendar.refetch()).error.status).toBe(502);
+  expect((await calendar.refetch()).data.rows).toEqual([]);
+  expect(mockRawQuery).toHaveBeenCalledTimes(3);
+  calendar.unsubscribe();
 });

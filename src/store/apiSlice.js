@@ -8,6 +8,7 @@ import { beginAdminRequest } from '../utils/adminActivity';
 import { getOrCreateSessionId } from '../utils/attribution';
 import { isWebsitePreview } from '../config/websiteDesigner';
 import { expandHomeFeed, storefrontReadOptions } from './storefrontTransport';
+import { broadcastRentalAvailabilityChange, changesRentalAvailability, rentalCalendarRequest, RENTAL_AVAILABILITY_TAG } from './rentalAvailabilityCache';
 import { confirmUploadedReferences, finishUploadRetryKey, forgetUploadRetryKey, getDurableUploadRetryKey, getRecordRetryKey, hasUploadAttempt, isRetrySafeCreation, markUploadAttempt, uploadScope } from '../services/uploadRetry';
 
 const rawBaseQuery = fetchBaseQuery({
@@ -168,6 +169,9 @@ async function baseQueryWithRefresh(args, api, extraOptions) {
     if (result.data && result.data.success !== false && typeof args === 'object' && ['POST', 'PUT', 'PATCH'].includes(args.method) && args.body && !(args.body instanceof FormData)) await confirmUploadedReferences(args.body).catch(() => {});
     if (creationKey && result.data && result.data.success !== false) finishUploadRetryKey(creationKey);
     if (creationKey && result.error?.data?.code === 'UPLOAD_RETRY_CONFLICT') forgetUploadRetryKey(creationKey);
+    if (result.data && result.data.success !== false && changesRentalAvailability(requestUrl(args), typeof args === 'string' ? 'GET' : args.method || 'GET')) {
+      broadcastRentalAvailabilityChange();
+    }
     return result;
   } finally {
     adminActivity.finish();
@@ -193,7 +197,7 @@ export const samiraApi = createApi({
     endpointDefinition,
     queryArgs: cacheIdentity(queryArgs),
   }),
-  tagTypes: ['Auth', 'Products', 'Categories', 'Banners', 'Settings', 'Cart', 'Wishlist', 'Addresses', 'Coupons', 'Orders', 'Payments', 'Returns', 'Reviews', 'AdminDashboard', 'AdminProducts', 'AdminCategories', 'AdminOrders', 'AdminCustomers', 'AdminSettings', 'ProductDrafts', 'VariantGroups', 'Inventory', 'Contact', 'Newsletter', 'Notifications', 'WebsiteCustomization', 'ReelImports'],
+  tagTypes: ['Auth', 'Products', 'Categories', 'Banners', 'Settings', 'Cart', 'Wishlist', 'Addresses', 'Coupons', 'Orders', 'Payments', 'Returns', 'Reviews', 'AdminDashboard', 'AdminProducts', 'AdminCategories', 'AdminOrders', 'AdminCustomers', 'AdminSettings', 'ProductDrafts', 'VariantGroups', 'Inventory', 'Contact', 'Newsletter', 'Notifications', 'WebsiteCustomization', 'ReelImports', RENTAL_AVAILABILITY_TAG],
   keepUnusedDataFor: 120,
   endpoints: (builder) => ({
     request: builder.query({
@@ -201,9 +205,18 @@ export const samiraApi = createApi({
       providesTags: (_result, _error, arg) => tagsForPath(arg.path),
       keepUnusedDataFor: 900,
     }),
+    getRentalCalendar: builder.query({
+      queryFn: async (args, _api, _extraOptions, baseQuery) => {
+        const result = await baseQuery(rentalCalendarRequest(args));
+        if (result.error) return result;
+        return Array.isArray(result.data?.rows) ? result : { error: { status: 502, data: { message: 'Availability could not be loaded.' } } };
+      },
+      providesTags: [RENTAL_AVAILABILITY_TAG],
+      keepUnusedDataFor: 900,
+    }),
     mutate: builder.mutation({
       query: ({ path, method = 'POST', body, silent, idempotencyKey }) => ({ url: path, method, body, ...(silent ? { silent } : {}), ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}) }),
-      invalidatesTags: (_result, _error, arg) => tagsForPath(arg.path, true),
+      invalidatesTags: (result, error, arg) => [...tagsForPath(arg.path, true), ...(!error && result?.success !== false && changesRentalAvailability(arg.path, arg.method || 'POST') ? [RENTAL_AVAILABILITY_TAG] : [])],
     }),
     upload: builder.mutation({
       queryFn: async ({ path, files, fieldName = 'images', silent = false, fields = {}, idempotencyKey }, api, extraOptions, baseQuery) => {
@@ -393,7 +406,7 @@ export const samiraApi = createApi({
     }),
     publishSelectedDrafts: builder.mutation({
       query: ({ apiPrefix = '/admin', ...body }) => ({ url: `${apiPrefix === '/seller' ? '/seller' : '/admin'}/product-drafts/publish-selected`, method: 'POST', body }),
-      invalidatesTags: ['ProductDrafts', 'Products', 'AdminProducts', 'AdminDashboard', 'Inventory'],
+      invalidatesTags: (result, error) => ['ProductDrafts', 'Products', 'AdminProducts', 'AdminDashboard', 'Inventory', ...(!error && result?.success !== false ? [RENTAL_AVAILABILITY_TAG] : [])],
     }),
     createVariantGroup: builder.mutation({
       query: ({ apiPrefix = '/admin', ...body }) => ({ url: `${apiPrefix === '/seller' ? '/seller' : '/admin'}/variant-groups`, method: 'POST', body }),
@@ -488,6 +501,7 @@ export const {
   useGetCurrentUserQuery,
   useGetOrdersQuery,
   useGetProductQuery,
+  useGetRentalCalendarQuery,
   useGetProductDraftsQuery,
   useGetProductsQuery,
   useGetVariantGroupQuery,

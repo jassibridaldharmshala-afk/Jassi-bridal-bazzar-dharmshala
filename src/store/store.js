@@ -4,6 +4,7 @@ import catalogReducer from './catalogSlice';
 import checkoutReducer from './checkoutSlice';
 import uiReducer from './uiSlice';
 import { samiraApi } from './apiSlice';
+import { installRentalAvailabilitySync } from './rentalAvailabilityCache';
 
 export const store = configureStore({
   reducer: {
@@ -15,3 +16,5 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(samiraApi.middleware),
 });
+
+installRentalAvailabilitySync(store, samiraApi);

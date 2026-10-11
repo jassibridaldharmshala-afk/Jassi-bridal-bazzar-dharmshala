@@ -1,9 +1,9 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { CalendarDays, CalendarX2, CheckCircle2, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react';
-import api from '../../services/api';
+import { useGetRentalCalendarQuery } from '../../store/apiSlice';
 import { useAuth } from '../../context/AuthContext';
 import { storefrontPath } from '../../utils/routing';
-import { localDateTime, rentalDate, rentalMoney, rentalUrl } from '../../utils/rentals';
+import { localDateTime, rentalDate, rentalMoney } from '../../utils/rentals';
 import './Rentals.css';
 import './RentalAvailabilityCalendar.css';
 
@@ -24,12 +24,18 @@ export default function RentalAvailabilityCalendar({ listing, items, title, poli
   const scheduledMonth = requestedPickup?.slice(0, 7), scheduledDays = Math.round((Date.parse((requestedReturn?.slice(0, 10) || '') + 'T12:00Z') - Date.parse((requestedPickup?.slice(0, 10) || '') + 'T12:00Z')) / 86400000);
   const [month, setMonth] = useState(scheduledMonth >= today.slice(0, 7) && scheduledMonth <= maxMonth ? scheduledMonth : today.slice(0, 7)), [days, setDays] = useState(scheduledDays >= policy.minimumDays && scheduledDays <= policy.maximumDays ? scheduledDays : policy.minimumDays);
   const [pickupTime, setPickupTime] = useState(slotTimes.includes(requestedPickup?.slice(11)) ? requestedPickup.slice(11) : policy.pickupStart), [returnTime, setReturnTime] = useState(slotTimes.includes(requestedReturn?.slice(11)) ? requestedReturn.slice(11) : policy.pickupStart);
-  const [data, setData] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false), [reload, setReload] = useState(0), [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState('');
   const itemsKey = items ? JSON.stringify(items) : '';
-  const key = JSON.stringify({ listingId: listing?._id, itemsKey, month, days, quantity, pickupTime, returnTime, deliveryMode, storeSlug, apiBase, viewer });
-  const [loadedKey, setLoadedKey] = useState('');
-  const fetching = useRef(false);
-  const refreshQueued = useRef(false);
+  const staff = apiBase !== '/rentals';
+  const staffStoreId = staff ? new URLSearchParams(window.location.search).get('storeId') || (apiBase.startsWith('/seller') ? sessionStorage.getItem('samira_seller_store_id') : '') || '' : '';
+  const effectiveStoreSlug = storeSlug === undefined ? /^\/store\/([^/]+)/.exec(window.location.pathname)?.[1] || sessionStorage.getItem('samira_store_slug') || '' : storeSlug;
+  const args = useMemo(() => ({ listingId: listing?._id, ...(itemsKey ? { items: JSON.parse(itemsKey) } : {}), month, days, quantity, pickupTime, returnTime, deliveryMode, storeSlug: effectiveStoreSlug, staffStoreId, apiBase, viewer, today }), [listing?._id, itemsKey, month, days, quantity, pickupTime, returnTime, deliveryMode, effectiveStoreSlug, staffStoreId, apiBase, viewer, today]);
+  const key = JSON.stringify(args);
+  const { currentData: data, error: failure, isFetching: busy, refetch } = useGetRentalCalendarQuery(args, {
+    skip: !listing?._id && !items?.length,
+    refetchOnMountOrArgChange: false, refetchOnFocus: false, refetchOnReconnect: false,
+  });
+  const error = failure ? failure.status === 'TIMEOUT_ERROR' ? 'Availability check took too long.' : failure.data?.message || failure.message || 'Availability could not be loaded.' : '';
   useEffect(() => { setSelected(''); }, [key]);
   useEffect(() => {
     if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(requestedPickup || '') || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(requestedReturn || '')) return;
@@ -39,26 +45,7 @@ export default function RentalAvailabilityCalendar({ listing, items, title, poli
     if (slotTimes.includes(requestedPickup.slice(11))) setPickupTime(requestedPickup.slice(11));
     if (slotTimes.includes(requestedReturn.slice(11))) setReturnTime(requestedReturn.slice(11));
   }, [requestedPickup, requestedReturn, maxMonth, today, policy.minimumDays, policy.maximumDays, slotTimes]);
-  useEffect(() => {
-    let alive = true;
-    fetching.current = true; setBusy(true); setError('');
-    const query = new URLSearchParams({ month, days: String(days), quantity: String(quantity), pickupTime, returnTime, ...(deliveryMode ? { deliveryMode } : {}) });
-    const request = itemsKey ? api.post(rentalUrl(`${apiBase}/calendar`, storeSlug), { month, days, pickupTime, returnTime, deliveryMode, items: JSON.parse(itemsKey) }, { silent: true }) : api.get(rentalUrl(`/rentals/calendar/${listing._id}?${query}`, storeSlug), { silent: true, forceRefetch: true, cache: 'no-store', cacheScope: viewer });
-    Promise.resolve(request)
-      .then(value => { if (alive) { if (!Array.isArray(value?.rows)) throw new Error('Availability could not be loaded.'); setData(value); setLoadedKey(key); } })
-      .catch(e => { if (alive) setError(e.details || e.message); })
-      .finally(() => { if (alive) { fetching.current = false; setBusy(false); if (refreshQueued.current) { refreshQueued.current = false; setLoadedKey(''); setReload(value => value + 1); } } });
-    return () => { alive = false; };
-  }, [listing?._id, itemsKey, month, days, quantity, pickupTime, returnTime, deliveryMode, storeSlug, reload, key, apiBase, viewer]);
-  useEffect(() => {
-    const refresh = () => { if (document.visibilityState === 'hidden') return; if (fetching.current) { refreshQueued.current = true; return; } setLoadedKey(''); setReload(value => value + 1); };
-    const storage = event => { if (event.key === 'samira:rental-availability-changed') refresh(); };
-    const timer = setInterval(refresh, 30000);
-    window.addEventListener('focus', refresh); window.addEventListener('online', refresh); document.addEventListener('visibilitychange', refresh);
-    window.addEventListener('samira:rental-availability-changed', refresh); window.addEventListener('storage', storage);
-    return () => { clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); document.removeEventListener('visibilitychange', refresh); window.removeEventListener('samira:rental-availability-changed', refresh); window.removeEventListener('storage', storage); };
-  }, []);
-  const current = loadedKey === key && !busy && !error;
+  const current = Boolean(data && !busy && !error);
   const row = current ? data.rows.find(item => item.date === selected) : null;
   const myBookings = current ? [...new Map(data.rows.filter(item => item.ownBooking).map(item => [item.ownBooking.id, item.ownBooking])).values()] : [];
   const offset = new Date(`${month}-01T12:00:00Z`).getUTCDay();
@@ -74,7 +61,7 @@ export default function RentalAvailabilityCalendar({ listing, items, title, poli
   return <section className="rental-availability" aria-label={`Availability for ${title || listing?.title || 'your complete rental set'}`} aria-busy={busy}>
     <header className="rental-availability__header">
       <h3><CalendarDays size={19} aria-hidden="true" />Date availability</h3>
-      <button type="button" className="rental-availability__refresh" onClick={() => setReload(value => value + 1)} disabled={busy}><RotateCw size={15} aria-hidden="true" />Refresh</button>
+      <button type="button" className="rental-availability__refresh" onClick={refetch} disabled={busy || (!listing?._id && !items?.length)}><RotateCw size={15} aria-hidden="true" />Refresh</button>
     </header>
     <p className="rental-availability__intro">Choose a pickup date. {itemsKey ? `All ${items.length} selected offers and quantities are checked together.` : `Availability is checked for ${quantity} ${quantity === 1 ? 'set' : 'sets'} across the full period.`}</p>
     {!!myBookings.length && !row?.ownBooking && <div className="rental-availability__own-bookings" role="status">{myBookings.map(booking => <div key={booking.id}><strong>{booking.status === 'HELD' ? 'You have a pending hold for this item' : 'You already booked this item'}</strong>{bookingSummary(booking)}</div>)}</div>}
@@ -116,7 +103,7 @@ export default function RentalAvailabilityCalendar({ listing, items, title, poli
     </div>}
     <footer className="rental-availability__footer">
       <p>Times in {policy.timezone}.{current && data.checkedAt && <> Checked {rentalDate(data.checkedAt, policy.timezone)}.</>}</p>
-      <p>Preparation and cleaning included. Updates every 30 seconds. Rechecked before booking; selecting a date does not reserve a piece.</p>
+      <p>Preparation and cleaning included. Refresh to check the latest dates. Availability is checked again before booking; selecting a date does not reserve a piece.</p>
     </footer>
   </section>;
 }
