@@ -1,9 +1,11 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, ArrowDown, ArrowUp, Eye, FolderTree, Package, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { Archive, ArrowDown, ArrowUp, ChevronDown, Eye, FolderTree, Package, Pencil, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import CategoryForm from '../../components/admin/CategoryForm';
-import SearchFilterBar from '../../components/admin/SearchFilterBar';
+import Loader from '../../components/admin/Loader';
+import PageState from '../../components/ui/PageState';
 import StatusBadge from '../../components/admin/StatusBadge';
-import PageHeader from '../../components/admin/PageHeader';
 import { AdminTable } from './Products';
 import api from '../../services/api';
 import { normalizeImageUrl } from '../../services/normalize';
@@ -16,8 +18,9 @@ export default function Categories() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [parent, setParent] = useState('all');
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [message, setMessage] = useAdminFeedback({ type: '', text: '' }, 'success', 'Categories');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [busy, setBusy] = useState('');
   const [selected, setSelected] = useState([]);
   const [editor, setEditor] = useState(null);
@@ -27,11 +30,12 @@ export default function Categories() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     setMessage({ type: '', text: '' });
     try { setCategories(asCatalogList(await api.get('/admin/categories?admin=true&archive=all'))); }
-    catch (error) { setMessage({ type: 'error', text: error.message }); }
+    catch (error) { setLoadError(error.message); setMessage({ type: 'error', text: error.message }); }
     finally { setLoading(false); }
-  }, []);
+  }, [setMessage]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -176,23 +180,25 @@ export default function Categories() {
   });
 
   return (
-    <section className="space-y-5">
-      <PageHeader title="Categories" note="Organize storefront navigation, product fields and search visibility from one place.">
+    <section className="category-workspace catalog-compact-workspace">
+      <div className="catalog-workspace-toolbar catalog-workspace-toolbar--categories" aria-label="Category actions">
+        {bridalSetup && <details className="catalog-setup-disclosure">
+          <summary><span>Category setup<small>{bridalSetup.missing?.length ? `${bridalSetup.missing.length} to add` : 'Bridal categories'}{(bridalSetup.archived?.length || bridalSetup.conflicts?.length || bridalSetup.structureUpdated) ? ' · Review needed' : ''}</small></span><ChevronDown size={16} aria-hidden="true" /></summary>
+          <div className="admin-card catalog-setup-disclosure__content space-y-3">
+            <p className="text-sm text-slate-600">New bridal categories start hidden. Add products, then make them visible.</p>
+            <p className="text-sm"><strong>{bridalSetup.missing?.length || 0}</strong> categories to add · <strong>{bridalSetup.existing?.length || 0}</strong> already present</p>
+            {!!bridalSetup.missing?.length && <p className="text-sm text-slate-700">To add: {bridalSetup.missing.join(', ')}</p>}
+            {!!bridalSetup.archived?.length && <p className="text-sm text-amber-800">Archived categories need manual review: {bridalSetup.archived.join(', ')}</p>}
+            {!!bridalSetup.conflicts?.length && <p className="text-sm text-amber-800">Naming conflicts need manual review: {bridalSetup.conflicts.join(', ')}</p>}
+            <div className="flex flex-wrap gap-3">
+              {(bridalSetup.missing?.length > 0 || bridalSetup.structureUpdated) && <button type="button" className="admin-btn" disabled={setupBusy} onClick={applyBridalSetup}>{setupBusy ? 'Setting up…' : 'Add bridal categories'}</button>}
+              <a className="admin-btn-ghost" href="/admin/products/add">Add product</a>
+              <a className="admin-btn-ghost" href="/admin/rentals">Set rental rates and deposits</a>
+            </div>
+          </div>
+        </details>}
         <button type="button" className="admin-btn" onClick={() => setEditor({ mode: 'Add', category: null })}><Plus size={17} /> Add category</button>
-      </PageHeader>
-
-      {bridalSetup && <div className="admin-card p-5 space-y-3">
-        <div><h2 className="text-lg font-bold text-rose">Bridal sale and rental catalogue</h2><p className="text-sm text-slate-600">Set up clothing, jewellery, bangles and jaimala categories. New categories start hidden until you add real products and make them visible.</p></div>
-        <p className="text-sm"><strong>{bridalSetup.missing?.length || 0}</strong> categories to add · <strong>{bridalSetup.existing?.length || 0}</strong> already present</p>
-        {!!bridalSetup.missing?.length && <p className="text-sm text-slate-700">To add: {bridalSetup.missing.join(', ')}</p>}
-        {!!bridalSetup.archived?.length && <p className="text-sm text-amber-800">Archived categories need manual review: {bridalSetup.archived.join(', ')}</p>}
-        {!!bridalSetup.conflicts?.length && <p className="text-sm text-amber-800">Naming conflicts need manual review: {bridalSetup.conflicts.join(', ')}</p>}
-        <div className="flex flex-wrap gap-3">
-          {(bridalSetup.missing?.length > 0 || bridalSetup.structureUpdated) && <button type="button" className="admin-btn" disabled={setupBusy} onClick={applyBridalSetup}>{setupBusy ? 'Setting up…' : 'Add bridal categories'}</button>}
-          <a className="admin-btn-ghost" href="/admin/products/add">Add product</a>
-          <a className="admin-btn-ghost" href="/admin/rentals">Set rental rates and deposits</a>
-        </div>
-      </div>}
+      </div>
 
       <div className="category-summary-grid">
         <SummaryCard label="Categories" value={summary.total} icon={FolderTree} active={status === 'all'} onClick={() => setStatus('all')} />
@@ -201,16 +207,20 @@ export default function Categories() {
         <SummaryCard label="Need products" value={summary.empty} tone="rose" icon={Package} active={status === 'empty'} onClick={() => setStatus('empty')} />
       </div>
 
-      {message.text && <div role={message.type === 'error' ? 'alert' : 'status'} className={`category-page-message is-${message.type}`}><span>{message.text}</span>{message.type === 'error' ? <button type="button" className="admin-btn-ghost" onClick={load}>Retry categories</button> : <button type="button" aria-label="Dismiss message" onClick={() => setMessage({ type: '', text: '' })}><X size={17} /></button>}</div>}
+      <AdminFeedback message={message} type="success" title="Categories" onDismiss={() => setMessage(null)} />
 
-      <SearchFilterBar search={query} onSearch={setQuery} placeholder="Search category, parent, slug or description">
-        <select aria-label="Filter category status" value={status} onChange={(event) => setStatus(event.target.value)} className="admin-filter-control"><option value="all">All statuses</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="empty">Need products</option><option value="archived">Archived</option></select>
-        <select aria-label="Filter parent category" value={parent} onChange={(event) => setParent(event.target.value)} className="admin-filter-control"><option value="all">All levels</option><option value="root">Top level</option>{roots.map((category) => <option key={category._id} value={category._id}>Under {category.name}</option>)}</select>
-      </SearchFilterBar>
+      <section className="admin-card catalog-filter-panel" aria-label="Filter categories">
+        <div className="catalog-filter-grid catalog-filter-grid--categories">
+          <label className="catalog-filter-search">Search categories<span className="catalog-filter-search__control"><Search size={16} aria-hidden="true" /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Name, parent or slug" /></span></label>
+          <label>Status<select aria-label="Filter category status" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">All statuses</option><option value="active">Visible</option><option value="hidden">Hidden</option><option value="empty">Need products</option><option value="archived">Archived</option></select></label>
+          <label>Level / parent<select aria-label="Filter parent category" value={parent} onChange={(event) => setParent(event.target.value)}><option value="all">All levels</option><option value="root">Top level</option>{roots.map((category) => <option key={category._id} value={category._id}>Under {category.name}</option>)}</select></label>
+        </div>
+        {(query.trim() || status !== 'all' || parent !== 'all') && <div className="catalog-filter-active"><span>Filters applied</span><button type="button" onClick={() => { setQuery(''); setStatus('all'); setParent('all'); }}><X size={14} />Clear filters</button></div>}
+      </section>
 
       {selected.length > 0 && <div className="category-bulk-bar"><strong>{selected.length} selected</strong><div><button disabled={busy === 'bulk'} type="button" onClick={() => runBulk('show')}>Make visible</button><button disabled={busy === 'bulk'} type="button" onClick={() => runBulk('hide')}>Hide</button><button disabled={busy === 'bulk'} type="button" onClick={() => runBulk('archive')} className="is-danger">Archive</button><button type="button" onClick={() => setSelected([])}>Clear</button></div></div>}
 
-      {loading ? <p role="status" className="admin-card p-5">Loading categories…</p> : <AdminTable title="Category catalogue" emptyTitle="No categories match these filters" heads={['Category', 'Catalogue', 'Visibility', 'Order', 'Actions']} rows={rows} />}
+      {loading ? <Loader label="Loading categories" /> : loadError ? <PageState error={loadError} onRetry={load} retryLabel="Retry categories" /> : rows.length ? <AdminTable title="Category catalogue" heads={['Category', 'Catalogue', 'Visibility', 'Order', 'Actions']} rows={rows} /> : <div className="admin-card catalog-empty-state"><h2>{categories.length ? 'No categories match these filters' : 'No categories yet'}</h2>{categories.length ? <button type="button" className="admin-btn-ghost" onClick={() => { setQuery(''); setStatus('all'); setParent('all'); }}>Clear filters</button> : <p>Add a category to get started.</p>}</div>}
 
       {editor && <CategoryEditor editor={editor} categories={categories} onClose={() => setEditor(null)} onSaved={async () => { await load(); setEditor(null); notify(editor.mode === 'Add' ? 'Category added successfully.' : 'Category changes saved.'); }} />}
       {action && <CategoryActionDialog action={action} categories={categories} busy={busy === action.category._id} onChange={setAction} onClose={() => !busy && setAction(null)} onRun={runCategoryAction} />}

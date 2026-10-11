@@ -6,13 +6,15 @@ import RentalOffer from './RentalOffer';
 import RentalBookingTracker from './RentalBookingTracker';
 import ProductRentalPricing, { pricingFromOffer, rentalPricingError } from '../admin/ProductRentalPricing';
 import { localDateTime } from '../../utils/rentals';
-jest.mock('../../services/api', () => ({ get: jest.fn() }));
+jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
+let mockViewer;
+jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: mockViewer }) }));
 jest.mock('../../context/StorefrontContext', () => ({ useStorefront: () => ({ storeSlug: 'bridal-shop' }) }));
 const policy = { timezone: 'Asia/Kolkata', minimumDays: 1, maximumDays: 30, maximumAdvanceDays: 180, pickupStart: '10:00', pickupEnd: '18:00', slotMinutes: 60 };
 const listing = { _id: 'offer1', title: 'Bridal look', dailyRatePaise: 75000, depositPaise: 200000, packages: [] };
 const month = localDateTime(new Date(), policy.timezone).slice(0, 7);
 const available = { date: `${month}-10`, status: 'AVAILABLE', pickupAt: `${month}-10T04:30:00.000Z`, returnDueAt: `${month}-12T04:30:00.000Z`, rentalPaise: 150000, depositPaise: 200000, dueNowPaise: 245000 };
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => { jest.clearAllMocks(); mockViewer = null; });
 
 test('rental pricing edits integer paise independently and chooses the existing offer', () => {
   const onChange = jest.fn();
@@ -32,12 +34,14 @@ test('multiple offers are selected explicitly without copying the first price to
   fireEvent.change(screen.getByLabelText('Rental offer to price'), { target: { value: 'offer2' } });
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ listingId: 'offer2', dailyRatePaise: 50000 }));
 });
-test('calendar disables conflicts and passes confirmed timezone dates and totals to booking', async () => {
+test('calendar lets customers inspect conflicts and passes only available timezone dates to booking', async () => {
   api.get.mockResolvedValue({ rows: [available, { date: `${month}-11`, status: 'UNAVAILABLE' }, { date: `${month}-13`, status: 'UNBOOKABLE', reason: 'Shop closed' }] });
   const onChoose = jest.fn();
   render(<RentalAvailabilityCalendar listing={listing} policy={policy} storeSlug="bridal-shop" quantity={2} onChoose={onChoose} />);
   const choose = await screen.findByRole('button', { name: `${month}-10: Available` });
-  expect(screen.getByRole('button', { name: `${month}-11: Unavailable for selected period` })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: `${month}-11: Unavailable for selected period` }));
+  expect(screen.getByText('Unavailable for this period')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Shop closed/ })).toBeDisabled();
   expect(api.get.mock.calls[0][0]).toContain('quantity=2'); expect(api.get.mock.calls[0][0]).toContain('store=bridal-shop');
   fireEvent.click(choose); fireEvent.click(screen.getByRole('button', { name: 'Use these dates' }));
@@ -45,6 +49,61 @@ test('calendar disables conflicts and passes confirmed timezone dates and totals
   fireEvent.change(screen.getByLabelText('Rental duration'), { target: { value: '3' } });
   expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument();
   await waitFor(() => expect(api.get.mock.calls.at(-1)[0]).toContain('days=3'));
+});
+
+const capacity = overrides => ({ listingId: listing._id, title: listing.title, requestedQuantity: 1, totalQuantity: 3, availableQuantity: 2, bookedQuantity: 1, blockedQuantity: 0, ...overrides });
+test('an existing own booking is visible even when another physical piece remains available', async () => {
+  mockViewer = { _id: 'buyer1' };
+  const ownBooking = { id: '111111111111111111111111', number: 'JB-1024', status: 'CONFIRMED', pickupAt: available.pickupAt, returnDueAt: available.returnDueAt, useDates: [available.date] };
+  api.get.mockResolvedValue({ rows: [{ ...available, status: 'ALREADY_BOOKED', ownBooking, availability: [capacity()] }] });
+  const onChoose = jest.fn();
+  render(<RentalAvailabilityCalendar listing={listing} policy={policy} storeSlug="bridal-shop" onChoose={onChoose} />);
+  expect(await screen.findByText('You already booked this item')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'View your booking →' })).toHaveAttribute('href', '/store/bridal-shop/rentals?id=' + ownBooking.id);
+  fireEvent.click(screen.getByRole('button', { name: `${month}-10: Already booked by you` }));
+  expect(screen.getByText('Already booked by you')).toBeInTheDocument();
+  expect(screen.getByText('Booked / held')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument();
+  expect(onChoose).not.toHaveBeenCalled();
+  expect(api.get).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ cacheScope: 'buyer1', cache: 'no-store' }));
+});
+
+test('partly booked inventory shows the remaining quantity and permits booking another real piece', async () => {
+  api.get.mockResolvedValue({ rows: [{ ...available, availability: [capacity()] }] });
+  const onChoose = jest.fn();
+  render(<RentalAvailabilityCalendar listing={listing} policy={policy} onChoose={onChoose} />);
+  const day = await screen.findByRole('button', { name: `${month}-10: Some pieces booked; available` });
+  expect(day).toHaveTextContent('2 left');
+  fireEvent.click(day); expect(screen.getByText('Booked / held')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Use these dates' }));
+  expect(onChoose).toHaveBeenCalledWith(expect.objectContaining({ date: available.date, availability: [capacity()] }));
+  expect(screen.queryByRole('link', { name: 'View your booking →' })).not.toBeInTheDocument();
+});
+
+test.each(['same-tab mutation', 'other-tab mutation', 'return to tab'])('calendar refreshes on %s and removes a stale booking action when the last piece is taken', async event => {
+  api.get.mockResolvedValueOnce({ rows: [available] }).mockResolvedValue({ rows: [{ ...available, status: 'UNAVAILABLE', reason: 'Already booked for these dates.', availability: [capacity({ availableQuantity: 0, bookedQuantity: 3 })] }] });
+  render(<RentalAvailabilityCalendar listing={listing} policy={policy} />);
+  fireEvent.click(await screen.findByRole('button', { name: `${month}-10: Available` }));
+  expect(screen.getByRole('button', { name: 'Use these dates' })).toBeInTheDocument();
+  act(() => window.dispatchEvent(event === 'other-tab mutation' ? new StorageEvent('storage', { key: 'samira:rental-availability-changed' }) : new Event(event === 'same-tab mutation' ? 'samira:rental-availability-changed' : 'focus')));
+  expect(screen.queryByRole('button', { name: 'Use these dates' })).not.toBeInTheDocument();
+  expect(await screen.findByText('Unavailable for this period')).toBeInTheDocument();
+  expect(screen.getByText('Already booked for these dates.')).toBeInTheDocument();
+  expect(api.get).toHaveBeenCalledTimes(2);
+});
+
+test('calendar polls every 30 seconds while visible and pauses in a hidden tab', async () => {
+  jest.useFakeTimers(); api.get.mockResolvedValue({ rows: [available] });
+  const view = render(<RentalAvailabilityCalendar listing={listing} policy={policy} />);
+  try {
+    await act(async () => {});
+    expect(api.get).toHaveBeenCalledTimes(1);
+    await act(async () => { jest.advanceTimersByTime(30000); });
+    expect(api.get).toHaveBeenCalledTimes(2);
+    const visibility = jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    await act(async () => { jest.advanceTimersByTime(60000); });
+    expect(api.get).toHaveBeenCalledTimes(2); visibility.mockRestore();
+  } finally { view.unmount(); jest.useRealTimers(); }
 });
 test('an old calendar response cannot replace the newly selected month', async () => {
   let finish;

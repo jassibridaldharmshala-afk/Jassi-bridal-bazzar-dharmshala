@@ -50,11 +50,32 @@ test('photo draft editor keeps sale and rental prices separate', async () => {
   expect(normalizeDraftBody({ ...draft, commerceMode: 'SALE_AND_RENTAL', rentalPricing: { dailyRatePaise: 60000, depositPaise: 100000 } })).toEqual(expect.objectContaining({ price: 1000, rentalPricing: { dailyRatePaise: 60000, depositPaise: 100000 } }));
 });
 
+test('rental draft requires actual pieces before publishing and completes without another setup redirect', async () => {
+  const navigate = jest.fn();
+  mockPublish.mockImplementation(() => ({ unwrap: async () => ({ success: true, data: { results: [{ id: 'draft-a', status: 'published' }], products: [{ _id: 'product-a', name: draft.name, commerceMode: 'SALE_AND_RENTAL', rentalOffers: [{ _id: 'offer-a', ready: true }] }] } }) }));
+  render(<ProductDrafts route="/admin/product-drafts" navigate={navigate} />);
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Review' }))[0]);
+  fireEvent.change(screen.getByLabelText('Available for'), { target: { value: 'SALE_AND_RENTAL' } });
+  fireEvent.change(screen.getByLabelText('Rental price per day (₹)'), { target: { value: '500' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save & publish' }));
+  expect(mockPublish).not.toHaveBeenCalled();
+  expect(screen.getAllByText(/actual number of physical rental pieces/).length).toBeGreaterThan(0);
+  fireEvent.change(screen.getByLabelText('Physical rental pieces'), { target: { value: '2' } });
+  fireEvent.change(screen.getByLabelText('Rack / location (optional)'), { target: { value: 'A-01' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save & publish' }));
+  await waitFor(() => expect(mockPublish).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: draft.name })).not.toBeInTheDocument());
+  expect(navigate).not.toHaveBeenCalled();
+  expect(screen.queryByText(/Complete rental setup/)).not.toBeInTheDocument();
+  expect(mockSave.mock.calls[0][0].body.rentalPricing.inventory).toEqual([{ componentIndex: 0, quantity: 2, location: 'A-01', status: 'READY' }]);
+});
+
 test('draft commerce options stay visible in Inventory and blank sizes publish as Free Size', async () => {
   render(<ProductDrafts />);
   fireEvent.click((await screen.findAllByRole('button', { name: 'Review' }))[0]);
   fireEvent.change(screen.getByLabelText('Available for'), { target: { value: 'SALE_AND_RENTAL' } });
   fireEvent.change(screen.getByLabelText('Rental price per day (₹)'), { target: { value: '500' } });
+  fireEvent.change(screen.getByLabelText('Physical rental pieces'), { target: { value: '2' } });
   fireEvent.click(screen.getByRole('button', { name: 'Inventory' }));
   expect(screen.getByLabelText('Available for')).toHaveValue('SALE_AND_RENTAL');
   const sizes = screen.getByLabelText('Available sizes');
@@ -63,7 +84,7 @@ test('draft commerce options stay visible in Inventory and blank sizes publish a
   expect(screen.queryByLabelText('M Bust')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Save & publish' }));
   await waitFor(() => expect(mockPublish).toHaveBeenCalledWith({ ids: ['draft-a'], apiPrefix: '/admin' }));
-  expect(mockSave.mock.calls[0][0].body).toMatchObject({ commerceMode: 'SALE_AND_RENTAL', sellingPrice: 1000, rentalPricing: { dailyRatePaise: 50000 }, sizingMode: 'free-size', sizes: [], sizeChart: { rows: [] } });
+  expect(mockSave.mock.calls[0][0].body).toMatchObject({ commerceMode: 'SALE_AND_RENTAL', sellingPrice: 1000, rentalPricing: { dailyRatePaise: 50000, inventory: [{ componentIndex: 0, quantity: 2 }] }, sizingMode: 'free-size', sizes: [], sizeChart: { rows: [] } });
 });
 
 test('draft sizes can be entered manually even when shop sizing is disabled and clearing them preserves stock', async () => {

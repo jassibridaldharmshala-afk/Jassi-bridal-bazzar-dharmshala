@@ -219,3 +219,60 @@
 .rental-setup .product-smart-fill__fields{max-height:360px;overflow:auto}
 @media(max-width:900px){.rental-product-options{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:640px){.rental-product-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rental-product-identity{grid-template-columns:100px 1fr;gap:12px;padding:12px}.rental-product-identity__photo>img{height:130px}.rental-product-identity h3{font-size:15px}.rental-product-identity__details .rental-muted{font-size:11px}.rental-product-photo-choices button{width:40px;height:48px}.rental-setup .product-smart-fill__toggle{padding:12px}.rental-setup .product-smart-fill__toggle small{font-size:11px;line-height:1.5}.rental-setup-review p{font-size:13px}.rental-setup .rental-saved-options .rental-button{white-space:normal;text-align:left}}
+
+/* Match the compact admin workspace while retaining setup and stock controls. */
+.rental-workspace.rental-admin { width: 100%; max-width: none; margin: 0; padding: 0; gap: 12px; min-width: 0; }
+.rental-admin .rental-card { padding: 16px; border-radius: 14px; }
+.rental-admin .rental-studio-header { gap: 10px; align-items: center; }
+.rental-admin .rental-orders-shortcut { display: inline-flex; align-items: center; min-height: 44px; color: var(--rental-wine); font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.rental-admin .rental-studio-nav { padding: 4px; gap: 4px; border-radius: 12px; }
+.rental-admin .rental-studio-nav button { min-height: 44px; padding: 8px; }
+.rental-admin .rental-get-started { margin: 0; }
+.rental-admin .rental-get-started summary { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+.rental-admin .rental-tool-panel header { margin-bottom: 10px; }
+.rental-admin .rental-tool-grid { gap: 8px; }
+.rental-admin .rental-tool-grid button { min-height: 80px; padding: 12px; gap: 5px; }
+.rental-admin .rental-section-heading { align-items: center; margin-bottom: 12px; gap: 10px; }
+.rental-admin .rental-section-heading h2 { margin: 0; font-size: 18px; }
+.rental-admin .rental-disclosure { margin: 12px 0; padding: 10px 12px; }
+.rental-admin .rental-disclosure > summary { min-height: 24px; }
+.rental-admin .rental-setup-steps { margin: 12px 0; gap: 8px; }
+.rental-admin .rental-setup-steps button { padding: 9px; min-height: 44px; }
+.rental-admin .rental-step-intro { margin: 12px 0; }
+.rental-admin .rental-step-intro > span { display: none; }
+.rental-admin .rental-step-intro h3 { font-size: 18px; margin: 4px 0 6px; }
+.rental-admin .rental-record-pager { padding: 0; border: 0; background: transparent; margin: 0 0 12px; }
+.rental-admin .rental-record-pager .rental-fields { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+.rental-admin .rental-record-pager .rental-actions { margin-top: 8px; align-items: center; gap: 8px; }
+.rental-admin .rental-piece-guide { margin-top: 6px; font-size: 12px; }
+.rental-admin .rental-piece-guide summary { min-height: 36px; align-content: center; color: var(--rental-wine); cursor: pointer; font-weight: 650; }
+.rental-admin .rental-piece-guide p { padding: 10px 12px; border: 1px solid var(--rental-line); border-radius: 10px; }
+.rental-admin .rental-piece-list { margin: 12px 0; gap: 10px; }
+.rental-admin .rental-piece-card { padding: 14px; border-radius: 12px; }
+.rental-admin .rental-piece-card dl { margin: 10px 0; }
+.rental-admin .rental-piece-card-actions { gap: 8px; padding-top: 10px; }
+.rental-admin .rental-tab-content { gap: 12px; }
+.rental-admin .rental-product-options { margin: 12px 0; }
+.rental-admin .rental-product-option__photo { aspect-ratio: auto; height: 140px; }
+.rental-admin .rental-product-identity { grid-template-columns: 100px minmax(0, 1fr); gap: 12px; padding: 12px; }
+.rental-admin .rental-product-identity__photo > img { height: 130px; }
+.rental-admin .rental-product-picker.is-selected { padding: 12px; }
+.rental-admin .rental-product-picker.is-selected .rental-product-identity { padding: 0; border: 0; margin: 0; background: transparent; grid-template-columns: 80px minmax(0, 1fr); }
+.rental-admin .rental-product-picker.is-selected .rental-product-identity__photo > img { height: 96px; }
+.rental-admin .rental-product-picker.is-selected .rental-product-identity__details > .rental-eyebrow { display: none; }
+.rental-admin .rental-register-card { margin: 12px 0; padding: 12px; }
+.rental-admin .rental-step-actions { padding-top: 12px; margin-top: 12px; }
+@media (max-width: 640px) {
+  .rental-admin .rental-card { padding: 12px; }
+  .rental-admin .rental-get-started { padding: 0; }
+  .rental-admin .rental-studio-header { flex-direction: row; }
+  .rental-admin .rental-studio-header > .rental-button { width: auto; max-width: 56%; font-size: 12px; padding: 8px 10px; }
+  .rental-admin .rental-studio-nav button { min-height: 56px; font-size: 11px; gap: 4px; padding: 6px 3px; }
+  .rental-admin .rental-studio-nav button span { min-height: 0; }
+  .rental-admin .rental-section-heading { flex-direction: row; }
+  .rental-admin .rental-section-heading > .rental-button { padding: 8px 10px; font-size: 12px; }
+  .rental-admin .rental-setup-steps button { gap: 6px; padding: 8px 4px; }
+  .rental-admin .rental-setup-steps button span { min-height: 0; }
+  .rental-admin .rental-piece-card-actions { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+  .rental-admin .rental-piece-card-actions > .rental-field { grid-column: 1 / -1; }
+}

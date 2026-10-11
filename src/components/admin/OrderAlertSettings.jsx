@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 
@@ -12,7 +14,7 @@ const noop = () => {};
 
 export default function OrderAlertSettings({ apiBase = '/admin/settings', onDirtyChange = noop, onBusyChange = noop }) {
   const [data, setData] = useState(null), [form, setForm] = useState(blank), [saved, setSaved] = useState(null);
-  const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useAdminFeedback('', 'success', 'Order Alert Settings');
   const [uncertainId, setUncertainId] = useState('');
   const locked = useRef(false);
   const dirty = !!saved && JSON.stringify(form) !== JSON.stringify(saved);
@@ -43,7 +45,7 @@ export default function OrderAlertSettings({ apiBase = '/admin/settings', onDirt
   return <div className="space-y-5">
     <div className="store-settings__tip"><p>Get a new-order alert without keeping this dashboard open. COD orders are announced when placed (verification status is included); online orders only after payment is confirmed. Notifications never block checkout.</p></div>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
-    {notice && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{notice}</p>}
+    <AdminFeedback message={notice} type="success" title="Order Alert Settings" onDismiss={() => setNotice('')} />
     <fieldset disabled={busy} className="space-y-5">
       {field('', 'storefrontUrl', 'Storefront URL for order links', { type: 'url', placeholder: 'https://your-store.com' })}
       <section className="space-y-3 rounded-xl border border-theme-border p-4" aria-labelledby="email-alert-heading">

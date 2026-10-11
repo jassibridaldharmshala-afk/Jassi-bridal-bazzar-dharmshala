@@ -12,6 +12,19 @@ const product = { _id: 'product-1', name: 'Rose kurta', stock: 8, variants: [], 
 const order = { _id: 'order12345678', orderStatus: 'Pending', paymentStatus: 'Pending', paymentMethod: 'COD', finalAmount: 1299, createdAt: '2026-09-06T00:00:00Z', orderItems: [{ product: 'p', name: 'Rose kurta', size: 'M', color: 'Pink', quantity: 1, price: 1299 }] };
 beforeEach(() => jest.clearAllMocks());
 
+test('sale order list and detail show the saved checkout identity rather than generated or changed account details', async () => {
+  const saved = { ...order, customer: { name: 'Priya Sharma', email: 'priya@example.com', phone: '9876543210' }, user: { name: 'Jassi User 0907', email: 'phone+9000000907@samira.local', phone: '9000000907' }, shippingAddress: { fullName: 'Priya Sharma', mobile: '9876543210' } };
+  api.get.mockImplementation(async path => path.includes('workspace-summary') ? {} : [saved]);
+  const view = render(<Orders />);
+  expect(await screen.findByText('Priya Sharma')).toBeInTheDocument(); expect(screen.queryByText('Jassi User 0907')).not.toBeInTheDocument();
+  view.unmount();
+  api.get.mockImplementation(async path => path.endsWith('/receipt') ? null : { ...saved, user: { ...saved.user, name: 'Changed account name', email: 'changed@example.com' } });
+  render(<OrderDetail route={'/admin/orders/detail?id=' + order._id} />);
+  expect(await screen.findByRole('link', { name: 'priya@example.com' })).toHaveAttribute('href', 'mailto:priya@example.com');
+  expect(screen.getAllByText('Priya Sharma').length).toBeGreaterThan(0);
+  expect(screen.queryByText('Changed account name')).not.toBeInTheDocument(); expect(screen.queryByText('changed@example.com')).not.toBeInTheDocument();
+});
+
 const inventorySummary = { sellable: 8, capabilities: { canAdjust: true, canBulkAdjust: true, canApprove: true, canReceive: true, canExport: true, canViewCost: true } };
 const inventoryPage = (items = [product]) => ({ items, page: 1, limit: 25, total: items.length, totalPages: 1, capabilities: inventorySummary.capabilities });
 const mockInventory = (items = [product]) => api.get.mockImplementation(async (path) => path.includes('/inventory/summary') ? inventorySummary : inventoryPage(items));
@@ -101,11 +114,11 @@ test('shipment validation failures preserve order controls and entered tracking 
   const tracking = await screen.findByPlaceholderText('AWB / tracking number');
   fireEvent.change(tracking, { target: { value: 'AWB123' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save manual shipment' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Tracking URL');
+  expect(await screen.findByRole('status')).toHaveTextContent('Tracking URL');
   expect(tracking).toHaveValue('AWB123');
   expect(screen.getByRole('heading', { name: 'Ordered items' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Save manual shipment' }));
-  await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByText('Tracking URL must use HTTPS')).not.toBeInTheDocument());
   expect(api.put).toHaveBeenCalledTimes(2);
 });
 

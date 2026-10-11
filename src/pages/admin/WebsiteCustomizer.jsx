@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { lazy, Suspense, memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Check, Copy, Download, History, Monitor, Palette, Plus, Redo2, RotateCcw, Save, Smartphone, Tablet, Trash2, Undo2, UploadCloud } from 'lucide-react';
 import PageHeader from '../../components/admin/PageHeader';
@@ -33,7 +35,7 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
   const [device, setDevice] = useState(previewDeviceForViewport);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useAdminFeedback('', 'info', 'Website Customizer');
   const [newThemeName, setNewThemeName] = useState('');
   const [newPreset, setNewPreset] = useState('default');
   const [catalog, setCatalog] = useState([]);
@@ -114,9 +116,9 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
       // The editor is usable immediately; history must not hold the page loader.
       loadHistory(target);
 
-    } catch (error) { if (sequence === requestId.current) setMessage(error.message); }
+    } catch (error) { if (sequence === requestId.current) setMessage(error.message, 'error'); }
     finally { if (sequence === requestId.current) setLoading(false); }
-  }, [acceptTheme, loadHistory, sellerMode]);
+  }, [acceptTheme, loadHistory, sellerMode, setMessage]);
 
   useEffect(() => { mounted.current = true; loadWorkspace(); return () => { mounted.current = false; requestId.current += 1; }; }, [loadWorkspace]);
   const loadCatalog = useCallback(async () => {
@@ -217,7 +219,7 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
   const run = async (label, action) => {
     if (lock.current) { setMessage('A draft save is already in progress. Please retry in a moment.'); return; }
     lock.current = true; setBusy(label); setMessage('');
-    try { await action(); } catch (error) { setMessage(error.message || 'Unable to complete this action. Your draft is still in the editor.'); }
+    try { await action(); } catch (error) { setMessage(error.message || 'Unable to complete this action. Your draft is still in the editor.', 'error'); }
     finally { lock.current = false; setBusy(''); }
   };
   const confirmLeave = () => !dirty || window.confirm('Discard unsaved editor changes and switch themes? Save or export first to keep them.');
@@ -237,24 +239,24 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
     dispatchDraft({ type: 'replace', draft: next });
     setCompareSaved(false);
     setMessage(''); setPublishReview(false); setPreflight(null);
-  }, []);
+  }, [setMessage]);
   const updateDraft = useCallback((path, value) => {
     dispatchDraft({ type: 'edit', path, value, time: Date.now() });
     setCompareSaved(false);
     setMessage(''); setPublishReview(false); setPreflight(null);
-  }, []);
+  }, [setMessage]);
   const undo = () => { dispatchDraft({ type: 'undo' }); setPublishReview(false); setPreflight(null); setCompareSaved(false); };
   const redo = () => { dispatchDraft({ type: 'redo' }); setPublishReview(false); setPreflight(null); setCompareSaved(false); };
   const updateSection = useCallback((id, field, value) => {
     dispatchDraft({ type: 'section', id, field, value, time: Date.now() });
     setCompareSaved(false);
     setMessage(''); setPublishReview(false); setPreflight(null);
-  }, []);
+  }, [setMessage]);
   const moveSection = useCallback((id, direction) => {
     dispatchDraft({ type: 'move-section', id, direction });
     setCompareSaved(false);
     setMessage(''); setPublishReview(false); setPreflight(null);
-  }, []);
+  }, [setMessage]);
   const persistDraft = async () => {
     if (issues.length) throw new Error(issues[0]);
     if (!selectedTheme.name.trim()) throw new Error('Enter a theme name.');
@@ -366,14 +368,14 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
       if (window.confirm('Replace the editor draft with this file? You can undo this. Nothing will be published.')) {
         replaceDraft(config); setMessage('Theme imported into the editor. Review every device before publishing.');
       }
-    } catch (error) { setMessage(error instanceof SyntaxError ? 'This file is not valid JSON.' : error.message); }
+    } catch (error) { setMessage(error instanceof SyntaxError ? 'This file is not valid JSON.' : error.message, 'error'); }
   };
 
   const applyPreset = useCallback((preset, includeMobile) => {
     const appearance = applyAppearancePreset(draft, preset.config);
     replaceDraft(includeMobile ? matchMobileAppearance(appearance) : appearance);
     setMessage(`${preset.name} applied to the draft. Publish to update desktop, mobile, loaders and admin.${includeMobile ? ' Mobile corners also matched.' : ' Mobile layout preserved.'} Your content and product selections are kept.`);
-  }, [draft, replaceDraft]);
+  }, [draft, replaceDraft, setMessage]);
   const restorePanel = () => {
     replaceDraft(restoreDesignerPanel(draft, savedConfig, activeTab));
     setMessage('This panel now matches the last saved draft. Other edits are kept. Use Undo to bring it back.');
@@ -383,9 +385,9 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
   if (loading) return <section className="admin-card p-8 text-sm text-slate-500" role="status">Loading Website Designer…</section>;
   if (!draft) return <section className="admin-card space-y-4 p-8"><h2 className="text-lg font-bold">Website Designer could not load</h2><p role="alert">{message}</p><button type="button" className="admin-btn" onClick={() => loadWorkspace()}>Try again</button></section>;
 
-  return <section className="min-w-0 space-y-5">
-    <PageHeader title={sellerMode ? 'Storefront Studio' : 'Website Designer'} note="Your store, your style. Edit privately, preview real pages, and publish with confidence." />
-    <p className="rounded-xl border border-theme-border bg-white p-4 text-xs leading-6 text-slate-600">Shared brand identity, contact details and announcements configured in <a href={sellerMode ? '/seller/settings' : '/admin/settings'} className="font-bold text-wine underline">Store settings</a> take priority over theme defaults. {workspace.managedFields?.length ? <>Currently managed there: <strong>{workspace.managedFields.join(', ')}</strong>.</> : 'No designer fields are currently overridden by Store settings.'}</p>
+  return <section className="designer-compact admin-compact min-w-0 space-y-5">
+    <PageHeader compact title={sellerMode ? 'Storefront Studio' : 'Website Designer'} note="Your store, your style. Edit privately, preview real pages, and publish with confidence." />
+    <details className="admin-compact-guide"><summary>Shared settings & device guide</summary><p>Shared brand identity, contact details and announcements configured in <a href={sellerMode ? '/seller/settings' : '/admin/settings'} className="font-bold text-wine underline">Store settings</a> take priority over theme defaults. {workspace.managedFields?.length ? <>Currently managed there: <strong>{workspace.managedFields.join(', ')}</strong>.</> : 'No designer fields are currently overridden by Store settings.'}</p><p>Desktop appearance controls do not change mobile layouts. Branding and footer content are shared. Mobile and tablet overrides are off unless you enable them.</p></details>
     <div className="admin-card space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2"><StatusDot active={selectedTheme.isActive} />
@@ -399,11 +401,11 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
           <button type="button" onClick={reviewPublish} disabled={!!busy || !!issues.length} className="inline-flex h-10 items-center gap-2 rounded-xl bg-wine px-4 text-xs font-black text-white disabled:opacity-50"><UploadCloud className="h-4 w-4" />{busy === 'preflight' ? 'Checking…' : 'Review & publish'}</button>
         </div>
       </div>
-      <p className="text-xs leading-5 text-slate-500">Desktop appearance controls do not change mobile layouts. Branding and footer content are shared. Mobile and tablet overrides are off unless you enable them.</p>
+
     </div>
     {recovery && <div className="admin-card flex flex-wrap items-center justify-between gap-3 border-amber-200 bg-amber-50 p-4"><div><p className="text-sm font-bold text-amber-900">A newer browser recovery draft is available.</p><p className="mt-1 text-xs text-amber-800">Saved {formatDate(recovery.savedAt)}. Restoring it changes only this private editor.</p></div><div className="flex gap-2"><button type="button" className="admin-btn" onClick={() => { replaceDraft(mergeWebsiteConfig(recovery.config)); setSelectedTheme((current) => ({ ...current, name: recovery.name || current.name })); setRecovery(null); }}>Restore recovery</button><button type="button" className="admin-btn-secondary" onClick={() => clearRecovery()}>Dismiss</button></div></div>}
     {selectedTheme.scheduledFor && <div className="admin-card flex flex-wrap items-center justify-between gap-3 border-sky-200 bg-sky-50 p-4"><div><p className="text-sm font-bold text-sky-900">A storefront update is scheduled.</p><p className="mt-1 text-xs text-sky-800">It will publish {formatDate(selectedTheme.scheduledFor)}. Later draft edits do not change the scheduled snapshot.</p></div><button type="button" className="admin-btn-secondary" disabled={!!busy} onClick={cancelSchedule}>Cancel schedule</button></div>}
-    {message && <p role="status" className="rounded-xl border border-theme-border bg-white p-4 text-sm font-semibold text-wine">{message}</p>}
+    <AdminFeedback message={message} type="info" title="Website Customizer" onDismiss={() => setMessage('')} />
     {!!issues.length && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-bold">Correct these fields before saving</p><ul className="mt-2 list-disc pl-5">{issues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}
     {publishReview && <div className="admin-card space-y-3 border-wine p-5" role="region" aria-label="Publish review">
       <h2 className="text-lg font-bold">Ready to update the live storefront?</h2>
@@ -416,7 +418,7 @@ export default function WebsiteCustomizer({ mode = 'admin' }) {
       <p className="text-xs text-slate-500">Publishing records a version. You can restore an earlier version to a draft at any time.</p>
       <details><summary className="cursor-pointer text-xs font-bold text-wine">Review color readability</summary><fieldset disabled={!!busy} className="mt-3"><ReadabilityReview draft={draft} replace={replaceDraft} onSelect={editFromReview} /></fieldset></details>
     </div>}
-    <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[220px_minmax(0,1fr)]">
+    <div className="designer-layout grid min-w-0 items-start gap-5 xl:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="order-2 min-w-0 space-y-4 xl:order-1">
         {!sellerMode && <div className="admin-card space-y-3 p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold"><Palette className="h-4 w-4" />My themes</h2>

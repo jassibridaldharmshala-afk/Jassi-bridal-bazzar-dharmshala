@@ -23,10 +23,12 @@ describe('desktop home workflows', () => {
   });
 
   test('shows a useful empty collection state instead of a blank section', () => {
-    render(<DesktopLuxuryHome navigate={jest.fn()} />);
+    render(<DesktopLuxuryHome navigate={jest.fn()} discovery={{ rentalEnabled: true, mode: 'SALE_AND_RENTAL', occasions: [{ key: 'wedding', label: 'Wedding' }] }} />);
 
     expect(screen.getByText(/No accessories are published yet/i)).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Browse all products/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('heading', { name: 'Shop by occasion' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Your look. Your choice.' })).not.toBeInTheDocument();
   });
 
   test('desktop rails disable out-of-stock purchases and do not invent five-star reviews', () => {

@@ -1,5 +1,5 @@
 import { useRentalBag } from '../../context/RentalBagContext';
-import { rentalShoppingRoute } from '../../utils/rentalShopping';
+import { rentalShoppingRoute, shoppingBagDestination } from '../../utils/rentalShopping';
 import NotificationBell from '../notifications/NotificationBell';
 import { useNotifications } from '../../context/NotificationContext';
 import { useEffect, useState } from 'react';
@@ -47,6 +47,8 @@ export default function MobileHeader({ navigate, route = '/' }) {
   const cart = useCart();
   const rentalBag = useRentalBag();
   const rentalShopping = rentalShoppingRoute(route);
+  const bagCount = Number(cart?.itemCount || 0) + Number(rentalBag.itemCount || 0);
+  const bagDestination = shoppingBagDestination(route, cart?.itemCount, rentalBag.itemCount);
   const wishlist = useWishlist();
   const { user, switchMode } = useAuth();
   const { unreadCount } = useNotifications();
@@ -118,11 +120,11 @@ export default function MobileHeader({ navigate, route = '/' }) {
                 </span>
               )}
             </button>
-            <button onClick={() => go(rentalShopping ? '/rental-cart' : '/cart')} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open cart">
+            <button onClick={() => go(bagDestination)} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open cart">
               <Icon name="bag" className="h-5.5 w-5.5" />
-              {(rentalShopping ? rentalBag.itemCount : cart.itemCount) > 0 && (
+              {bagCount > 0 && (
                 <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-wine px-1 text-[9px] font-black leading-none text-white">
-                  {(rentalShopping ? rentalBag.itemCount : cart.itemCount)}
+                  {bagCount}
                 </span>
               )}
             </button>
@@ -191,7 +193,7 @@ export default function MobileHeader({ navigate, route = '/' }) {
                 <DrawerLink icon={Package} label="My Orders" onClick={() => go('/orders')} />
                 <DrawerLink icon={Bell} label="Notifications" badge={unreadCount > 99 ? '99+' : unreadCount || ''} onClick={() => go('/notifications')} />
                 <DrawerLink icon={Heart} label="Wishlist" badge={wishlist.items.length || ''} onClick={() => go(rentalShopping ? '/wishlist?mode=rent' : '/wishlist')} />
-                <DrawerLink icon={ShoppingBag} label="My Cart" badge={(rentalShopping ? rentalBag.itemCount : cart.itemCount) || ''} onClick={() => go(rentalShopping ? '/rental-cart' : '/cart')} />
+                <DrawerLink icon={ShoppingBag} label="My Cart" badge={bagCount || ''} onClick={() => go(bagDestination)} />
                 <DrawerLink icon={MapPin} label="Saved Addresses" onClick={() => go('/profile/addresses')} />
                 <DrawerLink icon={Tag} label="Coupons" onClick={() => go('/profile')} />
               </DrawerSection>

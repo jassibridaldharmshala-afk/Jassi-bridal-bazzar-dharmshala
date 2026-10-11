@@ -29,7 +29,7 @@ const filterConfig = {
   ],
 };
 
-export default function MobileFilterSheet({ open, onClose, categories = [], params, applyDraftFilters, dynamicFacets = [], facets = {}, totalResults = 0 }) {
+export default function MobileFilterSheet({ open, onClose, categories = [], params, applyDraftFilters, dynamicFacets = [], facets = {}, totalResults = 0, shoppingMode }) {
   const [activeSection, setActiveSection] = useState('category');
   const [draft, setDraft] = useState(() => buildDraft(params));
   const dialogRef = useRef(null);
@@ -101,6 +101,7 @@ export default function MobileFilterSheet({ open, onClose, categories = [], para
     return multiCount + singleCount + (draft.minPrice || draft.maxPrice ? 1 : 0);
   }, [draft, dynamicFacets]);
   const visibleNavItems = [...navItems.filter((item) => {
+    if (shoppingMode === 'rental' && ['discount', 'stock'].includes(item.key)) return false;
     if (['price', 'sort', 'category'].includes(item.key)) return true;
     const facetKey = item.key === 'stock' ? 'availability' : `${item.key}s`;
     return (facets[facetKey] || []).some((option) => option.count > 0 || splitFilterValues(draft[item.key]).includes(String(option.value)));
@@ -215,7 +216,7 @@ export default function MobileFilterSheet({ open, onClose, categories = [], para
 
             {activeSection === 'price' && (
               <FilterSection>
-                <Accordion title="Price" open={expanded.price} onToggle={() => toggleExpanded('price', setExpanded)}>
+                <Accordion title={shoppingMode === 'rental' ? 'Rent / use day' : 'Price'} open={expanded.price} onToggle={() => toggleExpanded('price', setExpanded)}>
                   <div className="mobile-filter__prices">
                     <PriceInput label="Min Price" value={draft.minPrice} onChange={(value) => setDraft((current) => ({ ...current, minPrice: digitsOnly(value) }))} />
                     <PriceInput label="Max Price" value={draft.maxPrice} onChange={(value) => setDraft((current) => ({ ...current, maxPrice: digitsOnly(value) }))} />
@@ -270,7 +271,7 @@ export default function MobileFilterSheet({ open, onClose, categories = [], para
               <FilterSection>
                 <Accordion title="Sort By" open={expanded.sort} onToggle={() => toggleExpanded('sort', setExpanded)}>
                   <CheckboxList
-                    items={filterConfig.sort}
+                    items={filterConfig.sort.filter(item => shoppingMode !== 'rental' || item.value !== 'discount')}
                     value={draft.sort}
                     onChange={(value) => setDraft((current) => ({ ...current, sort: current.sort === value ? '' : value }))}
                   />

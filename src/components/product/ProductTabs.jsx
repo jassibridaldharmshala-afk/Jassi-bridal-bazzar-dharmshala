@@ -4,6 +4,7 @@ import './ProductTabs.css';
 
 export default function ProductTabs({
   product,
+  rentalOnly = false,
   returnPolicy = '',
   shippingPolicy = '',
   freeShippingMinimum = 0,
@@ -12,7 +13,7 @@ export default function ProductTabs({
 }) {
   const details = buildProductDetails(product);
   const hasMaterialCare = Boolean(details.fabric || details.careInstructions);
-  const hasDeliveryInformation = Boolean(returnPolicy || shippingPolicy || freeShippingMinimum || deliveryCharge);
+  const hasDeliveryInformation = !rentalOnly && Boolean(returnPolicy || shippingPolicy || freeShippingMinimum || deliveryCharge);
 
   return (
     <section className="sc-tabs" id="desktop-product-details" aria-labelledby="desktop-product-details-title">

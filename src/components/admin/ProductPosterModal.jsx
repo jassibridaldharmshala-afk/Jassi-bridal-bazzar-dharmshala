@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Download, X } from 'lucide-react';
 import { normalizeImageUrl } from '../../services/normalize';
@@ -5,7 +7,7 @@ import { productHref } from '../../utils/routing';
 
 export default function ProductPosterModal({ open, product, settings, onClose }) {
   const [posterUrl, setPosterUrl] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useAdminFeedback('', 'info', 'Product Poster Modal');
   const [generationFailed, setGenerationFailed] = useState(false);
   const [retry, setRetry] = useState(0);
 
@@ -22,12 +24,12 @@ export default function ProductPosterModal({ open, product, settings, onClose })
         if (!cancelled) setPosterUrl(url);
       })
       .catch((error) => {
-        if (!cancelled) { setGenerationFailed(true); setMessage(error.message || 'Unable to generate poster'); }
+        if (!cancelled) { setGenerationFailed(true); setMessage(error.message || 'Unable to generate poster', 'error'); }
       });
     return () => {
       cancelled = true;
     };
-  }, [open, product, settings, shareLink, retry]);
+  }, [open, product, settings, shareLink, retry, setMessage]);
 
   if (!open || !product) return null;
 
@@ -68,7 +70,7 @@ export default function ProductPosterModal({ open, product, settings, onClose })
             <p className="text-sm text-slate-500">WhatsApp: {settings?.whatsappNumber || '-'}</p>
             <p className="text-sm text-slate-500">Website: {window.location.origin}</p>
             <input aria-label="Product link" readOnly value={shareLink} className="admin-field__control" />
-            {message && <p role="status" className="rounded-xl bg-[#fdf4f6] px-3 py-2 text-sm font-semibold text-rose">{message}</p>}
+            <AdminFeedback message={message} type="info" title="Product Poster Modal" onDismiss={() => setMessage('')} />
             <button type="button" onClick={download} disabled={!posterUrl} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-wine px-4 text-sm font-black text-white disabled:opacity-60">
               <Download className="h-4 w-4" />
               Download PNG
@@ -99,9 +101,9 @@ async function generatePoster(product, settings, shareLink) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = '#6d1f34';
-  ctx.fillRect(60, 60, 180, 56);
+  ctx.fillRect(60, 60, 960, 56);
   ctx.fillStyle = '#ffffff';
-  drawText(ctx, 'JASSI GENERAL STORE', 150, 96, '24px Arial', 'center');
+  drawText(ctx, 'JASSI BRIDAL BAZAR DHARMSHALA', 540, 96, 'bold 28px Arial', 'center');
 
   const image = await loadImage(normalizeImageUrl(product.images?.[0]?.url || product.primaryImageUrl || '/uploads/placeholder.jpg'));
   const imageX = 90;

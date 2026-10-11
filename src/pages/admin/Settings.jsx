@@ -1,5 +1,7 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BadgeCheck, Building2, Check, ChevronRight, CreditCard, Globe2, ImagePlus, Link2, Mail, ReceiptText, RotateCcw, Save, Search, ShieldCheck, Truck } from 'lucide-react';
+import { BadgeCheck, Building2, ChevronRight, CreditCard, Globe2, ImagePlus, Link2, Mail, ReceiptText, RotateCcw, Save, Search, ShieldCheck, Truck } from 'lucide-react';
 import PageHeader from '../../components/admin/PageHeader';
 import ImageUploader from '../../components/admin/ImageUploader';
 import api from '../../services/api';
@@ -29,7 +31,7 @@ export default function Settings({ route = '' }) {
   const [active, setActive] = useState('identity');
   const [search, setSearch] = useState('');
   const [paymentReadiness, setPaymentReadiness] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useAdminFeedback(null, 'success', 'Settings');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const uploadLock = useRef(false);
@@ -106,8 +108,8 @@ export default function Settings({ route = '' }) {
   const sections = availableSections.filter(section => (section.title + ' ' + section.note + ' ' + section.keywords).toLowerCase().includes(search.toLowerCase().trim()));
   const logo = normalizeImageUrl(form.brandIdentityEnabled ? form.logoUrl : form.logoUrl ?? brand.logo) || logoFallback;
 
-  return <section className="store-settings">
-    <PageHeader title="Store settings" note="Everything you need to manage your business, in one place." />
+  return <section className="store-settings admin-compact">
+    <PageHeader compact title="Store settings" note="Everything you need to manage your business, in one place." />
     {loading ? <div className="admin-card p-6" role="status">Loading settings...</div> : loadError ? <div role="alert" className="store-settings__notice"><p>{loadError}</p><button type="button" onClick={load} className="admin-btn-ghost">Retry settings</button></div> : <>
       <div className="store-settings__overview">
         <div className="store-settings__brand"><StoreLogo src={logo} name={form.storeName || 'Your store'} /><div><strong>{form.storeName || 'Your store'}</strong><span>{form.legalBusinessName || 'Business preferences and storefront identity'}</span></div></div>
@@ -232,7 +234,7 @@ export default function Settings({ route = '' }) {
           </div>
         </div>
         {!['sms', 'order-alerts', 'traffic', 'rentals'].includes(active) && <div className="store-settings__savebar">
-          <div aria-live="polite">{message ? <p className={message.error ? 'is-error' : 'is-success'} role={message.error ? 'alert' : 'status'}>{!message.error && <Check size={17} />}{message.text}</p> : <p>{dirty ? 'You have unsaved changes' : 'All changes saved'}<small>{dirty ? 'Save to apply your updates across the store.' : 'Changes apply after you save.'}</small></p>}{message?.conflict && <button type="button" disabled={saving} onClick={reloadLatest} className="text-xs font-bold text-wine underline">Reload latest and keep my edits</button>}</div>
+          <div aria-live="polite"><AdminFeedback message={message} type="success" title="Settings" onDismiss={() => setMessage(null)} /><p>{dirty ? 'You have unsaved changes' : 'All changes saved'}<small>{dirty ? 'Save to apply your updates across the store.' : 'Changes apply after you save.'}</small></p>{message?.conflict && <button type="button" disabled={saving} onClick={reloadLatest} className="text-xs font-bold text-wine underline">Reload latest and keep my edits</button>}</div>
           <div className="store-settings__save-actions"><button type="button" className="admin-btn-ghost" disabled={!dirty || saving || uploading} onClick={discard}><RotateCcw size={16} /><span>Discard</span></button><button type="submit" className="admin-btn" disabled={!dirty || saving || uploading}><Save size={17} />{uploading ? 'Uploading...' : saving ? 'Saving...' : 'Save Settings'}</button></div>
         </div>}
       </form>

@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useEffect, useRef, useState } from 'react';
 import { Download, RefreshCw, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import api from '../../services/api';
@@ -74,7 +76,7 @@ export default function AuditExplorer({ endpoint = '/admin/audit-logs', seller =
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useAdminFeedback('', 'success', 'Audit Explorer');
   const pendingDelete = useRef(null);
   const explorer = useRef(null);
   const returnFocus = useRef(null);
@@ -82,7 +84,7 @@ export default function AuditExplorer({ endpoint = '/admin/audit-logs', seller =
   useEffect(() => {
     setDeleting(false); setConfirmDelete(false); setDeleteError(''); setNotice('');
     return () => { pendingDelete.current = null; };
-  }, [endpoint]);
+  }, [endpoint, setNotice]);
 
   useEffect(() => {
     let active = true;
@@ -187,11 +189,10 @@ export default function AuditExplorer({ endpoint = '/admin/audit-logs', seller =
 
   const actions = <><button type="button" className="admin-btn-ghost" onClick={refresh} disabled={loading}><RefreshCw size={16} /> Refresh</button>
     <button type="button" className="admin-btn-ghost" disabled={loading || !!error || !result?.items?.length} onClick={exportPage}><Download size={16} /> Export this page</button></>;
-  return <section ref={explorer} tabIndex={-1} className={'audit-explorer' + (seller ? ' admin-shell audit-explorer--seller' : '')} aria-label="Audit history">
-    {seller ? <header className="admin-card audit-heading"><div><h1>Audit history</h1><p>Activity recorded for your store.</p></div><div className="audit-actions">{actions}</div></header>
-      : <PageHeader title="Audit history" note="Trace who did what, when it happened, and which record was affected.">{actions}</PageHeader>}
-    <div className="audit-notice"><ShieldCheck size={20} aria-hidden="true" /><p>Recorded system history. Changes and request activity are labelled separately. Older events may have limited details; missing history is not recreated.</p></div>
-    {notice && <p className="audit-success" role="status">{notice}</p>}
+  return <section ref={explorer} tabIndex={-1} className={'audit-explorer admin-compact' + (seller ? ' admin-shell audit-explorer--seller' : '')} aria-label="Audit history">
+    <PageHeader compact kicker={seller ? 'Seller' : 'Admin'} title="Audit history">{actions}</PageHeader>
+    <details className="admin-compact-guide"><summary><ShieldCheck size={15} className="inline mr-2" aria-hidden="true" />About this history</summary><p>Recorded system history. Changes and request activity are labelled separately. Older events may have limited details; missing history is not recreated.</p></details>
+    <AdminFeedback message={notice} type="success" title="Audit Explorer" onDismiss={() => setNotice('')} />
     <form className="admin-card audit-filters" onSubmit={apply}>
       <label className="audit-search">Search activity<input name="q" value={draft.q} maxLength={100} onChange={change} placeholder="Action, recorded actor, record or request ID" /></label>
       <FilterSelect title="Actions" name="action" value={draft.action} onChange={change} options={options.actions.map((value) => [value, label(value)])} />

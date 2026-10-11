@@ -1,0 +1,59 @@
+.mobile-rental-details{border-radius:14px;background:#fff;padding:16px;color:#282c3f;font-family:var(--font-auth-app,'Figtree',sans-serif)}
+.mobile-rental-details h2{margin:0;font-family:inherit;font-size:14px;font-weight:700}
+.mobile-rental-details p{font-size:12px;line-height:1.6;color:#64748b;margin:12px 0 0}
+.mobile-rental-details__prices{display:grid;gap:10px;margin:14px 0 0;font-size:12px}
+.mobile-rental-details__prices>div{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.mobile-rental-details__prices dd{font-weight:700;color:#282c3f;white-space:nowrap}
+.mobile-rental-details__note{display:flex;gap:8px;align-items:flex-start}
+.mobile-rental-details__note svg{flex-shrink:0;margin-top:2px;color:var(--wine,#701e37)}
+.mobile-rental-details__option{display:grid;gap:7px;margin-top:14px;font-size:12px;font-weight:600}
+.mobile-rental-details__option select{min-height:44px;width:100%;min-width:0;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:8px;font-size:14px;color:#282c3f}
+.mobile-rental-details__fitting,.mobile-rental-details__contact{border-top:1px solid #f1f5f9;margin-top:14px;padding-top:8px}
+.mobile-rental-details__link,.mobile-rental-details__contact :is(button,a){display:inline-flex;align-items:center;min-height:44px;font-size:12px;font-weight:600;color:var(--wine,#701e37)}
+.mobile-rental-details__contact{display:flex;flex-wrap:wrap;gap:0 16px}
+.mobile-rental-details__skeleton{height:40px;max-width:220px;border-radius:8px;background:#f1f5f9;margin-top:14px}
+.mobile-product-booking-bar{position:fixed;bottom:calc(4rem + env(safe-area-inset-bottom));left:0;right:0;z-index:40;background:#fffffff2;border-top:1px solid #e2e8f0;padding:10px 12px;box-shadow:0 -8px 20px #0f172a14;backdrop-filter:blur(8px)}
+.mobile-product-booking-bar__actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mobile-product-booking-bar button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;min-width:0;border-radius:10px;padding:8px 6px;font:700 12px/1.3 var(--font-auth-app,'Figtree',sans-serif)}
+.mobile-product-booking-bar button:disabled{background:#e2e8f0;color:#64748b;border-color:#e2e8f0;cursor:not-allowed}
+.mobile-product-booking-bar__bag{background:var(--wine,#701e37);color:#fff}
+.mobile-product-booking-bar__primary{background:#191615;color:#fff}
+.mobile-product-booking-bar__secondary{border:1px solid var(--wine,#701e37);background:#fff;color:var(--wine,#701e37)}
+.mobile-product-booking-bar button svg{flex-shrink:0;width:16px;height:16px}
+.mobile-product-booking-bar :is(button,a):focus-visible,.mobile-rental-details :is(button,a,select):focus-visible{outline:2px solid var(--wine,#701e37);outline-offset:2px}
+@media(min-width:768px){.mobile-product-booking-bar{position:static;border:0;padding:0;box-shadow:none;background:transparent;backdrop-filter:none}}
+@media(max-width:767px){body:has(.mobile-product-booking-bar) .sc-help-launcher{bottom:calc(148px + env(safe-area-inset-bottom))}}
+.mobile-product-purchase-choice{margin-top:16px}
+.mobile-product-purchase-choice>p{margin:0 0 9px;font-size:11px;font-weight:600;color:#64748b}
+.mobile-product-purchase-choice__options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mobile-product-purchase-choice__options>button{display:grid;gap:5px;min-width:0;min-height:96px;padding:12px;text-align:left;border:1px solid #e2e8f0;border-radius:12px;background:#fff;color:#282c3f;transition:border-color .15s,background .15s}
+.mobile-product-purchase-choice__options>button[aria-pressed=true]{border-color:var(--wine,#701e37);background:#fcf6f8;box-shadow:inset 0 0 0 1px var(--wine,#701e37)}
+.mobile-product-purchase-choice__options>button:disabled{opacity:.6;cursor:wait}
+.mobile-product-purchase-choice__label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.mobile-product-purchase-choice__label svg{width:15px;height:15px;flex-shrink:0;color:var(--wine,#701e37)}
+.mobile-product-purchase-choice__check{margin-left:auto;visibility:hidden}
+button[aria-pressed=true] .mobile-product-purchase-choice__check{visibility:visible}
+.mobile-product-purchase-choice strong{font-size:15px;line-height:1.4;font-weight:700;overflow-wrap:anywhere}
+.mobile-product-purchase-choice small{font-size:10px;line-height:1.4;color:#64748b}
+.mobile-product-purchase-choice button:focus-visible{outline:2px solid var(--wine,#701e37);outline-offset:3px}
+.mobile-rental-details__specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;font-size:12px}
+.mobile-rental-details__specs dt{font-size:10px;color:#64748b;margin-bottom:4px}
+.mobile-rental-details__specs dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.mobile-rental-details .rental-fitting-info{margin-top:12px}
+.mobile-rental-details .rental-fitting-info p:empty{display:none}
+.mobile-rental-details .rental-fitting-info p:has(>span){display:flex;flex-wrap:wrap;gap:6px}
+.mobile-rental-details .rental-fitting-info span{border-radius:6px;background:#faf3ee;padding:5px 8px;color:var(--wine,#701e37);font-size:11px;font-weight:600}
+.mobile-rental-details h3{font:600 12px/1.5 var(--font-auth-app,'Figtree',sans-serif);margin:0}
+.mobile-rental-details__included{border-top:1px solid #f1f5f9;margin-top:14px;padding-top:12px}
+.mobile-rental-details__included ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px;font-size:12px;color:#64748b}
+.mobile-rental-details__included li{display:flex;justify-content:space-between;gap:12px}
+.mobile-rental-details__included li>b{flex-shrink:0;font-weight:600;color:#282c3f}
+.mobile-rental-details__service{display:flex;align-items:flex-start;gap:10px;margin-top:14px}
+.mobile-rental-details__service>svg{width:17px;height:17px;flex-shrink:0;margin-top:1px;color:var(--wine,#701e37)}
+.mobile-rental-details__service p{margin-top:3px;font-size:11px}
+.mobile-rental-details__availability-link{display:flex;width:100%;gap:8px;border:1px solid #eadfe3;border-radius:10px;padding:10px 12px;margin-top:14px}
+.mobile-rental-details__availability-link>svg:last-child{margin-left:auto}
+.mobile-rental-details__availability{margin-top:12px;min-width:0}
+.mobile-rental-details__terms{font-size:12px;border-top:1px solid #f1f5f9;margin-top:14px;padding-top:12px}
+.mobile-rental-details__terms summary{min-height:32px;cursor:pointer;font-weight:600;color:#282c3f}
+.mobile-rental-details__terms p{white-space:pre-wrap;margin-top:8px}

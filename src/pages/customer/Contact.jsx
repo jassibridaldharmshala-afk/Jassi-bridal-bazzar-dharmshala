@@ -21,7 +21,7 @@ const pageCopy = {
   '/terms': {
     title: 'Terms and Conditions',
     key: 'termsConditions',
-    fallback: 'By using Jassi General Store, you agree to provide accurate account and order information, follow checkout terms, and use the website only for lawful shopping activity.',
+    fallback: 'By using Jassi Bridal Bazar Dharmshala, you agree to provide accurate account and order information, follow checkout terms, and use the website only for lawful shopping activity.',
   },
   '/shipping-policy': {
     title: 'Shipping Policy',
@@ -46,7 +46,7 @@ const pageCopy = {
   '/our-story': {
     title: 'Our Story',
     key: 'ourStory',
-    fallback: 'Jassi General Store offers festive and everyday ethnic wear chosen for fabric, finish and occasion-ready styling.',
+    fallback: 'Jassi Bridal Bazar Dharmshala offers festive and everyday ethnic wear chosen for fabric, finish and occasion-ready styling.',
   },
 };
 
@@ -97,7 +97,7 @@ export default function Contact({ route = '/contact' }) {
       <section className="container-page py-6 md:py-10">
         <Card as="article" className="mx-auto max-w-3xl">
           <CardContent className="p-5 md:p-7">
-          <p className="small-text font-bold uppercase tracking-[0.14em] text-wine md:text-xs md:tracking-[0.22em]">Jassi General Store</p>
+          <p className="small-text font-bold uppercase tracking-[0.14em] text-wine md:text-xs md:tracking-[0.22em]">Jassi Bridal Bazar Dharmshala</p>
           <h1 className="page-title mt-3 md:text-3xl">{policy.title}</h1>
           <p className="body-text mt-5 whitespace-pre-line text-slate-600 md:leading-7">
             {settings[policy.key] || policy.fallback}
@@ -144,7 +144,7 @@ export default function Contact({ route = '/contact' }) {
 
             <div className="relative flex h-full flex-col">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#e7c68e]">Contact Jassi General Store</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#e7c68e]">Contact Jassi Bridal Bazar Dharmshala</p>
                 <h2 className="mt-3 text-[27px] font-semibold leading-tight sm:text-[32px]">Let&apos;s find the right answer together.</h2>
                 <p className="mt-4 max-w-md text-[13px] leading-6 text-white/70 sm:text-[14px]">
                   Choose the most convenient way to reach us. We can help with product details, sizing, orders, and after-sales support.

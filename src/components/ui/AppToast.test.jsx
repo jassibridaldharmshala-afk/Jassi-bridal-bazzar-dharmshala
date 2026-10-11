@@ -29,7 +29,7 @@ test('does not render an empty overlay when no notification is active', () => {
   expect(container).toBeEmptyDOMElement();
 });
 
-test('styles place every mode top-right on desktop/mobile, respect safe areas and support reduced motion', () => {
+test('styles keep customer feedback at the top and place workspace feedback bottom-left with safe areas', () => {
   const css = fs.readFileSync(path.join(__dirname, 'AppToast.css'), 'utf8');
   expect(css).toContain('var(--site-surface');
   expect(css).toContain('var(--site-text');
@@ -43,5 +43,8 @@ test('styles place every mode top-right on desktop/mobile, respect safe areas an
   expect(css).toContain('width: 44px; height: 44px');
   expect(css).toContain('prefers-reduced-motion: reduce');
   expect(css).toContain('overflow-wrap: anywhere');
-  expect(css).not.toMatch(/\bbottom\s*:/);
+  expect(css).toContain('.app-toast-region--workspace');
+  expect(css).toContain('bottom: calc(76px + env(safe-area-inset-bottom');
+  expect(css).toContain('left: max(16px, env(safe-area-inset-left');
+  expect(css).toContain('bottom:max(20px,env(safe-area-inset-bottom');
 });

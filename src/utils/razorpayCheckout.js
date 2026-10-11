@@ -76,7 +76,7 @@ export async function openRazorpayCheckout({
   email,
   contact,
   preferredMethod,
-  storeName = 'Jassi General Store',
+  storeName = 'Jassi Bridal Bazar Dharmshala',
   description = 'Store order',
   onSuccess,
   onDismiss,

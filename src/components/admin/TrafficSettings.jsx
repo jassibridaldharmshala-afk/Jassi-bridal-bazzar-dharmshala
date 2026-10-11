@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import { announceSettingsSaved } from '../../config/storeSettings';
@@ -6,7 +8,7 @@ const editable = data => ({ ...Object.fromEntries(KEYS.map(key => [key, data[key
 
 export default function TrafficSettings({ apiBase = '/admin/settings', onDirtyChange, onBusyChange }) {
   const [data, setData] = useState(null); const [form, setForm] = useState(null); const [baseline, setBaseline] = useState(null);
-  const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [notice, setNotice] = useAdminFeedback('', 'success', 'Traffic Settings');
   const [retentionConfirmed, setRetentionConfirmed] = useState(false); const [confirmation, setConfirmation] = useState('');
   const [uncertainId, setUncertainId] = useState('');
   const lock = useRef(false); const dirty = !!form && JSON.stringify(form) !== JSON.stringify(baseline);
@@ -38,7 +40,7 @@ export default function TrafficSettings({ apiBase = '/admin/settings', onDirtyCh
   return <div className="space-y-5">
     <div className="store-settings__tip"><p>Measure anonymous visits without affecting cart, login or checkout. Traffic appears in <a href={apiBase.startsWith('/seller') ? '/seller/traffic' : '/admin/traffic'}>Traffic & visitors</a> and Reports & Insights. Admin/seller/master pages, previews and known bots are excluded. Visitor totals are estimates, not a directory of people.</p></div>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
-    {notice && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{notice}</p>}
+    <AdminFeedback message={notice} type="success" title="Traffic Settings" onDismiss={() => setNotice('')} />
     <fieldset disabled={busy} className="space-y-5">
       {toggle('enabled', 'Enable storefront traffic analytics', 'Turning this off stops new collection. Existing analytics and orders are not deleted.')}
       {toggle('consentRequired', 'Require explicit analytics consent', 'Recommended. Visitors can decline, withdraw consent and request deletion from Privacy preferences. GA4 always needs explicit consent.')}

@@ -4,16 +4,18 @@ import Checkout from './Checkout';
 import api from '../../services/api';
 import { openRazorpayCheckout } from '../../utils/razorpayCheckout';
 const mockCart = {}, mockToast = jest.fn();
+let mockUser;
 jest.mock('../../context/CartContext', () => ({ useCart: () => mockCart }));
-jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { _id: 'user', phone: '9000000081', isPhoneVerified: true }, setToast: mockToast }) }));
+jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: mockUser, setToast: mockToast }) }));
 jest.mock('../../hooks/useDesktopFeedback', () => () => ({ isDesktop: true, notify: jest.fn() }));
-jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
+jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn(), put: jest.fn() }));
 jest.mock('../../utils/analytics', () => ({ trackEvent: jest.fn() }));
 jest.mock('../../utils/razorpayCheckout', () => ({ openRazorpayCheckout: jest.fn() }));
 const selected = { _id: 'line-a', product: { _id: 'a', name: 'Selected saree', price: 999, images: [] }, quantity: 1, size: 'Free Size', color: '', selected: true };
 const later = { ...selected, _id: 'line-b', product: { ...selected.product, _id: 'b', name: 'Saved for later saree' }, selected: false };
 beforeEach(() => {
   jest.clearAllMocks(); sessionStorage.clear(); localStorage.clear(); window.history.replaceState({}, '', '/checkout');
+  mockUser = { _id: 'user', phone: '9000000081', name: 'Jassi User 0081', email: 'phone+9000000081@samira.local', isPhoneVerified: true };
   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
   Object.assign(mockCart, { items: [selected, later], hydrated: true, coupon: null, setCoupon: jest.fn(), completeCheckout: jest.fn(async () => ({ ok: true })), refresh: jest.fn(async () => ({ ok: true })), clearCart: jest.fn() });
   api.get.mockImplementation(async path => path === '/user/addresses' ? [{ _id: 'addr', fullName: 'Test Customer', mobile: '9000000081', houseNo: '1', area: 'Test Road', city: 'Delhi', state: 'Delhi', pincode: '110001', isDefault: true }] : { methods: [{ key: 'COD', label: 'Cash on Delivery', enabled: true }] });
@@ -35,16 +37,47 @@ test.each([390, 820, 1280])('new checkout address fields use borderless inner co
     fireEvent.click(screen.getByRole('button', { name: 'Add new address', exact: true }));
   }
   await screen.findByLabelText('Full name');
+  expect(screen.getByLabelText('Full name')).toHaveValue('');
+  expect(screen.getByLabelText('Email (optional)')).toHaveValue('');
   const form = screen.getByLabelText('Full name').closest('form');
   expect(form).toHaveClass('sc-address-form');
   const controls = [...form.querySelectorAll('.sc-address-form__field input, .sc-address-form__field select')];
-  expect(controls).toHaveLength(9);
+  expect(controls).toHaveLength(10);
   controls.forEach(control => expect(control.parentElement).toHaveClass('sc-field-shell'));
   expect(screen.getByLabelText('District')).toBeDisabled();
   fireEvent.change(screen.getByLabelText('State'), { target: { value: 'Delhi' } });
   expect(screen.getByLabelText('District')).toBeEnabled();
   expect(screen.getByLabelText('District').parentElement).toHaveClass('sc-field-shell');
   expect(screen.getByLabelText('Make this my default address').closest('.sc-field-shell')).toBeNull();
+});
+
+test.each([[390, 'COD'], [1280, 'UPI']])('entered checkout name and email reach the %s px %s order instead of the generated login identity', async (width, method) => {
+  useMobileViewport(width);
+  const originalGet = api.get.getMockImplementation(), originalPost = api.post.getMockImplementation();
+  api.get.mockImplementation(path => path === '/settings/payment-methods' ? Promise.resolve({ methods: [{ key: 'COD', label: 'Cash on Delivery', enabled: true }, { key: 'UPI', label: 'UPI', enabled: true }] }) : originalGet(path));
+  api.post.mockImplementation((path, body) => path === '/payments/create-order' ? Promise.resolve({ orderId: 'order-online', razorpayOrderId: 'payment-qa', keyId: 'test-key', amount: 102200, currency: 'INR' }) : originalPost(path, body));
+  const recipient = { _id: 'addr', fullName: 'Priya Sharma', email: 'priya@example.com', mobile: '9000000081', houseNo: '1', area: 'Test Road', city: 'Delhi', state: 'Delhi', pincode: '110001', isDefault: true };
+  api.put.mockResolvedValue([recipient]);
+  render(<Checkout navigate={jest.fn()} />);
+  await screen.findByText('Test Customer');
+  if (width < 1024) { fireEvent.click(screen.getByRole('button', { name: 'Change', exact: true })); fireEvent.click(screen.getByRole('button', { name: 'Edit', exact: true })); }
+  else fireEvent.click(screen.getByRole('button', { name: 'Edit Address' }));
+  fireEvent.change(await screen.findByLabelText('Full name'), { target: { value: recipient.fullName } });
+  fireEvent.change(screen.getByLabelText('Email (optional)'), { target: { value: recipient.email } });
+  fireEvent.click(screen.getByRole('button', { name: 'Update Address', exact: true }));
+  await screen.findByText('Priya Sharma');
+  expect(api.put).toHaveBeenCalledWith('/user/addresses/addr', expect.objectContaining({ fullName: recipient.fullName, email: recipient.email }));
+  if (width < 1024) {
+    fireEvent.click(screen.getByRole('button', { name: 'Deliver to this address' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to payment' }));
+  }
+  if (method === 'UPI') fireEvent.click(await screen.findByRole('button', { name: 'UPI', exact: true }));
+  const pay = await screen.findByRole('button', { name: method === 'COD' ? 'Place COD Order' : 'Pay Now', exact: true });
+  await waitFor(() => expect(pay).toBeEnabled()); fireEvent.click(pay);
+  await waitFor(() => expect(api.post).toHaveBeenCalledWith(method === 'COD' ? '/orders/cod' : '/payments/create-order', expect.objectContaining({ shippingAddress: expect.objectContaining({ fullName: recipient.fullName, email: recipient.email }) })));
+  await waitFor(() => expect(openRazorpayCheckout).toHaveBeenCalledTimes(method === 'UPI' ? 1 : 0));
+  expect(openRazorpayCheckout.mock.calls.map(([details]) => ({ name: details.name, email: details.email }))).toEqual(method === 'UPI' ? [{ name: recipient.fullName, email: recipient.email }] : []);
+  expect(screen.queryByText(mockUser.name)).not.toBeInTheDocument(); expect(screen.queryByText(mockUser.email)).not.toBeInTheDocument();
 });
 
 test.each([390, 820, 1280])('editing a checkout address keeps every control in its outer shell at %ipx', async width => {
@@ -60,7 +93,7 @@ test.each([390, 820, 1280])('editing a checkout address keeps every control in i
   const name = await screen.findByLabelText('Full name');
   expect(name).toHaveValue('Test Customer');
   const controls = [...name.closest('form').querySelectorAll('.sc-address-form__field input, .sc-address-form__field select')];
-  expect(controls).toHaveLength(9);
+  expect(controls).toHaveLength(10);
   controls.forEach(control => {
     expect(control.parentElement).toHaveClass('sc-field-shell');
     if (!control.disabled) {

@@ -76,3 +76,23 @@
 
 @media (prefers-reduced-motion: reduce) { .app-toast { animation: none; } }
 @media print { .app-toast-region { display: none; } }
+
+.app-toast-region--workspace {
+  inset-inline-end: auto;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  top: auto;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  z-index: 160;
+  max-width: min(320px, calc(100vw - 32px));
+}
+.app-toast-region--workspace .app-toast {
+  border-color: rgba(190, 156, 110, .35);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fffdf9, #fff8f1);
+  box-shadow: 0 8px 32px rgba(68, 27, 38, .14), 0 1px 3px rgba(68, 27, 38, .06);
+  animation-name: app-toast-workspace-enter;
+}
+.app-toast-region--workspace .app-toast__message{font-size:12px;font-weight:600}
+.app-toast-region--workspace .app-toast__title{font-size:10px}
+@media(min-width:1024px){.app-toast-region--workspace{left:max(20px,env(safe-area-inset-left,0px));bottom:max(20px,env(safe-area-inset-bottom,0px))}}
+@keyframes app-toast-workspace-enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}

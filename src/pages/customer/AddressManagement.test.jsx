@@ -143,7 +143,7 @@ test.each(['/profile/addresses/new', '/profile/addresses/edit?id=home'])(
     await screen.findByLabelText('Full name');
     const dialog = screen.getByRole('dialog');
     const controls = [...dialog.querySelectorAll('.sc-address-form__field input, .sc-address-form__field select')];
-    expect(controls).toHaveLength(9);
+    expect(controls).toHaveLength(10);
     controls.forEach(control => {
       expect(control.parentElement).toHaveClass('sc-field-shell');
       expect(control.parentElement.parentElement).toHaveClass('sc-address-form__field', 'min-w-0');

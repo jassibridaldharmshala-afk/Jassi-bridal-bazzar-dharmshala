@@ -1,6 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import AppToast from '../components/ui/AppToast';
+import { ADMIN_FEEDBACK_EVENT } from '../hooks/useAdminFeedback';
+import { AdminFeedbackContext } from './AdminFeedbackContext';
+import { getAdminActivitySnapshot, isAdminWorkspace, subscribeAdminActivity } from '../utils/adminActivity';
 import api from '../services/api';
 import { clearRentalContactSessions } from '../utils/rentalContactDraft';
 import { samiraApi } from '../store/apiSlice';
@@ -12,6 +15,7 @@ export function AuthProvider({ children, navigate }) {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const [toast, setToastState] = useState(null);
+  const activity = useSyncExternalStore(subscribeAdminActivity, getAdminActivitySnapshot, getAdminActivitySnapshot);
   const sessionRevision = useRef(0);
   const profileRequest = useRef(0);
 
@@ -35,6 +39,12 @@ export function AuthProvider({ children, navigate }) {
 
   const notify = useCallback((message, type = 'info', title = '') => {
     setToast({ message, type, title });
+  }, [setToast]);
+
+  useEffect(() => {
+    const receiveFeedback = event => setToast(event.detail);
+    window.addEventListener(ADMIN_FEEDBACK_EVENT, receiveFeedback);
+    return () => window.removeEventListener(ADMIN_FEEDBACK_EVENT, receiveFeedback);
   }, [setToast]);
 
   const persist = useCallback((data) => {
@@ -74,10 +84,10 @@ export function AuthProvider({ children, navigate }) {
   }, [refreshProfile]);
 
   useEffect(() => {
-    if (!toast) return undefined;
+    if (!toast || (isAdminWorkspace() && activity.active && !['error', 'warning'].includes(toast.type))) return undefined;
     const timer = window.setTimeout(() => setToastState(null), 3500);
     return () => window.clearTimeout(timer);
-  }, [toast]);
+  }, [activity.active, toast]);
 
   useEffect(() => {
     const onRefreshed = (event) => dispatch(setUserAction(event.detail));
@@ -198,10 +208,13 @@ export function AuthProvider({ children, navigate }) {
     availableModes: user?.availableModes || ['customer'],
   }), [deleteProfile, logout, notify, refreshProfile, resendOtp, sendOtp, sendProfileEmailChangeOtp, sendProfilePhoneChangeOtp, setToast, switchMode, toast, updateProfile, user, verifyOtp, verifyProfileEmailChangeOtp, verifyProfilePhoneChangeOtp]);
 
+  const feedback = useMemo(() => ({ managed: true, toast }), [toast]);
   return (
     <AuthContext.Provider value={value}>
-      {children}
-      <AppToast toast={toast} onDismiss={() => setToast('')} activeMode={user?.activeMode || 'customer'} />
+      <AdminFeedbackContext.Provider value={feedback}>
+        {children}
+        <AppToast toast={toast} onDismiss={() => setToast('')} activeMode={user?.activeMode || 'customer'} />
+      </AdminFeedbackContext.Provider>
     </AuthContext.Provider>
   );
 }

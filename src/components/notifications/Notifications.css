@@ -94,3 +94,17 @@
   .sc-notifications--admin .sc-notifications__heading h1 { font-size: 20px; }
   .sc-notification-banner { top: 12px; right: 16px; }
 }
+
+/* Admin notification categories and read controls share an aligned toolbar. */
+.sc-notifications--admin .sc-notifications__shell{max-width:none;margin:0}
+.sc-notifications--admin .sc-notifications__heading{align-items:center;padding:0;margin:0 0 12px;background:transparent;gap:12px}
+.sc-notifications--admin .sc-notifications__eyebrow{display:none}
+.sc-notifications--admin .sc-notifications__heading>div>p:last-child{margin:0;font-size:13px}
+.sc-notifications--admin .sc-notifications__mark-all{min-height:44px;padding:10px 14px;font-size:13px;border-radius:8px;border-color:var(--notification-border)}
+.sc-notifications--admin .sc-notifications__toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--notification-border);border-radius:10px}
+.sc-notifications--admin .sc-notifications__filters{flex:0 1 auto;min-width:0;max-width:100%;flex-wrap:nowrap;gap:4px;overflow-x:auto;padding:4px;border:1px solid var(--notification-border);border-radius:8px;background:var(--admin-cream,#faf5f0)}
+.sc-notifications--admin .sc-notifications__filters button{flex-shrink:0;min-height:40px;padding:8px 13px;border:0;border-radius:6px;font-size:13px}
+.sc-notifications--admin .sc-notifications__read-filter{flex:0 0 auto;gap:12px;margin:0;padding:0;border:0}
+.sc-notifications--admin .sc-notifications__read-filter label{min-height:44px;font-size:13px;white-space:nowrap}
+.sc-notifications--admin .sc-notifications__read-filter button{width:44px;height:44px;border:1px solid var(--notification-border);border-radius:8px;background:white}
+@media(max-width:767px){.sc-notifications--admin .sc-notifications__toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.sc-notifications--admin .sc-notifications__filters button{min-height:44px;font-size:12px;padding:8px 12px}.sc-notifications--admin .sc-notifications__read-filter{justify-content:space-between}.sc-notifications--admin .sc-notifications__mark-all{font-size:12px}.sc-notifications--admin .sc-notifications__group>h2{margin-left:0}.sc-notifications--admin .sc-notifications__list{border-width:1px;border-radius:9px}}

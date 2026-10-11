@@ -3,7 +3,7 @@ import { normalizeImageEntries } from '../services/normalize';
 
 // Defaults match the existing Add Product form flags and inventory behavior.
 const QUICK_ADD_DEFAULTS = {
-  brand: 'Jassi General Store',
+  brand: 'Jassi Bridal Bazar Dharmshala',
   slug: '',
   shortDescription: '',
   description: '',

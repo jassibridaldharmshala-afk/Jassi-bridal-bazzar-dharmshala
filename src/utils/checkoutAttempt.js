@@ -16,6 +16,7 @@ export function checkoutPayloadSignature(payload = {}) {
     expectedTotal: payload.expectedTotal,
     coupon: payload.coupon?.code || '',
     address: payload.shippingAddress?._id || [payload.shippingAddress?.pincode, payload.shippingAddress?.houseNo, payload.shippingAddress?.area].join('|'),
+    contact: [payload.shippingAddress?.fullName, payload.shippingAddress?.mobile || payload.shippingAddress?.phone, payload.shippingAddress?.email || ''],
     items: (payload.orderItems || []).map(item => [item.product, item.variantId || '', item.size || '', item.color || '', item.quantity]),
   });
 }

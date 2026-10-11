@@ -2,9 +2,24 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import MobileHeader from './MobileHeader';
 
-jest.mock('../../context/CartContext', () => ({
-  useCart: () => ({ itemCount: 0 }),
-}));
+let mockBuyCount, mockRentalCount;
+jest.mock('../../context/CartContext', () => ({ useCart: () => ({ itemCount: mockBuyCount }) }));
+jest.mock('../../context/RentalBagContext', () => ({ useRentalBag: () => ({ itemCount: mockRentalCount }) }));
+beforeEach(() => { mockBuyCount = 0; mockRentalCount = 0; });
+
+test('mobile cart and drawer share the combined count and can find rentals from a buy page', () => {
+  mockRentalCount = 2;
+  const navigate = jest.fn(), view = render(<MobileHeader navigate={navigate} route="/store/bridal-shop/products" />);
+  expect(screen.getByRole('button', { name: 'Open cart' })).toHaveTextContent('2');
+  fireEvent.click(screen.getByRole('button', { name: 'Open cart' }));
+  expect(navigate).toHaveBeenLastCalledWith('/store/bridal-shop/rental-cart');
+  mockBuyCount = 1;
+  view.rerender(<MobileHeader navigate={navigate} route="/store/bridal-shop/products" />);
+  expect(screen.getByRole('button', { name: 'Open cart' })).toHaveTextContent('3');
+  fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+  fireEvent.click(screen.getByRole('button', { name: /My Cart/ }));
+  expect(navigate).toHaveBeenLastCalledWith('/store/bridal-shop/cart');
+});
 
 jest.mock('../../context/WishlistContext', () => ({
   useWishlist: () => ({ items: [] }),
@@ -28,7 +43,7 @@ describe('mobile header search', () => {
     const navigate = jest.fn();
     render(<MobileHeader navigate={navigate} route="/wishlist" />);
 
-    expect(screen.queryByAltText('Jassi General Store')).not.toBeInTheDocument();
+    expect(screen.queryByAltText('Jassi Bridal Bazar Dharmshala')).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Search sarees, suits, kurtis...')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Search products' }));

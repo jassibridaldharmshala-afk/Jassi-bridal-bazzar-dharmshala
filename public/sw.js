@@ -1,4 +1,4 @@
-const CACHE = 'jassi-general-store-phone-shell-v3';
+const CACHE = 'jassi-bridal-bazar-dharmshala-phone-shell-v4';
 const APP_SHELL = ['/', '/index.html', '/offline.html', '/manifest.json', '/favicon.ico', '/logo192.png', '/logo512.png'];
 const STATIC_PATTERN = /\.(?:js|css|woff2?|png|jpe?g|gif|svg|ico|webp)$/i;
 const PRIVATE_PATH = /^\/(?:api|uploads|admin|seller|checkout|orders|order-detail|order-success|payment-failed|profile|returns|notifications)(?:\/|$)/;

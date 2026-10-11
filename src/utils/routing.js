@@ -103,5 +103,6 @@ export function currentPath() {
 export function rentalProductHref(product, storeSlug = '') {
   const key = String(product?._id || product?.id || '').trim();
   const href = key ? productHref(product, storeSlug) : storefrontPath('/rental-book', storeSlug);
-  return key ? href + (href.includes('?') ? '&' : '?') + 'mode=rent' : href;
+  const listing = product?.rentalOffer?._id || product?.rentalPreview?.listingId;
+  return key ? href + (href.includes('?') ? '&' : '?') + new URLSearchParams({ mode: 'rent', ...(listing ? { listing } : {}) }) : href;
 }

@@ -249,7 +249,7 @@ export function generateTags(input = {}) {
     style && `${style} wear`,
     work && `${work} detailing`,
     'ethnic wear',
-    'jassi general store',
+    'jassi bridal bazar dharmshala',
     category,
     priceSegment && `${priceSegment} collection`,
     targetCustomer && `${targetCustomer} wear`,
@@ -293,7 +293,7 @@ export function generateSeo(input = {}) {
   const color = normalizeText(input.color || '').toLowerCase();
   const work = normalizeText(input.work || input.workPattern || '').toLowerCase();
   const style = normalizeText(input.style || '').toLowerCase();
-  const metaTitle = `${productName} | Jassi General Store`;
+  const metaTitle = `${productName} | Jassi Bridal Bazar Dharmshala`;
   const metaKeywords = unique([
     productName,
     category,
@@ -302,10 +302,10 @@ export function generateSeo(input = {}) {
     occasion,
     work,
     style,
-    'Jassi General Store',
+    'Jassi Bridal Bazar Dharmshala',
     'ethnic wear',
   ].filter(Boolean).map((item) => String(item).toLowerCase())).join(', ');
-  const metaDescription = `Shop ${productName} from Jassi General Store. Perfect for ${occasion} with elegant ${fabric || category.toLowerCase()} styling and a polished finish.`;
+  const metaDescription = `Shop ${productName} from Jassi Bridal Bazar Dharmshala. Perfect for ${occasion} with elegant ${fabric || category.toLowerCase()} styling and a polished finish.`;
   return { metaTitle, metaKeywords, metaDescription };
 }
 
@@ -315,14 +315,14 @@ export function generateCaption(input = {}) {
   const occasion = normalizeText(input.occasion || 'special occasions').toLowerCase();
   const sizes = Array.isArray(input.sizes) ? input.sizes.join(', ') : normalizeText(input.sizes || '');
   return [
-    'New arrival at Jassi General Store ✨',
+    'New arrival at Jassi Bridal Bazar Dharmshala ✨',
     '',
     productName,
     `Category: ${category}`,
     `Perfect for ${occasion}.`,
     ...(sizes ? [`Available Sizes: ${sizes}`] : []),
     '',
-    'Order now from Jassi General Store.',
+    'Order now from Jassi Bridal Bazar Dharmshala.',
     '',
     '#SamiraCollection #EthnicWear #FestiveWear',
   ].join('\n');

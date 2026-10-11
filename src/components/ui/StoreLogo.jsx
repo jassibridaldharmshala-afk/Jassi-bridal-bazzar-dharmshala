@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import fallback from '../../assets/generated-brand-logo.svg';
 import { normalizeImageUrl } from '../../services/normalize';
 
-export default function StoreLogo({ src, name = 'Jassi General Store', className = '' }) {
-  const source = src === fallback ? (name === 'Jassi General Store' ? fallback : '') : normalizeImageUrl(src) || (name === 'Jassi General Store' ? fallback : '');
+export default function StoreLogo({ src, name = 'Jassi Bridal Bazar Dharmshala', className = '' }) {
+  const source = src === fallback ? (name === 'Jassi Bridal Bazar Dharmshala' ? fallback : '') : normalizeImageUrl(src) || (name === 'Jassi Bridal Bazar Dharmshala' ? fallback : '');
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [source]);
   if (source && !failed) return <img src={source} alt={name} className={className} onError={() => setFailed(true)} />;

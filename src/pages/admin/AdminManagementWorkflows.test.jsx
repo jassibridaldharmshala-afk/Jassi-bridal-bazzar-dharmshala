@@ -348,7 +348,7 @@ test('support status is serialized and changes only after the API acknowledges i
   expect(status).toBeDisabled();
   expect(status).toHaveValue('NEW');
   await act(async () => { reject(new Error('Update failed')); });
-  expect(await screen.findByRole('alert')).toHaveTextContent('Update failed');
+  expect(await screen.findByRole('status')).toHaveTextContent('Update failed');
   fireEvent.change(status, { target: { value: 'READ' } });
   await waitFor(() => expect(status).toHaveValue('READ'));
 });
@@ -362,7 +362,12 @@ test('subscriber loading retries then search distinguishes active and unsubscrib
   expect(screen.getByText('Unsubscribed')).toBeInTheDocument();
 });
 test('dashboard read failures retry and legacy responses never appear as current period data', async () => {
-  api.get.mockRejectedValueOnce(new Error('Dashboard offline')).mockResolvedValueOnce({ stats: { orders: { value: 12 } } });
+  let attempt = 0;
+  api.get.mockImplementation(async path => {
+    if (!path.startsWith('/admin/dashboard/overview')) return { day: '2026-10-11', timezone: 'Asia/Kolkata', counts: { pickups: 0, returns: 0, overdue: 0, balance: 0 } };
+    if (++attempt === 1) throw new Error('Dashboard offline');
+    return { stats: { orders: { value: 12 } } };
+  });
   render(<Dashboard />);
   fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
   expect(await screen.findByText('The dashboard API is out of date. Restart or update the backend, then refresh this page.')).toBeInTheDocument();

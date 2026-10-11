@@ -24,3 +24,11 @@
 .traffic-report__empty { padding: 1.5rem 0; font-size: .8rem; color: var(--site-muted, #756b73); }.traffic-report__definitions { padding: 1.2rem; }.traffic-report__definitions summary { display: flex; gap: .6rem; align-items: center; margin-top: 0; font-weight: 700; }.traffic-report__definitions p { margin-top: .8rem; font-size: .8rem; line-height: 1.6; }
 @media (max-width: 1100px) { .traffic-report__funnel { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .traffic-report__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }.traffic-report__columns { grid-template-columns: 1fr; }.traffic-report__health { flex-wrap: wrap; }.traffic-report__health a { margin-left: 0; }.traffic-report__panel { padding: 1rem; }.traffic-report__kpis article { padding: 1rem; }.traffic-report__kpis strong { font-size: 1.65rem; }.traffic-report__funnel { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.admin-compact .traffic-report { gap:12px; }
+.admin-compact .traffic-report__health { padding:12px; border-radius:12px; }
+.admin-compact .traffic-report__kpis,.admin-compact .traffic-report__columns { gap:8px; }
+.admin-compact .traffic-report__kpis article { padding:12px; }
+.admin-compact .traffic-report__kpis strong { font-size:26px; margin:6px 0; }
+.admin-compact .traffic-report__panel { padding:16px; }
+.admin-compact .traffic-report__muted { margin:4px 0 12px; }
+@media(max-width:767px) { .admin-compact .traffic-report__panel { padding:12px; } }

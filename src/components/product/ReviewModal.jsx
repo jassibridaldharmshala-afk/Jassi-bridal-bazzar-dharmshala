@@ -130,7 +130,7 @@ export default function ReviewModal({ open, product, existingReview, initialRati
           <form onSubmit={submit} className="min-h-0 flex-1 overflow-y-auto pb-[max(20px,env(safe-area-inset-bottom))]">
             <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4 sm:px-5">
               <div className="h-20 w-16 shrink-0 overflow-hidden rounded-xl bg-[#f6efe8]">{image ? <img src={image} alt={product?.name || 'Product'} className="h-full w-full object-cover object-top" /> : null}</div>
-              <div className="min-w-0"><p className="truncate text-[12px] font-bold text-charcoal">{product?.brand || 'Jassi General Store'}</p><p className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-500">{product?.name}</p></div>
+              <div className="min-w-0"><p className="truncate text-[12px] font-bold text-charcoal">{product?.brand || 'Jassi Bridal Bazar Dharmshala'}</p><p className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-500">{product?.name}</p></div>
             </div>
 
             <div className="px-4 py-5 text-center sm:px-5">

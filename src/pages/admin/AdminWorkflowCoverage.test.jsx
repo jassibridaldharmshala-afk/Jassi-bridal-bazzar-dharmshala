@@ -6,6 +6,7 @@ import VariantGroups from './VariantGroups';
 import Returns from './Returns';
 import Reports from './Reports';
 import Settings from './Settings';
+import CustomerWorkspace from '../../components/customers/CustomerWorkspace';
 import ContextualHelp from '../../components/help/ContextualHelp';
 import api from '../../services/api';
 const mockVariantRefetch = jest.fn();
@@ -37,6 +38,15 @@ beforeEach(() => {
   [mockVariantArchive, mockVariantCreate, mockVariantUpdate, mockVariantDelete, mockVariantRestore, mockVariantReconcile].forEach((mock) => mock.mockReturnValue({ unwrap: () => Promise.resolve({ message: 'Saved' }) }));
 });
 afterEach(() => jest.restoreAllMocks());
+
+test('customer summary formats recorded net revenue once', async () => {
+  api.get.mockImplementation(async path => path.startsWith('/admin/customer-crm')
+    ? { items: [], total: 0, page: 1, totalPages: 1, summary: { total: 0, netRevenue: 12500 } }
+    : []);
+  render(<CustomerWorkspace />);
+  expect(await screen.findByText('₹12,500')).toBeInTheDocument();
+  expect(screen.queryByText('₹NaN')).not.toBeInTheDocument();
+});
 
 test('contextual manual opens the correct page guide and keeps full help searchable', async () => {
   const navigate = jest.fn();
@@ -92,16 +102,17 @@ test('late product reads cannot replace another selected edit target', async () 
 });
 
 test('mixed commerce product saves the sale price and selected rental price together', async () => {
-  const rentalOffers = [{ _id: 'offer-1', title: 'Bridal saree', active: true, revision: 3, dailyRatePaise: 75000, depositPaise: 200000 }];
+  const rentalOffers = [{ _id: 'offer-1', title: 'Bridal saree', active: true, revision: 3, dailyRatePaise: 75000, depositPaise: 200000, pieces: [{ label: 'Saree', configured: 2, required: 1 }] }];
   api.get.mockImplementation(async path => path === '/catalog-configuration' ? { industry: 'boutique', features: { sizing: false }, attributes: [] } : path.includes('duplicate-check') ? { conflicts: [] } : { name: 'Bridal saree', description: 'Bridal saree with an embroidered border.', sku: 'BRIDAL-1', category: 'cat', price: 5000, originalPrice: 6000, stock: 2, lowStockAlert: 5, commerceMode: 'SALE_AND_RENTAL', rentalOffers, sizes: [], colors: [], tags: [], images: [{ url: '/uploads/saree.jpg', primary: true }] });
   api.put.mockResolvedValue({});
   render(<ProductForm mode="Update" productId="prod1" />);
   const rate = await screen.findByLabelText('Rental price per day (₹)');
   expect(rate).toHaveValue(750);
+  expect(screen.getByLabelText('Physical rental pieces')).toHaveValue(2);
   fireEvent.change(rate, { target: { value: '900' } });
   fireEvent.change(screen.getByLabelText(/Selling price/), { target: { value: '5500' } });
   fireEvent.click(screen.getByRole('button', { name: 'Update Product' }));
-  await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/products/prod1', expect.objectContaining({ price: 5500, rentalPricing: expect.objectContaining({ listingId: 'offer-1', revision: 3, dailyRatePaise: 90000, depositPaise: 200000 }) })));
+  await waitFor(() => expect(api.put).toHaveBeenCalledWith('/admin/products/prod1', expect.objectContaining({ price: 5500, rentalPricing: expect.objectContaining({ listingId: 'offer-1', revision: 3, dailyRatePaise: 90000, depositPaise: 200000, inventory: [expect.objectContaining({ quantity: 2 })] }) })));
 });
 
 test('category editing retries reads, preserves both images and only removes the chosen image', async () => {
@@ -129,11 +140,11 @@ test('variant family archive failures are actionable and preserve the family for
   render(<VariantGroups />);
   fireEvent.click(screen.getByRole('button', { name: 'Archive Rose family' }));
   fireEvent.click(screen.getByRole('button', { name: 'Archive family' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Family archive failed');
+  expect(await screen.findByRole('status')).toHaveTextContent('Family archive failed');
   expect(screen.getByRole('heading', { name: 'Rose family' })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Archive Rose family' }));
   fireEvent.click(screen.getByRole('button', { name: 'Archive family' }));
-  expect(await screen.findByRole('status')).toHaveTextContent('Family archived');
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Family archived'));
   expect(mockVariantArchive).toHaveBeenCalledTimes(2);
 });
 

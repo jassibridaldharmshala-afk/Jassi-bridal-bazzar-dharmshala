@@ -62,7 +62,9 @@ export default function Reports({ route = '/admin/reports' }) {
   const currency = sections.summary?.currency || options?.currentStore?.currency || 'INR';
   const maximumDate = todayForTimezone((activeTab === 'traffic' ? sections.traffic?.timezone : sections.summary?.timezone) || options?.timezone || options?.currentStore?.timezone);
   const capabilities = options?.capabilities || sections.summary?.capabilities || {};
-  const permittedSections = useMemo(() => REPORT_SECTIONS.filter((section) => capabilities.sections?.[section] !== false), [capabilities.sections]);
+  // Equivalent permission responses must not abort and restart the same reads.
+  const permittedSectionKey = REPORT_SECTIONS.filter((section) => capabilities.sections?.[section] !== false).join(',');
+  const permittedSections = useMemo(() => permittedSectionKey.split(',').filter(Boolean), [permittedSectionKey]);
   const visibleTabs = useMemo(() => tabs.filter(([value]) => permittedSections.includes(tabSection[value])), [permittedSections]);
 
   const loadOptions = useCallback(() => {
@@ -80,29 +82,30 @@ export default function Reports({ route = '/admin/reports' }) {
   useEffect(() => { if (route.split('?')[0].endsWith('/traffic')) { setActiveTab('traffic'); setFilters({ range: 'today' }); setDraft({ range: 'today' }); } }, [route]);
   useEffect(() => {
     if (activeTab !== 'traffic' || capabilities.sections?.traffic === false) return undefined;
-    let active = true; const controller = new AbortController();
+    let active = true;
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'hidden') return;
-      api.get(`${base}/reports/center/traffic?${query}`, { silent: true, cache: 'no-store', signal: controller.signal })
+      api.get(`${base}/reports/center/traffic?${query}`, { silent: true, cache: 'no-store' })
         .then(data => { if (active) { setSections(current => ({ ...current, traffic: data })); setErrors(current => ({ ...current, traffic: '' })); } })
         .catch(error => { if (active && error.name !== 'AbortError') setErrors(current => ({ ...current, traffic: error.message })); });
     }, 30000);
-    return () => { active = false; controller.abort(); window.clearInterval(timer); };
+    return () => { active = false; window.clearInterval(timer); };
   }, [activeTab, base, query, capabilities.sections?.traffic]);
 
   useEffect(() => {
     const version = ++requestVersion.current;
     const requestedSections = permittedSections.length ? permittedSections : REPORT_SECTIONS;
-    const controllers = requestedSections.map(() => new AbortController());
     setLoading(Object.fromEntries(requestedSections.map((section) => [section, true])));
     setErrors({});
-    requestedSections.forEach((section, index) => {
-      api.get(`${base}/reports/center/${section}?${query}`, { silent: true, cache: 'no-store', signal: controllers[index].signal })
+    requestedSections.forEach((section) => {
+      api.get(`${base}/reports/center/${section}?${query}`, { silent: true, cache: 'no-store' })
         .then((data) => { if (version === requestVersion.current) setSections((old) => ({ ...old, [section]: data })); })
         .catch((error) => { if (version === requestVersion.current && error?.name !== 'AbortError') setErrors((old) => ({ ...old, [section]: error.message })); })
         .finally(() => { if (version === requestVersion.current) setLoading((old) => ({ ...old, [section]: false })); });
     });
-    return () => { requestVersion.current += 1; controllers.forEach((controller) => controller.abort()); };
+    // RTK shares matching reads. Ignore old results without aborting a read
+    // that the next render or another consumer is already waiting for.
+    return () => { requestVersion.current += 1; };
   }, [base, permittedSections, query, reload]);
 
   useEffect(() => {
@@ -159,8 +162,8 @@ export default function Reports({ route = '/admin/reports' }) {
   const rangeInfo = sections[currentSection]?.range || sections.summary?.range;
   const activeFilters = Object.entries(filters).filter(([key, value]) => !['range', 'from', 'to', 'scope', 'store'].includes(key) && value);
 
-  return <section className="report-center">
-    <PageHeader title="Reports & Insights" kicker={isSeller ? 'Seller' : 'Admin'} note="Accurate store performance, finance, customers, marketing, inventory and delivery data in one place.">
+  return <section className="report-center admin-compact">
+    <PageHeader compact title="Reports & Insights" kicker={isSeller ? 'Seller' : 'Admin'} note="Accurate store performance, finance, customers, marketing, inventory and delivery data in one place.">
       <button type="button" className="admin-btn-ghost" onClick={() => setReload((value) => value + 1)} disabled={Object.values(loading).some(Boolean)}><RefreshCw size={16} className={Object.values(loading).some(Boolean) ? 'animate-spin' : ''} /> Refresh</button>
     </PageHeader>
 

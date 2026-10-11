@@ -16,13 +16,15 @@ beforeEach(() => { sessionStorage.clear(); jest.clearAllMocks(); mockUser = null
 afterEach(() => jest.useRealTimers());
 async function send() {
   fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9876543210' } });
-  fireEvent.click(screen.getByLabelText(/I agree to the/)); await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Send OTP' })));
+  fireEvent.click(screen.getByLabelText(/I agree to the/)); fireEvent.click(screen.getByRole('button', { name: 'Send OTP' }));
+  await act(async () => { await mockSend.mock.results.at(-1).value; });
   await screen.findByLabelText('OTP digit 1');
 }
 test('a verified account reviews without sending another OTP and pickup requests no address', async () => {
   mockUser = { _id: 'one', phone: '9876543210', isPhoneVerified: true }; const next = jest.fn(); render(<Harness onContinue={next} />);
-  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Review booking' }))); await waitFor(() => expect(next).toHaveBeenCalledWith(mockUser));
+  fireEvent.click(screen.getByRole('button', { name: 'Review booking' })); await act(async () => { await next.mock.results.at(-1).value; }); await waitFor(() => expect(next).toHaveBeenCalledWith(mockUser));
   expect(mockSend).not.toHaveBeenCalled(); expect(screen.queryByText('Delivery & return address')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Verified account number')).toBeInTheDocument();
 });
 test('OTP paste and deleting a middle digit preserve every other digit and never store the code', async () => {
   render(<Harness />); await send();
@@ -37,7 +39,8 @@ test('backend length controls the boxes and a verification response without veri
   mockSend.mockResolvedValue({ otpLength: 4, resendAfterSeconds: 0 }); mockVerify.mockResolvedValue({ user: { phone: '9876543210', isPhoneVerified: false } });
   const next = jest.fn(); render(<Harness onContinue={next} />); await send();
   expect(screen.queryByLabelText('OTP digit 5')).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('OTP digit 1'), { target: { value: '1234' } }); await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' })));
+  fireEvent.change(screen.getByLabelText('OTP digit 1'), { target: { value: '1234' } }); fireEvent.click(screen.getByRole('button', { name: 'Verify & continue' }));
+  await act(async () => { await mockVerify.mock.results.at(-1).value; });
   expect(await screen.findByRole('alert')).toHaveTextContent('could not be confirmed'); expect(next).not.toHaveBeenCalled();
 });
 test('wrong OTP leaves the same details available for correction and does not continue', async () => {
@@ -47,16 +50,17 @@ test('wrong OTP leaves the same details available for correction and does not co
 });
 test('change number invalidates the previous challenge and verified-account shortcut', async () => {
   mockUser = { phone: '9876543210', isPhoneVerified: true }; const invalidated = jest.fn(); render(<Harness onVerificationChange={invalidated} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Change' })); expect(screen.queryByText('Verified account number')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Change' })); expect(screen.queryByLabelText('Verified account number')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Send OTP' })).toBeDisabled(); expect(invalidated).toHaveBeenCalledTimes(1);
   fireEvent.change(screen.getByLabelText('Mobile number'), { target: { value: '9000000001' } }); expect(sessionStorage.getItem('rental-otp-challenge:bridal:')).toBeNull();
 });
 test('resend respects the server cooldown, resets the code and expiry cannot pass verification', async () => {
   jest.useFakeTimers(); render(<Harness />); await send();
   expect(screen.getByRole('button', { name: 'Resend OTP in 1:00' })).toBeDisabled();
-  act(() => jest.advanceTimersByTime(61000)); await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Resend OTP' })));
+  act(() => jest.advanceTimersByTime(61000)); fireEvent.click(screen.getByRole('button', { name: 'Resend OTP' }));
+  await act(async () => { await mockResend.mock.results.at(-1).value; });
   await waitFor(() => expect(mockResend).toHaveBeenCalledWith('9876543210'));
-  await act(async () => {}); expect(screen.getByLabelText('OTP digit 1')).toHaveValue('');
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Resend OTP in 1:00' })).toBeDisabled()); expect(screen.getByLabelText('OTP digit 1')).toHaveValue('');
   fireEvent.change(screen.getByLabelText('OTP digit 1'), { target: { value: '123456' } });
   act(() => jest.advanceTimersByTime(301000));
   expect(screen.getByRole('alert')).toHaveTextContent('expired'); expect(screen.getByRole('button', { name: 'Verify & continue' })).toBeDisabled(); expect(mockVerify).not.toHaveBeenCalled();
@@ -75,6 +79,6 @@ test('a guest phone entry survives same-browser refresh before sending OTP, with
 test('refresh while verifying a changed number cannot reuse the old verified-number shortcut', async () => {
   mockUser = { phone: '9000000001', isPhoneVerified: true }; const view = render(<Harness />);
   fireEvent.click(screen.getByRole('button', { name: 'Change' })); await send(); view.unmount();
-  render(<Harness />); expect(screen.getByLabelText('Mobile number')).toHaveValue('9876543210'); expect(screen.queryByText('Verified account number')).not.toBeInTheDocument();
+  render(<Harness />); expect(screen.getByLabelText('Mobile number')).toHaveValue('9876543210'); expect(screen.queryByLabelText('Verified account number')).not.toBeInTheDocument();
   expect(screen.getByLabelText('OTP digit 1')).toHaveValue(''); expect(screen.getByRole('button', { name: 'Verify & continue' })).toBeDisabled();
 });

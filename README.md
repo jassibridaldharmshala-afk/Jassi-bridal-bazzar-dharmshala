@@ -1,6 +1,6 @@
-# Jassi General Store
+# Jassi Bridal Bazar Dharmshala
 
-A standalone Boutique — Sale & Rental commerce project generated for **Jassi General Store**. It has its own source tree and must use its own database, storage and service credentials. Master Configuration, Store Portfolio and project-generation tools are intentionally absent from this client project.
+A standalone Boutique — Sale & Rental commerce project generated for **Jassi Bridal Bazar Dharmshala**. It has its own source tree and must use its own database, storage and service credentials. Master Configuration, Store Portfolio and project-generation tools are intentionally absent from this client project.
 ## Managed installation
 
 This package has one unique, revocable installation identity. Open `client-installation.json`, copy its values into the **backend hosting environment**, and then permanently delete that file before committing or sharing the project. Never put `CLIENT_LICENSE_KEY` in the frontend. The admin **System & updates** screen shows subscription, limits, connection state and assigned updates without exposing that key.
@@ -14,6 +14,10 @@ This package has one unique, revocable installation identity. Open `client-insta
 5. If present, transfer `client-installation.json` values to the backend environment and delete the file.
 6. Run `npm install` in this folder and in `backend`.
 7. Run `npm run server` in one terminal and `npm start` in another.
+
+## Existing store branding
+
+The display name is **Jassi Bridal Bazar Dharmshala**. For an existing database, run `node scripts/rename-store-brand.js` from `backend` to preview the branding updates, then run it with `--apply` and restart the API. This updates the default store, saved settings, product branding and website copy. Existing database names, store URLs and hosting service identifiers are retained for compatibility.
 
 ## Phone app experience
 

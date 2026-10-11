@@ -1,0 +1,81 @@
+.rental-cart__mobile-steps { display: none; }
+.rental-cart .rental-bag-item__picture { flex: 0 0 auto; padding-right: 0; }
+.rental-cart .rental-bag-item__image { display: grid; place-items: center; width: 100%; height: 100%; color: var(--bag-muted); }
+.rental-cart .rental-bag-item__image img { width: 100%; height: 100%; border-radius: 0; object-fit: cover; object-position: center top; }
+.rental-cart .rental-bag-item__size { display: inline-flex; align-items: center; gap: 4px; padding: 8px; border: 1px solid var(--bag-border); border-radius: 8px; background: var(--site-background, #faf8f9); color: var(--bag-ink); font-size: 10px; }
+.rental-cart .rental-bag-item__size strong { font-size: inherit; }
+@media (min-width: 1024px) {
+.rental-cart.sc-bag { min-height: 0; padding: 18px 0 24px; }
+.rental-cart .rental-cart__header { display: flex; margin-bottom: 0; }
+.rental-cart__header > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rental-cart__header h1 { margin: 0; font-size: 25px; }
+.rental-cart__back { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; color: var(--bag-ink); }
+.rental-cart .sc-bag__layout { gap: 24px; }
+.rental-cart .sc-bag__main { padding: 0; }
+.rental-cart__plan-note { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; padding: 11px 14px; border: 1px solid var(--bag-border); border-radius: 7px; background: #fcf8f2; font-size: 12px; line-height: 1.5; color: var(--bag-muted); }
+.rental-cart__plan-note svg { flex-shrink: 0; color: var(--bag-primary); }
+.rental-cart .rental-bag-items { gap: 12px; }
+.rental-cart .rental-bag-item { padding: 16px; gap: 16px; border-color: var(--bag-border); border-radius: 7px; }
+.rental-cart .rental-bag-item__picture { width: 112px; height: 150px; overflow: hidden; border-radius: 5px; background: #f5eee8; }
+.rental-cart .rental-bag-item__image img { width: 100%; height: 100%; border-radius: 0; object-fit: cover; object-position: center top; }
+.rental-cart .rental-bag-item__body { padding-right: 20px; }
+.rental-cart .rental-bag-item__kind { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--bag-primary); font-weight: 600; }
+.rental-cart .rental-bag-item__title { display: block; padding-right: 0; margin-top: 5px; font-size: 14px; line-height: 1.4; font-weight: 650; }
+.rental-cart .rental-bag-item p { margin: 5px 0 8px; font-size: 11px; color: var(--bag-muted); }
+.rental-cart .rental-bag-item strong { font-size: 15px; }
+.rental-cart .rental-bag-item strong small { font-size: 11px; font-weight: 400; }
+.rental-cart .rental-bag-item__deposit { display: flex; align-items: center; gap: 5px; max-width: none; line-height: 1.5; }
+.rental-cart .rental-bag-item__deposit svg { flex-shrink: 0; }
+.rental-cart .rental-bag-item__quantity { margin: 0; background: #f8f3ef; border-color: #e7dfd9; }
+.rental-cart .rental-bag-item__quantity button { width: 36px; height: 34px; }
+.rental-cart .rental-bag-item__quantity span { min-width: 25px; font-size: 12px; }
+.rental-cart .rental-bag-item__remove { top: 7px; right: 7px; }
+.rental-cart .rental-cart__add { margin-top: 7px; padding: 0; min-height: 44px; border: 0; background: transparent; font-size: 12px; }
+.rental-cart__add > span { flex: 0 1 auto; }
+.rental-cart__aside { display: grid; gap: 12px; position: sticky; top: 100px; border: 0; }
+.rental-cart .sc-bag__prices { padding: 18px; border: 1px solid var(--bag-border); border-radius: 7px; }
+.rental-cart .sc-bag__prices > h2 { margin: 0 0 14px; font-family: var(--site-body-font, 'Inter', sans-serif); font-size: 12px; }
+.rental-cart .sc-bag__price-row { margin-top: 12px; color: var(--bag-muted); }
+.rental-cart .sc-bag__price-row > :last-child { color: var(--bag-ink); font-weight: 650; }
+.rental-cart .sc-bag__total { margin-top: 14px; padding-top: 14px; gap: 12px; align-items: center; font-size: 12px; }
+.rental-cart .sc-bag__total > :last-child { color: var(--bag-primary); font-size: 20px; font-weight: 750; text-align: right; }
+.rental-cart__charge-note { margin: 12px 0 0; color: var(--bag-muted); font-size: 11px; line-height: 1.6; }
+.rental-cart .sc-bag__desktop-continue { margin-top: 16px; }
+.rental-cart .sc-bag__next { margin-top: 9px; }
+.rental-cart .rental-checkout-utilities { margin: 8px 0 0; min-height: 40px; }
+.rental-cart__loading { display: flex; align-items: center; gap: 10px; min-height: 100px; padding: 20px; color: var(--bag-muted); }
+.rental-cart__empty { display: grid; justify-items: center; gap: 12px; padding: 28px 16px; text-align: center; }
+.rental-cart__empty h2 { font-size: 21px; margin: 0; }
+.rental-cart__empty p { margin: 0; color: var(--bag-muted); font-size: 12px; }
+}
+@media (max-width: 1023px) {
+  .rental-cart.sc-bag { min-height: 0; padding: 0 0 calc(156px + env(safe-area-inset-bottom)); }
+  .rental-cart .rental-cart__header { display: none; }
+  .rental-cart .rental-cart__mobile-steps { display: flex; }
+  .rental-cart .sc-bag__shell { width: 100%; }
+  .rental-cart .sc-bag__layout { display: block; }
+  .rental-cart__plan-note { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; padding: 12px; border: 1px solid var(--bag-border); border-radius: 14px; background: var(--shopping-tint); color: var(--bag-ink); font-size: 11px; line-height: 1.5; }
+  .rental-cart__plan-note svg { flex-shrink: 0; color: var(--shopping-action); }
+  .rental-cart .rental-bag-items { gap: 14px; }
+  .rental-cart .rental-bag-item__quantity { margin: 0; border-radius: 8px; }
+  .rental-cart .rental-bag-item__quantity button { width: 36px; height: 44px; }
+  .rental-cart .rental-bag-item__quantity span { min-width: 0; padding: 0 3px; font-size: 10px; font-weight: 600; }
+  .rental-cart .rental-bag-item__size { min-height: 44px; }
+  .rental-cart .rental-bag-item__body { padding-right: 0; }
+  .rental-cart .rental-bag-item__title { padding-right: 24px; }
+  .rental-cart .rental-bag-item__kind { display: flex; align-items: center; gap: 5px; margin-top: 5px; color: var(--bag-muted); font-size: 10px; }
+  .rental-cart .rental-bag-item__deposit { display: flex; align-items: flex-start; gap: 5px; max-width: none; margin-top: 10px; font-size: 10px; line-height: 1.6; }
+  .rental-cart .rental-bag-item__deposit svg { flex-shrink: 0; }
+  .rental-cart .rental-bag-item__remove { top: 0; right: 0; width: 44px; height: 44px; color: var(--bag-muted); }
+  .rental-cart .sc-bag-item__price small { color: var(--bag-muted); font-size: 11px; }
+  .rental-cart .sc-bag-item__unit { margin-top: 4px; font-size: 10px; }
+  .rental-cart .rental-checkout-utilities { margin: 0; }
+  .rental-cart .sc-bag__mobile-continue small { font-size: 10px; color: var(--bag-muted); }
+  .rental-cart__loading { display: flex; align-items: center; gap: 10px; min-height: 100px; padding: 20px; color: var(--bag-muted); }
+  .rental-cart__empty { display: grid; justify-items: center; gap: 12px; padding: 28px 16px; text-align: center; }
+  .rental-cart__empty h2 { font-size: 21px; margin: 0; }
+  .rental-cart__empty p { margin: 0; color: var(--bag-muted); font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .rental-cart .rental-bag-item__quantity button { width: 30px; }
+}

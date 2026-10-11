@@ -82,3 +82,10 @@
   .audit-filters .audit-actions > button { flex: 1; }
 }
 @media (max-width: 360px) { .audit-filters, .audit-metadata { grid-template-columns: minmax(0, 1fr); } .audit-search, .audit-filters > .audit-actions { grid-column: auto; } .audit-dialog--confirm .audit-dialog__footer { flex-direction: column; align-items: stretch; } }
+.audit-explorer.admin-compact { gap:12px; }
+.audit-explorer.admin-compact .audit-filters { padding:12px; gap:8px; }
+.audit-explorer.admin-compact .audit-filters label { gap:5px; font-size:12px; }
+.audit-explorer.admin-compact .audit-filters input,.audit-explorer.admin-compact .audit-filters select { border-radius:9px; }
+.audit-explorer.admin-compact .audit-pagination { padding:12px; gap:10px; }
+.audit-explorer.admin-compact .audit-footnote { margin:0; font-size:11px; }
+.audit-explorer.admin-compact .audit-error { padding:16px; }

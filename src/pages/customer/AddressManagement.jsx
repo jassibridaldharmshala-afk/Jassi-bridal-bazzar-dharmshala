@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, CardContent, CardTitle, Select, TextInput } from '../../components/ui';
-import { ArrowLeft, ChevronRight, Plus, Home, BriefcaseBusiness, MapPinned, UserRound, Phone, Building2, Check, MapPin, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Plus, Home, BriefcaseBusiness, MapPinned, UserRound, Phone, Mail, Building2, Check, MapPin, Trash2 } from 'lucide-react';
 import AccountSidebar from '../../components/layout/AccountSidebar';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { districtsForState, INDIAN_STATES } from '../../data/indiaLocations';
 import { lookupPincode } from '../../utils/indiaPincode';
 import { digitsOnly, isValidIndianMobile, PHONE_VALIDATION_MESSAGE } from '../../utils/phoneInput';
+import { customerName, customerEmail } from '../../utils/customerIdentity';
 import './Profile.css';
 import './AddressManagement.css';
 import '../../styles/MobileShoppingTheme.css';
 
 const emptyAddress = {
-  fullName: '', mobile: '', alternateMobile: '', pincode: '', state: '', city: '',
+  fullName: '', email: '', mobile: '', alternateMobile: '', pincode: '', state: '', city: '',
   houseNo: '', area: '', landmark: '', addressType: 'Home', isDefault: false,
 };
 function savedAddresses(data) {
@@ -56,6 +57,7 @@ export default function AddressManagement({ route = '/profile/addresses', naviga
     setMessage('');
     setForm(editing && selected ? {
       ...emptyAddress, ...selected,
+      fullName: customerName(selected.fullName), email: customerEmail(selected.email),
       mobile: selected.mobile || selected.phone || '',
       houseNo: selected.houseNo || selected.houseNumber || '',
     } : { ...emptyAddress });
@@ -267,6 +269,9 @@ export function AddressForm({ form, setForm, onSubmit, message, editing, onCance
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gold">Contact details</p>
           <LabeledField icon={UserRound} label="Full name">
             <TextInput autoComplete="name" value={form.fullName || ''} onChange={(event) => update('fullName', event.target.value)} placeholder="Name as on the parcel" disabled={saving} required />
+          </LabeledField>
+          <LabeledField icon={Mail} label="Email (optional)">
+            <TextInput type="email" autoComplete="email" value={form.email || ''} onChange={(event) => update('email', event.target.value)} placeholder="Email for order updates" maxLength={254} disabled={saving} />
           </LabeledField>
           <LabeledField icon={Phone} label="Mobile number">
             <TextInput

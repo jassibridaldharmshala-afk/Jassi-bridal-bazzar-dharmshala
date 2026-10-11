@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Clipboard, FileText, Mail, MapPin, MessageCircle, PackageCheck, Phone, Plus, ReceiptText, ShieldCheck, UserRound } from 'lucide-react';
 import Receipt from '../../components/order/Receipt';
@@ -8,6 +10,7 @@ import PageHeader from '../../components/admin/PageHeader';
 import StatusBadge from '../../components/admin/StatusBadge';
 import api from '../../services/api';
 import ShipmentPanel from '../../components/admin/ShipmentPanel';
+import { orderCustomer } from '../../utils/customerIdentity';
 import WorkflowSmartFill, { CopySmartDraft } from '../../components/admin/WorkflowSmartFill';
 
 const blankAddress = { fullName: '', mobile: '', alternateMobile: '', houseNo: '', area: '', landmark: '', city: '', state: '', pincode: '', addressType: 'Home' };
@@ -18,7 +21,7 @@ export default function OrderDetail({ route = '' }) {
   const apiBase = seller ? '/seller' : '/admin';
   const [order, setOrder] = useState(null);
   const [receipt, setReceipt] = useState(null);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useAdminFeedback('', 'info', 'Order Detail');
   const [receiptError, setReceiptError] = useState('');
   const [saving, setSaving] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -59,13 +62,13 @@ export default function OrderDetail({ route = '' }) {
       setAddressForm({ ...blankAddress, ...(data.shippingAddress || {}) });
       const activeUnits = (data.orderItems || []).reduce((sum, item) => sum + Math.max(0, Number(item.quantity || 0) - Number(item.cancelledQuantity || 0)), 0);
       setRtoForm(current => ({ ...current, receivedQuantity: String(activeUnits) }));
-    } catch (error) { if (version === loadVersion.current) setMessage(error.message); }
-  }, [apiBase, orderId, loadReceipt]);
+    } catch (error) { if (version === loadVersion.current) setMessage(error.message, 'error'); }
+  }, [apiBase, orderId, loadReceipt, setMessage]);
   useEffect(() => {
     setOrder(null); setReceipt(null); setMessage(''); setReceiptError(''); setSaving(false); setCancelOpen(false); setCodOpen(false); setRefundOpen(false); setManualRefundTarget(null); setInvoiceOpen(false); mutationPending.current = false;
     load();
     return () => { loadVersion.current += 1; mutationVersion.current += 1; mutationPending.current = false; };
-  }, [load]);
+  }, [load, setMessage]);
 
   const mutate = async (path, body, method = 'put') => {
     if (mutationPending.current || !order || order._id !== orderId) return false;
@@ -77,7 +80,7 @@ export default function OrderDetail({ route = '' }) {
       if (version === mutationVersion.current) await load();
       return version === mutationVersion.current;
     } catch (error) {
-      if (version === mutationVersion.current) { setMessage(error.message); if (error.status === 409) await load(); }
+      if (version === mutationVersion.current) { setMessage(error.message, 'error'); if (error.status === 409) await load(); }
       return false;
     } finally { if (version === mutationVersion.current) { mutationPending.current = false; setSaving(false); } }
   };
@@ -141,6 +144,7 @@ export default function OrderDetail({ route = '' }) {
 
   const displayId = order.invoiceNumber || `#${order._id.slice(-8).toUpperCase()}`;
   const address = order.shippingAddress || {};
+  const customer = orderCustomer(order);
   const canEditAddress = ['Pending', 'Confirmed', 'Packed'].includes(order.orderStatus) && !order.shipment?.awb && !['BOOKING', 'BOOKED', 'UNKNOWN'].includes(order.shipment?.bookingState);
   const returnHref = seller ? `${apiBase}/orders` : `/admin/returns?orderId=${order._id}`;
   const cancellationRefund = order.cancellationRefund;
@@ -157,7 +161,7 @@ export default function OrderDetail({ route = '' }) {
       <button type="button" className="admin-btn-ghost inline-flex items-center gap-2" onClick={() => copy(order._id, setMessage)}><Clipboard size={15} />Copy order ID</button>
       <a href={`${apiBase}/orders`} className="admin-btn-ghost">Back to orders</a>
     </PageHeader>
-    {message && <p role="alert" className="rounded-xl bg-rose/10 p-3 text-sm font-bold text-rose">{message}</p>}
+    <AdminFeedback message={message} type="info" title="Order Detail" onDismiss={() => setMessage('')} />
     {['HIGH', 'MANUAL_REVIEW'].includes(order.customerRisk?.status) && <section role="alert" className="admin-card border border-amber-300 bg-amber-50 p-4"><strong>Manual review recommended · customer risk {String(order.customerRisk.status).toLowerCase().replaceAll('_', ' ')}</strong><p className="admin-note mt-1">Score {Number(order.customerRisk.score || 0)}/100. This is an internal signal only; verify the order and evidence before taking any action.</p>{order.customerRisk.reasons?.length > 0 && <p className="mt-2 text-sm">{order.customerRisk.reasons.join(' · ')}</p>}</section>}
     {cancellationRefundNeedsAction && <section role="alert" className="admin-card flex flex-wrap items-center justify-between gap-3 p-4"><div><strong>Cancellation refund needs attention</strong><p className="admin-note">{cancellationRefund.lastError || 'The automatic refund did not finish. Retry it without creating a second refund.'}</p></div><button type="button" className="admin-btn" disabled={saving} onClick={() => cancellationRefund.status === 'MANUAL_REQUIRED' ? openManualRefund({ type: 'cancellation', amount: cancellationRefund.amount }, 'Cancellation refund completed outside the connected gateway.') : mutate('cancellation-refund', {}, 'post')}>{cancellationRefund.status === 'MANUAL_REQUIRED' ? 'Record manual refund' : saving ? 'Retrying…' : 'Retry refund safely'}</button></section>}
     {rtoRefundNeedsAction && <section role="alert" className="admin-card flex flex-wrap items-center justify-between gap-3 p-4"><div><strong>RTO refund needs attention</strong><p className="admin-note">{rto.lastRefundError || 'The prepaid refund did not finish. Retry uses the same idempotent refund operation.'}</p></div><button type="button" className="admin-btn" disabled={saving} onClick={() => rto.refundStatus === 'MANUAL_REQUIRED' ? openManualRefund({ type: 'rto', amount: rto.refundAmount }, 'RTO refund completed outside the connected gateway.') : mutate('rto/refund', {}, 'post')}>{rto.refundStatus === 'MANUAL_REQUIRED' ? 'Record manual refund' : saving ? 'Retrying…' : 'Retry RTO refund'}</button></section>}
@@ -188,7 +192,7 @@ export default function OrderDetail({ route = '' }) {
 
       <aside className="space-y-5">
         <section className="admin-card p-5"><header className="order-section-heading"><div><h2>Customer verification</h2><p>Checks required before COD fulfilment</p></div><ShieldCheck size={19} /></header><div className="order-facts"><Row label="Phone" value={order.user?.isPhoneVerified ? 'Verified' : 'Pending'} /><Row label="Successful deliveries" value={String(order.codVerification?.successfulDeliveries ?? '—')} /><Row label="Previous RTO" value={String(order.codVerification?.rtoCount ?? '—')} /><Row label="COD verification" value={order.paymentMethod !== 'COD' ? 'Not required · prepaid' : order.codVerification?.status === 'VERIFIED' ? 'Verified' : order.codVerification?.required ? 'Required · waiting for customer' : 'Not required'} /></div>{order.codVerification?.required && order.codVerification?.status !== 'VERIFIED' && <p className="admin-note mt-3">Packing and courier dispatch stay locked until the customer completes the OTP check.</p>}{!order.codVerification?.evaluatedAt && <p className="admin-note mt-3">This historical order predates smart COD verification and continues under its original workflow.</p>}</section>
-        <section className="admin-card p-5"><header className="order-section-heading"><div><h2>Customer</h2><p>Contact and delivery identity</p></div><UserRound size={19} /></header><div className="order-contact-card"><strong>{order.user?.name || address.fullName || 'Customer'}</strong>{order.user?.email && <a href={`mailto:${order.user.email}`}><Mail size={15} />{order.user.email}</a>}{(order.user?.phone || address.mobile) && <a href={`tel:+91${order.user?.phone || address.mobile}`}><Phone size={15} />+91 {order.user?.phone || address.mobile}</a>}{(order.user?.phone || address.mobile) && <a href={`https://wa.me/91${order.user?.phone || address.mobile}`} target="_blank" rel="noreferrer"><MessageCircle size={15} />Open WhatsApp</a>}</div></section>
+        <section className="admin-card p-5"><header className="order-section-heading"><div><h2>Customer</h2><p>Contact and delivery identity</p></div><UserRound size={19} /></header><div className="order-contact-card"><strong>{customer.name}</strong>{customer.email && <a href={`mailto:${customer.email}`}><Mail size={15} />{customer.email}</a>}{(customer.phone) && <a href={`tel:+91${customer.phone}`}><Phone size={15} />+91 {customer.phone}</a>}{(customer.phone) && <a href={`https://wa.me/91${customer.phone}`} target="_blank" rel="noreferrer"><MessageCircle size={15} />Open WhatsApp</a>}</div></section>
         <section className="admin-card p-5"><header className="order-section-heading"><div><h2>Delivery address</h2><p>Snapshot saved with this order</p></div><MapPin size={19} /></header><address className="order-address"><strong>{address.fullName}</strong><span>{address.houseNo}{address.area ? `, ${address.area}` : ''}</span>{address.landmark && <span>Near {address.landmark}</span>}<span>{address.city}, {address.state} {address.pincode}</span><span>Phone: {address.mobile}</span></address><button type="button" className="order-copy-link" onClick={() => copy(addressText(address), setMessage)}><Clipboard size={14} />Copy address</button>{canEditAddress && <details className="order-edit-address"><summary>Correct address before booking</summary><form onSubmit={saveAddress}><div className="grid gap-3 sm:grid-cols-2">{[['fullName', 'Contact name'], ['mobile', 'Mobile'], ['houseNo', 'House / flat'], ['area', 'Street / area'], ['landmark', 'Landmark'], ['city', 'City'], ['state', 'State'], ['pincode', 'PIN code']].map(([key, label]) => <label key={key}>{label}<input value={addressForm[key] || ''} maxLength={key === 'area' ? 300 : 160} onChange={event => setAddressForm(value => ({ ...value, [key]: event.target.value }))} /></label>)}</div><label>Reason for correction<textarea maxLength={300} value={addressReason} onChange={event => setAddressReason(event.target.value)} /></label><button className="admin-btn w-full" disabled={saving}>Validate and update address</button></form></details>}</section>
         <section className="admin-card p-5"><header className="order-section-heading"><div><h2>Payment record</h2><p>Financial status stays separate from delivery</p></div><FileText size={19} /></header><div className="order-facts"><Row label="Method" value={order.paymentMethod} /><Row label="Provider" value={order.paymentProvider || '-'} /><Row label="State" value={order.paymentState || order.paymentStatus} /><Row label="Refunded" value={`₹${Number(order.refundedAmount || 0).toLocaleString('en-IN')}`} /><Row label="Refundable" value={`₹${Math.max(0, Number(order.finalAmount || 0) - Number(order.refundedAmount || 0)).toLocaleString('en-IN')}`} /><Row label="Razorpay order" value={order.razorpayOrderId || '-'} /><Row label="Payment ID" value={order.razorpayPaymentId || '-'} />{order.paymentFailureReason && <Row label="Failure" value={order.paymentFailureReason} />}</div>{order.refunds?.length > 0 && <details className="mt-4"><summary className="cursor-pointer text-sm font-bold">Refund history ({order.refunds.length})</summary><div className="mt-3 grid gap-2">{order.refunds.map(item => <div key={item.providerRefundId} className="rounded-xl bg-slate-50 p-3 text-xs"><strong>₹{Number(item.amount || 0).toLocaleString('en-IN')} · {item.status}</strong><p>{item.provider || 'payment provider'} · {item.providerRefundId}</p><time>{item.processedAt ? new Date(item.processedAt).toLocaleString('en-IN') : ''}</time></div>)}</div></details>}</section>
         <section className="admin-card p-5"><header className="order-section-heading"><div><h2>Private staff notes</h2><p>Never shown to the customer</p></div><Plus size={19} /></header><form onSubmit={addNote}><textarea className="admin-field__control min-h-24 w-full" maxLength={1000} value={staffNote} onChange={event => setStaffNote(event.target.value)} placeholder="Packing instruction, customer call result or internal follow-up" /><button type="submit" disabled={saving || !staffNote.trim()} className="admin-btn mt-3 w-full">Add private note</button></form><div className="order-staff-notes">{[...(order.staffNotes || [])].reverse().map((item, index) => <article key={`${item.date}-${index}`}><p>{item.text}</p><small>{item.author?.name || 'Staff'} · {item.date ? new Date(item.date).toLocaleString('en-IN') : ''}</small></article>)}{!order.staffNotes?.length && <p className="admin-note">No private notes yet.</p>}</div></section>

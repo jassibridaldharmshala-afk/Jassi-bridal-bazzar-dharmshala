@@ -1,11 +1,12 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, Archive, Boxes, ChevronDown, ClipboardCheck, Clock3,
   Download, History, IndianRupee, Plus, RefreshCw, Search,
-  ShieldCheck, ShoppingCart, TrendingDown, Truck, Undo2, Upload, Warehouse, X,
+  ShoppingCart, TrendingDown, Truck, Undo2, Upload, Warehouse, X,
 } from 'lucide-react';
 import DataTable from '../../components/admin/DataTable';
-import PageHeader from '../../components/admin/PageHeader';
 import api from '../../services/api';
 import WorkflowSmartFill from '../../components/admin/WorkflowSmartFill';
 import './Inventory.css';
@@ -42,7 +43,7 @@ export default function Inventory({ route = '' }) {
   const [purchaseFilters, setPurchaseFilters] = useState({ q: '', status: '', page: 1, limit: 20 });
   const [loading, setLoading] = useState({ catalog: true, summary: true, history: false, purchase: false });
   const [errors, setErrors] = useState({});
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useAdminFeedback('', 'success', 'Inventory');
   const [reload, setReload] = useState(0);
   const [adjustment, setAdjustment] = useState(null);
   const [markOut, setMarkOut] = useState(null);
@@ -123,19 +124,20 @@ export default function Inventory({ route = '' }) {
   };
 
   return <section className="inventory-workspace">
-    <PageHeader title="Inventory operations" note="Know what can sell, what is committed, what is arriving, and why every quantity changed." kicker={base === '/seller' ? 'Seller' : 'Admin'}>
+    <div className="inventory-toolbar">
+      <nav className="inventory-tabs" aria-label="Inventory sections">
+        {[['stock', Boxes, 'Stock'], ['purchase', Truck, 'Restocking'], ['history', History, 'Movement history']].map(([value, Icon, text]) => <button key={value} type="button" className={tab === value ? 'is-active' : ''} aria-current={tab === value ? 'page' : undefined} onClick={() => setTab(value)}><Icon size={17} />{text}</button>)}
+      </nav>
+      <div className="inventory-toolbar-actions">
       <button type="button" className="admin-btn-ghost" onClick={refresh} disabled={Object.values(loading).some(Boolean)}><RefreshCw size={16} /> Refresh</button>
       {access.canExport && <button type="button" className="admin-btn-ghost" onClick={exportInventory}><Download size={16} /> Export</button>}
       {access.canReceive && <button type="button" className="admin-btn" onClick={() => setPurchase({ supplier: { name: '', phone: '', email: '' }, expectedAt: '', notes: '', items: [{ selection: productOptions[0]?.key || '', quantity: 1, unitCost: productOptions[0]?.product?.costPrice || 0 }] })}><Plus size={16} /> Purchase order</button>}
-    </PageHeader>
+      </div>
+    </div>
 
-    {notice && <div className="inventory-notice" role="status"><ShieldCheck size={18} /><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label="Dismiss message"><X size={15} /></button></div>}
+    <AdminFeedback message={notice} type="success" title="Inventory" onDismiss={() => setNotice('')} />
     {errors.summary && <div className="inventory-warning" role="alert"><AlertTriangle size={18} />Summary is temporarily unavailable. Stock controls can still be used.</div>}
     <SummaryCards data={summary} loading={loading.summary} canViewCost={access.canViewCost} onFilter={(status) => { setTab('stock'); setFilters((value) => ({ ...value, status, page: 1 })); }} />
-
-    <nav className="inventory-tabs" aria-label="Inventory sections">
-      {[['stock', Boxes, 'Stock'], ['purchase', Truck, 'Restocking'], ['history', History, 'Movement history']].map(([value, Icon, text]) => <button key={value} type="button" className={tab === value ? 'is-active' : ''} aria-current={tab === value ? 'page' : undefined} onClick={() => setTab(value)}><Icon size={17} />{text}</button>)}
-    </nav>
 
     {tab === 'stock' && <StockPanel
       base={base} page={catalog} loading={loading.catalog} error={errors.catalog} filters={filters} setFilters={setFilters}
@@ -169,7 +171,7 @@ function SummaryCards({ data, loading, canViewCost, onFilter }) {
     ['Aged stock', data?.agedStockProducts, Clock3, '', `${number(data?.agedStockUnits)} units unchanged for 90 days`],
   ];
   if (canViewCost) cards.push(['Stock cost', money(data?.costValue), IndianRupee, '', `Retail value ${money(data?.retailValue)}`]);
-  return <div className="inventory-summary" aria-busy={loading}>{cards.map(([title, value, Icon, filter, note]) => <button type="button" key={title} onClick={() => filter && onFilter(filter)} disabled={loading || !filter} className={filter ? 'is-actionable' : ''}><span><Icon size={18} /></span><div><small>{title}</small><strong>{loading ? '—' : typeof value === 'number' ? number(value) : value || '—'}</strong><p>{note}</p></div></button>)}</div>;
+  return <div className="inventory-summary" aria-busy={loading}>{cards.map(([title, value, Icon, filter, note]) => <button type="button" key={title} title={note} aria-label={`${title}: ${loading ? 'Loading' : value ?? 0}. ${note}`} onClick={() => filter && onFilter(filter)} disabled={loading || !filter} className={filter ? 'is-actionable' : ''}><span><Icon size={18} /></span><div><small>{title}</small><strong>{loading ? '—' : typeof value === 'number' ? number(value) : value || '—'}</strong></div></button>)}</div>;
 }
 
 function StockPanel({ page, loading, error, filters, setFilters, access, onAdjust, onMarkOut, onHide, onOrder, onBulk, onRetry }) {
@@ -177,7 +179,7 @@ function StockPanel({ page, loading, error, filters, setFilters, access, onAdjus
     <div className="inventory-filters">
       <label className="inventory-search"><Search size={17} /><input aria-label="Search inventory" value={filters.q} onChange={(event) => setFilters((value) => ({ ...value, q: event.target.value, page: 1 }))} placeholder="Product, SKU or barcode" /></label>
       <select aria-label="Stock filter" value={filters.status} onChange={(event) => setFilters((value) => ({ ...value, status: event.target.value, page: 1 }))}><option value="">All stock</option><option value="attention">Needs attention</option><option value="low">Low stock</option><option value="out">Sold out products</option><option value="variant-out">Variant sold out</option><option value="healthy">Healthy</option><option value="hidden">Hidden</option></select>
-      <select aria-label="Inventory sort" value={filters.sort} onChange={(event) => setFilters((value) => ({ ...value, sort: event.target.value, page: 1 }))}><option value="updated">Recently changed</option><option value="name">Product name</option><option value="stock-low">Lowest stock</option><option value="stock-high">Highest stock</option></select>
+      <select aria-label="Inventory sort" value={filters.sort} onChange={(event) => setFilters((value) => ({ ...value, sort: event.target.value, page: 1 }))}><option value="updated">Latest changes</option><option value="name">Product name</option><option value="stock-low">Lowest stock</option><option value="stock-high">Highest stock</option></select>
       {access.canBulkAdjust && <button type="button" className="admin-btn-ghost" onClick={onBulk}><Upload size={16} /> Bulk import</button>}
     </div>
     <DataTable loading={loading} error={error} onRetry={onRetry} title="Live inventory" note={`${number(page.total)} matching products · Sellable excludes reserved and non-sellable units`} emptyTitle="No matching inventory" emptyNote="Try another search or stock filter." heads={['Product', 'Location', 'Sellable / on hand', 'Committed', 'Incoming', 'Non-sellable', 'Status', 'Actions']} minWidth={1120} rows={page.items.map((product) => <InventoryRow key={product._id} product={product} access={access} onAdjust={onAdjust} onMarkOut={onMarkOut} onHide={onHide} onOrder={onOrder} />)} />
@@ -188,14 +190,14 @@ function StockPanel({ page, loading, error, filters, setFilters, access, onAdjus
 function InventoryRow({ product, access, onAdjust, onMarkOut, onHide, onOrder }) {
   const photo = product.images?.find((image) => image.primary)?.url || product.images?.[0]?.url || product.primaryImage || '';
   return <tr>
-    <td><div className="inventory-product">{photo ? <img src={photo} alt="" /> : <span><Boxes size={18} /></span>}<div><strong title={product.name}>{product.name}</strong><small>{product.sku || 'No product SKU'} · Alert at {product.lowStockAlert ?? 5}</small>{product.variants?.length > 0 && <details><summary>{product.variants.length} variants <ChevronDown size={13} /></summary><div>{product.variants.map((variant) => { const variantAvailable = Number(variant.available ?? variant.stock ?? 0); const variantStatus = variant.status || (variantAvailable <= 0 ? 'SOLD_OUT' : variantAvailable <= Number(variant.lowStockAlert ?? product.lowStockAlert ?? 5) ? 'LOW' : 'HEALTHY'); return <button type="button" key={variant._id} onClick={() => access.canAdjust && onAdjust(product, { ...variant, available: variantAvailable, status: variantStatus })}><span>{[variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku || 'Variant'}</span><b className={`is-${variantStatus.toLowerCase()}`}>{variantAvailable} sellable</b><small>{variant.reserved || 0} reserved · {variant.incoming || 0} incoming</small></button>; })}</div></details>}</div></div></td>
-    <td><strong>{product.inventoryLocation || 'Main stockroom'}</strong><small>{product.binLocation || 'No bin assigned'}</small></td>
-    <td><strong>{number(product.available)}</strong><small>{number(product.onHand)} physical/on hand</small></td>
-    <td><strong>{number(product.reserved)}</strong><small>Open fulfilment</small></td>
-    <td><strong>{number(product.incoming)}</strong><small>Supplier orders</small></td>
-    <td><strong>{number(product.damaged + product.quarantine)}</strong><small>{product.damaged} damaged · {product.quarantine} hold</small></td>
-    <td><InventoryStatus value={product.inventoryStatus} variants={product.variants} /><small>{product.lastInventoryChangeAt ? `${new Date(product.lastInventoryChangeAt).toLocaleString('en-IN')} · ${product.lastInventoryChangedBy?.name || 'System'} · r${product.inventoryRevision ?? 0}` : `No stock change recorded · r${product.inventoryRevision ?? 0}`}</small></td>
-    <td><div className="inventory-actions">{access.canAdjust && !product.variants?.length && <button type="button" onClick={() => onAdjust(product)}>Adjust</button>}{access.canReceive && !product.variants?.length && <button type="button" onClick={() => onOrder(product, null)}>Order stock</button>}{access.canAdjust && product.available > 0 && <button type="button" className="is-danger" onClick={() => onMarkOut(product)}>Mark out</button>}{access.canManageCatalog && product.isActive && <button type="button" onClick={() => onHide(product)}>Hide</button>}</div></td>
+    <td data-label="Product"><div className="inventory-product">{photo ? <img src={photo} alt="" /> : <span><Boxes size={18} /></span>}<div><strong title={product.name}>{product.name}</strong><small>{product.sku || 'No product SKU'} · Alert at {product.lowStockAlert ?? 5}</small>{product.variants?.length > 0 && <details><summary>{product.variants.length} variants <ChevronDown size={13} /></summary><div>{product.variants.map((variant) => { const variantAvailable = Number(variant.available ?? variant.stock ?? 0); const variantStatus = variant.status || (variantAvailable <= 0 ? 'SOLD_OUT' : variantAvailable <= Number(variant.lowStockAlert ?? product.lowStockAlert ?? 5) ? 'LOW' : 'HEALTHY'); return <button type="button" key={variant._id} onClick={() => access.canAdjust && onAdjust(product, { ...variant, available: variantAvailable, status: variantStatus })}><span>{[variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku || 'Variant'}</span><b className={`is-${variantStatus.toLowerCase()}`}>{variantAvailable} sellable</b><small>{variant.reserved || 0} reserved · {variant.incoming || 0} incoming</small></button>; })}</div></details>}</div></div></td>
+    <td data-label="Location"><strong>{product.inventoryLocation || 'Main stockroom'}</strong><small>{product.binLocation || 'No bin assigned'}</small></td>
+    <td data-label="Sellable / on hand"><strong>{number(product.available)}</strong><small>{number(product.onHand)} physical/on hand</small></td>
+    <td data-label="Committed"><strong>{number(product.reserved)}</strong><small>Open fulfilment</small></td>
+    <td data-label="Incoming"><strong>{number(product.incoming)}</strong><small>Supplier orders</small></td>
+    <td data-label="Non-sellable"><strong>{number(product.damaged + product.quarantine)}</strong><small>{product.damaged} damaged · {product.quarantine} hold</small></td>
+    <td data-label="Status"><InventoryStatus value={product.inventoryStatus} variants={product.variants} /><small>{product.lastInventoryChangeAt ? `${new Date(product.lastInventoryChangeAt).toLocaleString('en-IN')} · ${product.lastInventoryChangedBy?.name || 'System'} · r${product.inventoryRevision ?? 0}` : `No stock change recorded · r${product.inventoryRevision ?? 0}`}</small></td>
+    <td data-label="Actions"><div className="inventory-actions">{access.canAdjust && !product.variants?.length && <button type="button" onClick={() => onAdjust(product)}>Adjust</button>}{access.canReceive && !product.variants?.length && <button type="button" onClick={() => onOrder(product, null)}>Order stock</button>}{access.canAdjust && product.available > 0 && <button type="button" className="is-danger" onClick={() => onMarkOut(product)}>Mark out</button>}{access.canManageCatalog && product.isActive && <button type="button" onClick={() => onHide(product)}>Hide</button>}</div></td>
   </tr>;
 }
 

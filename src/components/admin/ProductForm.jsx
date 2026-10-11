@@ -1,5 +1,7 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CircleCheck, Copy, Eye, FileText, Hash, ImagePlus, IndianRupee, Search, SlidersHorizontal, Tag, Type, X } from 'lucide-react';
+import { ChevronDown, CircleCheck, Copy, Eye, FileText, Hash, ImagePlus, IndianRupee, Search, SlidersHorizontal, Tag, Type, X } from 'lucide-react';
 import api from '../../services/api';
 import ImageUploader from './ImageUploader';
 import VideoUploader from './VideoUploader';
@@ -43,7 +45,7 @@ const emptyProduct = {
   hsnCode: '',
   barcode: '',
   sku: '',
-  brand: 'Jassi General Store',
+  brand: 'Jassi Bridal Bazar Dharmshala',
   category: '',
   subCategory: '',
   categoryDefinitionKey: '',
@@ -108,6 +110,7 @@ export default function ProductForm({
   apiPrefix = '/admin',
   uploadPrefix = '/admin/uploads',
   cancelPath = '/admin/products',
+  compact = false,
 }) {
   const [structure, setStructure] = useState(null);
   const [structureError, setStructureError] = useState('');
@@ -139,7 +142,7 @@ export default function ProductForm({
   const [cloudDraft, setCloudDraft] = useState(null);
   const [autosaveStatus, setAutosaveStatus] = useState('');
   const [autosaveReady, setAutosaveReady] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useAdminFeedback('', 'success', 'Products');
   const [loadError, setLoadError] = useState('');
   const [reload, setReload] = useState(0);
   const [errors, setErrors] = useState({});
@@ -357,7 +360,7 @@ export default function ProductForm({
     setMessage('Product details copied. Add a unique SKU, review the photos and enter stock before publishing.');
     setCopyOpen(false);
     setViewMode('essential');
-  }, []);
+  }, [setMessage]);
 
   const update = (field, value) => {
     setForm((current) => {
@@ -571,11 +574,12 @@ export default function ProductForm({
       autosavePauseRef.current = true;
       if (!cloudDraft && autosaveIdRef.current) await api.delete(`${apiPrefix}/product-drafts/${autosaveIdRef.current}`).catch(() => {});
       if (!productId) setForm(emptyProduct);
+      else setForm(current => ({ ...current, inventoryRevision: savedProduct.inventoryRevision ?? current.inventoryRevision, rentalOffers: savedProduct.rentalOffers || [], rentalPricing: pricingFromOffer(savedProduct.rentalOffers?.find(offer => offer._id === current.rentalPricing?.listingId) || savedProduct.rentalOffers?.[0]) }));
       clearDraft(productId, apiPrefix);
       setMessage(intent === 'schedule' ? 'Product scheduled successfully.' : intent === 'publish' ? 'Product published successfully.' : 'Product saved successfully.');
       onSaved?.(savedProduct);
     } catch (error) {
-      setMessage(error.message);
+      setMessage(error.message, 'error');
     } finally {
       setSaving(false);
       submitIntentRef.current = 'save';
@@ -613,7 +617,7 @@ export default function ProductForm({
       setMessage('Draft saved safely. Open Product Drafts whenever you are ready to complete it.');
       onSaved?.({ draft: true });
     } catch (error) {
-      setMessage(error.message);
+      setMessage(error.message, 'error');
     } finally {
       draftSaveLock.current = false;
       setSaving(false);
@@ -638,7 +642,7 @@ export default function ProductForm({
     || (selectableSizes.length > 0 && getSizeChartValidation(sizingProduct).valid);
   const pricingReady = Number(form.price) > 0 && (form.commerceMode === 'RENTAL_ONLY'
     || (Number(form.originalPrice) > 0 && Number(form.price) <= Number(form.originalPrice)))
-    && (form.commerceMode === 'SALE_ONLY' || !rentalPricingError(form.rentalPricing));
+    && (form.commerceMode === 'SALE_ONLY' || !rentalPricingError(form.rentalPricing, { requireInventory: true }));
   const inventoryReady = Number.isSafeInteger(Number(form.stock)) && Number(form.stock) >= 0
     && (!form.trackVariants || (form.variants?.length > 0 && !validateVariants(form.variants)));
   const checklist = [
@@ -660,43 +664,16 @@ export default function ProductForm({
   if (!draftReady) return <p role="status" className="admin-card p-5">Loading product...</p>;
 
   return (
-    <form ref={formRef} onSubmit={submit} aria-busy={saving || mediaActivity.images || mediaActivity.videos} className="admin-product-form">
+    <form ref={formRef} onSubmit={submit} aria-busy={saving || mediaActivity.images || mediaActivity.videos} className={`admin-product-form${compact ? ' admin-product-form--compact' : ''}`}>
       <div className="product-form-commandbar">
-        <div><p>Editing experience</p><div className="product-form-mode" aria-label="Product form detail level"><button type="button" aria-pressed={viewMode === 'essential'} onClick={() => setViewMode('essential')}>Essentials</button><button type="button" aria-pressed={viewMode === 'advanced'} onClick={() => setViewMode('advanced')}><SlidersHorizontal size={15} /> Advanced</button></div></div>
-        <div className="product-form-quality"><span className={quality.score >= 80 ? 'is-ready' : ''}>{quality.score}</span><div><strong>Listing quality</strong><small>{quality.next || 'Ready for customers'}</small></div></div>
+        <div>{!compact && <p>Editing experience</p>}<div className="product-form-mode" aria-label="Product form detail level"><button type="button" aria-pressed={viewMode === 'essential'} onClick={() => setViewMode('essential')}>Essentials</button><button type="button" aria-pressed={viewMode === 'advanced'} onClick={() => setViewMode('advanced')}><SlidersHorizontal size={15} /> Advanced</button></div></div>
+        {!compact && <div className="product-form-quality"><span className={quality.score >= 80 ? 'is-ready' : ''}>{quality.score}</span><div><strong>Listing quality</strong><small>{quality.next || 'Ready for customers'}</small></div></div>}
         <div className="product-form-commandbar__actions">
           {mode === 'Add' && <button type="button" className="admin-btn-ghost" onClick={() => setCopyOpen(true)}><Copy size={16} /> Copy existing</button>}
           <button type="button" className="admin-btn-ghost" onClick={() => setPreviewOpen(true)}><Eye size={16} /> Preview</button>
         </div>
       </div>
-      <div className="admin-form-guide" role="status">
-        <div className="admin-form-guide__progress">
-          <span className={`admin-form-guide__count${readyCount === checklist.length ? ' is-ready' : ''}`}>
-            {readyCount === checklist.length ? <CircleCheck className="h-4 w-4" /> : `${readyCount}/${checklist.length}`}
-          </span>
-          <span>{readyCount === checklist.length ? 'Ready to save' : 'Still needed'}</span>
-        </div>
-        <div className="admin-form-guide__chips">
-          {checklist.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`admin-form-chip${item.done ? ' is-done' : ''}`}
-                title={item.done ? `${item.label} added` : `Jump to ${item.label.toLowerCase()}`}
-                aria-label={item.done ? `${item.label} added` : `${item.label} still needed`}
-                onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              >
-                <span className="admin-form-chip__icon">
-                  {item.id === 'photo' && previewImage ? <img src={previewImage} alt="" /> : <Icon className="h-3.5 w-3.5" />}
-                </span>
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <ProductChecklist checklist={checklist} readyCount={readyCount} previewImage={previewImage} quality={quality} compact={compact} />
 
       {recoveryDraft && <div role="alert" className={`admin-form-hint ${recoveryDraft.stale ? 'border-amber-300 bg-amber-50' : ''}`}>
         <div><h3>Unsaved browser draft found</h3><p>{recoveryDraft.stale ? 'The saved product changed after this browser draft was created. Review carefully before applying it.' : `Restore edits${recoveryDraft.savedAt ? ` saved ${new Date(recoveryDraft.savedAt).toLocaleString('en-IN')}` : ''}, or discard them and keep the latest server version.`}</p></div>
@@ -723,7 +700,7 @@ export default function ProductForm({
         {viewMode === 'advanced' && <Input label="Slug" value={form.slug} onChange={(value) => update('slug', value)} placeholder="leave blank for auto slug" />}
         <Input field="sku" label="SKU" value={form.sku} onChange={(value) => update('sku', value)} error={errors.sku} placeholder="SC-0101" />
         {viewMode === 'advanced' && <Input label="Brand" value={form.brand} onChange={(value) => update('brand', value)} />}
-        <Input label="Short Description" value={form.shortDescription} onChange={(value) => update('shortDescription', value)} placeholder="Premium festive wear" />
+        <Input label="Short Description" wide={compact} value={form.shortDescription} onChange={(value) => update('shortDescription', value)} placeholder="Premium festive wear" />
         <label className="admin-field lg:col-span-2">
           <span>Full Description</span>
           <textarea
@@ -743,7 +720,7 @@ export default function ProductForm({
 
       <Section id="product-pricing" step="02" title="Category, Pricing and Inventory" note="Where it sits in the catalog and how it is sold.">
         <label className="admin-field"><span>Available for</span><select className="admin-field__control" value={form.commerceMode || 'SALE_ONLY'} onChange={event => setForm(current => ({ ...current, commerceMode: event.target.value }))}><option value="SALE_ONLY">Sale only</option><option value="RENTAL_ONLY">Rental only</option><option value="SALE_AND_RENTAL">Sale and rental</option></select><small>Choose sale, rental or both for this item.</small></label>
-        {form.commerceMode !== 'SALE_ONLY' && <div className="admin-form-hint lg:col-span-2"><h3>Sale + rental inventory</h3><p>Set rental pricing below. Track rental pieces and dates in Rental Studio. Sale stock is counted separately; use zero sale stock for rental-only items.</p></div>}
+        {form.commerceMode !== 'SALE_ONLY' && <p className="admin-form-hint lg:col-span-2">Sale stock and rental pieces are tracked separately. Enter rental details below.</p>}
         <label className="admin-field">
           <span>Category<em>*</em></span>
           <select
@@ -780,12 +757,11 @@ export default function ProductForm({
             {availableSubcategories.map((item) => <option key={item} value={item} />)}
           </datalist>
         </label>}
-        <Input label="Occasions (comma-separated)" value={form.occasion} onChange={(value) => update('occasion', value)} placeholder="Wedding, Party, Daily wear" />
-        <small className="text-slate-500">Use consistent occasion names. Homepage shortcuts use this store’s published products.</small>
+        <Input label="Occasions (comma-separated)" value={form.occasion} onChange={(value) => update('occasion', value)} placeholder="Wedding, Party, Daily wear" helpText={compact ? '' : 'Use consistent occasion names. Homepage shortcuts use this store’s published products.'} />
         {viewMode === 'advanced' && <Input label="Fabric" value={form.fabric} onChange={(value) => update('fabric', value)} placeholder="Silk" />}
         {form.commerceMode !== 'RENTAL_ONLY' && <Input field="originalPrice" label="Original price" type="number" min="0.01" step="0.01" value={form.originalPrice} onChange={(value) => update('originalPrice', value)} error={errors.originalPrice} placeholder="2499" />}
         <Input field="price" label={form.commerceMode === 'RENTAL_ONLY' ? 'Reference item value' : 'Selling price'} type="number" min="0.01" step="0.01" value={form.price} onChange={(value) => update('price', value)} error={errors.price} placeholder={form.commerceMode === 'RENTAL_ONLY' ? 'Enter item value' : '1299'} />
-        {form.commerceMode !== 'SALE_ONLY' && <ProductRentalPricing value={form.rentalPricing} offers={form.rentalOffers} onChange={value => update('rentalPricing', value)} error={errors.rentalPricing} apiPrefix={apiPrefix} />}
+        {form.commerceMode !== 'SALE_ONLY' && <ProductRentalPricing collectPieces collapseFitting value={form.rentalPricing} offers={form.rentalOffers} onChange={value => update('rentalPricing', value)} error={errors.rentalPricing} apiPrefix={apiPrefix} />}
         {viewMode === 'advanced' && <Input field="costPrice" label="Cost price" type="number" min="0" step="0.01" value={form.costPrice || 0} onChange={(value) => update('costPrice', value)} error={errors.costPrice} placeholder="700" />}
         {viewMode === 'advanced' && <Input field="gstRate" label="GST rate (%)" type="number" min="0" max="100" step="0.01" value={form.gstRate || 0} onChange={(value) => update('gstRate', value)} error={errors.gstRate} placeholder="5" />}
         {viewMode === 'advanced' && <Input label="HSN code" value={form.hsnCode || ''} onChange={(value) => update('hsnCode', value)} placeholder="6204" />}
@@ -846,13 +822,14 @@ export default function ProductForm({
 
       <Section id="product-media" step="03" title="Product Images, Sizes and Colors" note="Photos first, then the options customers pick.">
         <div className="lg:col-span-2" data-error-field="images" tabIndex="-1">
-          <div className="admin-form-hint mb-3">
+          {!compact && <div className="admin-form-hint mb-3">
             <h3>Product images</h3>
             <p>Click the upload box or drag images here. Keep up to 20 clear product photos; add up to 8 at a time. JPG, JPEG, PNG or WEBP files up to 20MB are compressed before upload.</p>
-          </div>
+          </div>}
           <ImageUploader
+            compact={compact}
             label="Choose Product Images"
-            helpText="Uploaded images are saved on the backend and only image URLs are stored in MongoDB."
+            helpText="JPG, PNG or WebP · add up to 8 photos at a time."
             multiple
             maxFiles={20}
             uploadContext="products"
@@ -873,7 +850,7 @@ export default function ProductForm({
           </div>
           <VideoUploader
             label="Choose Product Videos"
-            helpText="Videos are uploaded to the backend and only video URLs are stored in MongoDB."
+            helpText="MP4, WebM or MOV · up to 2 videos, 20 MB each."
             multiple
             maxFiles={2}
             uploadContext="product-videos"
@@ -980,7 +957,7 @@ export default function ProductForm({
         ) : null}
       </Section>
 
-      <Section id="complete-look" title="Complete the look" note="Optional complementary products on the product-detail page; no automatic bundles or cart changes."><CompleteLookPicker apiPrefix={apiPrefix} productId={productId} value={form.completeLookProductIds || []} onChange={value => update('completeLookProductIds', value)} disabled={saving} /></Section>
+      <Section id="complete-look" title="Complete the look" collapsible={compact} note="Optional complementary products on the product-detail page; no automatic bundles or cart changes."><CompleteLookPicker apiPrefix={apiPrefix} productId={productId} value={form.completeLookProductIds || []} onChange={value => update('completeLookProductIds', value)} disabled={saving} /></Section>
       {viewMode === 'advanced' && <Section id="product-fulfilment" step="04" title="Shipping, Supplier and Schedule" note="Operational details used for courier planning, restocking and controlled publishing.">
         <Input field="packageDimensions" label="Package length (cm)" type="number" min="0" step="0.1" value={form.packageDimensions?.lengthCm || 0} onChange={(value) => { updateNested(setForm, 'packageDimensions', 'lengthCm', value); clearErrors(setErrors, 'packageDimensions'); }} error={errors.packageDimensions} />
         <Input label="Package width (cm)" type="number" min="0" step="0.1" value={form.packageDimensions?.widthCm || 0} onChange={(value) => { updateNested(setForm, 'packageDimensions', 'widthCm', value); clearErrors(setErrors, 'packageDimensions'); }} />
@@ -1167,7 +1144,7 @@ export default function ProductForm({
       {previewOpen && <ProductPreviewModal product={{ ...form, sizes: splitList(form.sizes), colors: splitList(form.colors) }} onClose={() => setPreviewOpen(false)} />}
 
       {(mediaActivity.images || mediaActivity.videos) && <p role="status" className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">Media upload in progress. Saving will be available when it finishes.</p>}
-      {message && <p role="status" className="rounded-2xl border border-theme-border bg-white px-4 py-3 text-sm font-semibold text-wine">{message}</p>}
+      <AdminFeedback message={message} type="success" title="Products" onDismiss={() => setMessage('')} />
       <div className="admin-form-actions">
         {onCancel ? (
           <button type="button" disabled={saving || mediaActivity.images || mediaActivity.videos} onClick={onCancel} className="admin-btn-ghost disabled:opacity-60">
@@ -1178,7 +1155,7 @@ export default function ProductForm({
         )}
         <button type="button" disabled={saving || mediaActivity.images || mediaActivity.videos} onClick={() => { setForm(JSON.parse(baselineRef.current)); setErrors({}); setMessage(''); clearDraft(productId, apiPrefix); setRecoveryDraft(null); setSmartFillReset(value => value + 1); }} className="admin-btn-ghost disabled:opacity-60">Reset</button>
         {mode === 'Add' && <button type="button" disabled={saving || mediaActivity.images || mediaActivity.videos || !structure} onClick={saveServerDraft} className="admin-btn-ghost disabled:opacity-60">Save Draft</button>}
-        <button type="button" disabled={saving || mediaActivity.images || mediaActivity.videos} onClick={() => setPreviewOpen(true)} className="admin-btn-ghost disabled:opacity-60"><Eye size={16} /> Preview</button>
+        {!compact && <button type="button" disabled={saving || mediaActivity.images || mediaActivity.videos} onClick={() => setPreviewOpen(true)} className="admin-btn-ghost disabled:opacity-60"><Eye size={16} /> Preview</button>}
         {scheduledPublish && <button type="submit" disabled={saving || mediaActivity.images || mediaActivity.videos} onClick={() => { submitIntentRef.current = 'schedule'; }} className="admin-btn-secondary disabled:opacity-60">Schedule Product</button>}
         <button type="submit" disabled={saving || mediaActivity.images || mediaActivity.videos} onClick={() => { submitIntentRef.current = mode === 'Add' ? 'publish' : 'save'; }} className="admin-btn disabled:opacity-60">{saving ? 'Saving...' : (mediaActivity.images || mediaActivity.videos) ? 'Uploading media...' : `${mode} Product`}</button>
       </div>
@@ -1333,7 +1310,39 @@ function formatFlagSummary(flags = {}) {
   ].join('\n');
 }
 
-function Section({ id, title, note, step, children }) {
+function ProductChecklist({ checklist, readyCount, previewImage, quality, compact }) {
+  const progress = <div className="admin-form-guide__progress">
+    <span className={`admin-form-guide__count${readyCount === checklist.length ? ' is-ready' : ''}`}>
+      {readyCount === checklist.length ? <CircleCheck className="h-4 w-4" /> : `${readyCount}/${checklist.length}`}
+    </span>
+    <span>{readyCount === checklist.length ? 'Ready to save' : compact ? 'Product checklist' : 'Still needed'}</span>
+  </div>;
+  const chips = <div className="admin-form-guide__chips">
+    {checklist.map((item) => {
+      const Icon = item.icon;
+      return <button key={item.id} type="button" className={`admin-form-chip${item.done ? ' is-done' : ''}`}
+        title={item.done ? `${item.label} added` : `Jump to ${item.label.toLowerCase()}`}
+        aria-label={item.done ? `${item.label} added` : `${item.label} still needed`}
+        onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+        <span className="admin-form-chip__icon">{item.id === 'photo' && previewImage ? <img src={previewImage} alt="" /> : <Icon className="h-3.5 w-3.5" />}</span>
+        {item.label}
+      </button>;
+    })}
+  </div>;
+  return compact ? <details className="product-form-checklist">
+    <summary>{progress}<ChevronDown size={16} /></summary>
+    <div className="product-form-checklist__body">
+      {chips}
+      <p>Listing quality: {quality.score}/100 · {quality.next || 'Ready for customers'}</p>
+    </div>
+  </details> : <div className="admin-form-guide" role="status">{progress}{chips}</div>;
+}
+
+function Section({ id, title, note, step, children, collapsible = false }) {
+  if (collapsible) return <details id={id} className="admin-form-card product-form-optional">
+    <summary><span>{title}</span><span>Optional <ChevronDown size={16} /></span></summary>
+    <div className="admin-form-grid">{children}</div>
+  </details>;
   return (
     <section id={id} className="admin-form-card">
       <header className="admin-form-card__head">
@@ -1348,9 +1357,9 @@ function Section({ id, title, note, step, children }) {
   );
 }
 
-function Input({ field, label, value, onChange, placeholder, type = 'text', required = false, error, min, max, step, disabled = false }) {
+function Input({ field, label, value, onChange, placeholder, type = 'text', required = false, error, min, max, step, disabled = false, wide = false, helpText }) {
   return (
-    <label className="admin-field">
+    <label className={`admin-field${wide ? ' product-form-wide' : ''}`}>
       <span>{label}{required ? <em>*</em> : null}</span>
       <input
         required={required}
@@ -1366,6 +1375,7 @@ function Input({ field, label, value, onChange, placeholder, type = 'text', requ
         className={`admin-field__control disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500${error ? ' is-error' : ''}`}
         placeholder={placeholder}
       />
+      {helpText && <small className="text-slate-500">{helpText}</small>}
       {error && <span className="admin-field__error">{error}</span>}
     </label>
   );
@@ -1650,7 +1660,7 @@ function validate(form, sizingProduct = form, attributes = []) {
   if (!form.category) errors.category = 'Category is required.';
   if (form.commerceMode !== 'RENTAL_ONLY' && (!Number.isFinite(Number(form.originalPrice)) || Number(form.originalPrice) <= 0)) errors.originalPrice = 'Original price is required.';
   if (!Number.isFinite(Number(form.price)) || Number(form.price) <= 0) errors.price = form.commerceMode === 'RENTAL_ONLY' ? 'Reference item value is required.' : 'Selling price is required.';
-  if (form.commerceMode !== 'SALE_ONLY' && rentalPricingError(form.rentalPricing)) errors.rentalPricing = rentalPricingError(form.rentalPricing);
+  if (form.commerceMode !== 'SALE_ONLY' && rentalPricingError(form.rentalPricing, { requireInventory: true })) errors.rentalPricing = rentalPricingError(form.rentalPricing, { requireInventory: true });
   if (form.commerceMode !== 'RENTAL_ONLY' && Number(form.price) > Number(form.originalPrice)) errors.price = 'Selling price cannot exceed original price.';
   if (!Number.isSafeInteger(Number(form.stock)) || Number(form.stock) < 0) errors.stock = 'Stock must be a whole number of zero or more.';
   if (!Number.isSafeInteger(Number(form.lowStockAlert)) || Number(form.lowStockAlert) < 0) errors.lowStockAlert = 'Use a whole number of zero or more.';

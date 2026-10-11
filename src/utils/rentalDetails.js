@@ -1,3 +1,4 @@
+import { customerName } from './customerIdentity';
 export const rentalAddressFields = [['fullName', 'Contact name'], ['mobile', 'Mobile number'], ['houseNo', 'House / building'], ['area', 'Area / street'], ['landmark', 'Landmark (optional)'], ['city', 'City'], ['state', 'State'], ['pincode', 'PIN code']];
 export const pieceMeasurementFields = {
   APPAREL: [['bust', 'Bust'], ['chest', 'Chest'], ['waist', 'Waist'], ['hips', 'Hips'], ['shoulder', 'Shoulder'], ['sleeve', 'Sleeve length'], ['armhole', 'Armhole'], ['blouseLength', 'Blouse length'], ['outfitLength', 'Outfit length'], ['bottomLength', 'Bottom length'], ['inseam', 'Inseam'], ['outseam', 'Outseam']],
@@ -6,7 +7,7 @@ export const pieceMeasurementFields = {
 };
 const mobile = value => String(value || '').replace(/[\s()-]/g, '').replace(/^\+?91(?=\d{10}$)/, '');
 export function blankRentalAddress(customer = {}, saved = {}) {
-  return Object.fromEntries(rentalAddressFields.map(([key]) => [key, saved?.[key] ?? (key === 'fullName' ? customer?.name || '' : key === 'mobile' ? mobile(customer?.phone) : '')]));
+  return Object.fromEntries(rentalAddressFields.map(([key]) => [key, key === 'fullName' ? customerName(saved?.[key] ?? customer?.name) : saved?.[key] ?? (key === 'mobile' ? mobile(customer?.phone) : '')]));
 }
 export function editableRentalDetails(saved, customer = {}) {
   const contact = value => value ? { name: value.name || '', phone: mobile(value.phone), ...(value.authorised !== undefined ? { relationship: value.relationship || '', authorised: value.authorised === true } : {}) } : null;

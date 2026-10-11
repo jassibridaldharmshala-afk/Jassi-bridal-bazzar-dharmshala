@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ProductSmartFill from '../admin/ProductSmartFill';
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../admin/AdminFeedback';
 import RentalProductIdentity from './RentalProductIdentity';
 import { applySmartPatch } from '../../utils/productSmartFill';
 import { rentalMoney, rentalOperation } from '../../utils/rentals';
@@ -15,7 +17,8 @@ export default function RentalSetupWizard({ base, initialListingId = '', initial
   const [rows, setRows] = useState([]), [id, setId] = useState(initialListingId), [data, setData] = useState(null), [step, setStep] = useState(initialListingId ? 2 : 1);
   const [offer, setOffer] = useState(newOffer), [piece, setPiece] = useState(newPiece), [pieceBaseline, setPieceBaseline] = useState(newPiece);
   const [error, setError] = useState(''), [loading, setLoading] = useState(false), [reload, setReload] = useState(0), [quantity, setQuantity] = useState('');
-  const [product, setProduct] = useState(null), [createNew, setCreateNew] = useState(false), [notice, setNotice] = useState('');
+  const [product, setProduct] = useState(null), [createNew, setCreateNew] = useState(false);
+  const [notice, setNotice] = useAdminFeedback('', 'info', 'Rental setup');
   const pristine = useRef(true);
   const batch = useRef(rentalOperation()), stepIntro = useRef(null), previousStep = useRef(step);
   useEffect(() => { if (!loading && previousStep.current !== step && stepIntro.current) { previousStep.current = step; stepIntro.current.focus(); stepIntro.current.scrollIntoView?.({ block: 'start' }); } }, [step, loading]);
@@ -100,11 +103,11 @@ export default function RentalSetupWizard({ base, initialListingId = '', initial
     if (result) { setOffer(result); setReload(v => v + 1); }
   };
   return <section className="rental-card rental-setup" aria-busy={loading || busy}>
-    <header className="rental-section-heading"><div><span className="rental-eyebrow">START RENTING A PRODUCT</span><h2>Easy rental setup</h2><p className="rental-muted">Choose a product, confirm its price and quantity, then start rentals. Photos and saved prices are reused.</p></div>{data?.listing.active && <span className="rental-status">{data.ready && data.shopEnabled ? 'Visible for rental' : 'Waiting for setup'}</span>}</header>
+    <header className="rental-section-heading"><h2>Easy rental setup</h2>{data?.listing.active && <span className="rental-status">{data.ready && data.shopEnabled ? 'Visible for rental' : 'Waiting for setup'}</span>}</header>
     {!write && <p className="rental-notice">You can review setup. Ask a staff member with inventory editing access to save or activate it.</p>}
     <details className="rental-disclosure"><summary>Find a saved rental option / set up another product</summary><div className="rental-offer-selector"><RentalField label="Offer to set up"><select value={id} disabled={busy || loading} onChange={e => switchOffer(e.target.value)}><option value="">Choose a product first</option>{rows.map(row => <option key={row._id} value={row._id}>{row.title} · {row.active ? 'Active' : 'Paused'}</option>)}{id && !rows.some(row => row._id === id) && <option value={id}>{data?.listing.title || 'Selected offer'}</option>}</select></RentalField><button type="button" className="rental-text-button" disabled={busy} onClick={() => switchOffer('')}>Set up another product</button></div><RentalRecordPager base={base} kind="listings" refresh={refresh} onLoaded={setRows} /><button type="button" className="rental-button rental-button--secondary" disabled={busy || loading || !id} onClick={() => { if (dirty && !window.confirm('Reload this offer? Unsaved changes will be lost.')) return; setReload(v => v + 1); }}>Refresh readiness</button></details>
     <nav className="rental-setup-steps" aria-label="Rental setup steps">{['Product & price', 'Quantity', 'Confirm'].map((label, i) => <button type="button" key={label} className={step === i + 1 ? 'is-selected' : ''} aria-current={step === i + 1 ? 'step' : undefined} disabled={busy || loading || (i > 0 && !data)} onClick={() => setStep(i + 1)}><strong>{i + 1}</strong><span>{label}</span></button>)}</nav>
-    {notice && <p className="rental-muted" role="status">{notice}</p>}
+    <AdminFeedback message={notice} title="Rental setup" onDismiss={() => setNotice('')} />
     {step !== 1 && product && <RentalProductIdentity product={product} title={offer.title} />}
     {error && <p role="alert" className="rental-notice">{error}</p>}{loading && <p role="status">Checking this offer…</p>}
     {!loading && step === 1 && <fieldset disabled={busy || !write}>

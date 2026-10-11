@@ -133,3 +133,42 @@
   .social-import__save button { min-height: 48px; }
 }
 @media (max-width: 360px) { .social-import__field-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* Keep entry and review controls close to the work they belong to. */
+.social-import { gap: 12px; }
+.social-import__toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.social-import__guide { min-width: 0; flex: 1; }
+.social-import__guide summary { display: flex; align-items: center; min-height: 44px; }
+.social-import__guide summary::before { content: '▸'; margin-right: 8px; }
+.social-import__guide[open] summary::before { content: '▾'; }
+.social-import__guide > div { max-width: 640px; padding: 12px; border: 1px solid #e7d5ca; border-radius: 10px; background: #fff; font-size: 12px; color: #76686c; line-height: 1.6; }
+.social-import__guide p + p { margin-top: 6px; }
+.social-import__toolbar > a { flex-shrink: 0; }
+.social-import__start, .social-import__gallery, .social-import__fields, .social-import__progress, .social-import__history { padding: 16px; }
+.social-import__url-form { margin-top: 0; gap: 8px; }
+.social-import__url input { min-height: 44px; }
+.social-import__workspace { gap: 12px; }
+.social-import__workspace.is-empty { grid-template-columns: 1fr; }
+.social-import__main { gap: 12px; }
+.social-import__main[hidden] { display: none; }
+.social-import__workspace.is-empty .social-import__history { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.social-import__workspace.is-empty .social-import__history > header,
+.social-import__workspace.is-empty .social-import__history > nav,
+.social-import__workspace.is-empty .social-import__history > p { grid-column: 1 / -1; }
+.social-import__history header { padding-bottom: 6px; }
+.social-import__history header button { width: 44px; min-height: 44px; }
+.social-import__history h2 { font-size: 17px; }
+.social-import__history-item { padding: 10px 8px; }
+.social-import__review { gap: 12px; }
+.social-import__fields fieldset { gap: 12px; }
+.social-import__gallery > header, .social-import__fields > header { margin-bottom: 12px; }
+.social-import__autofill, .social-import__quality-summary { padding: 12px; margin-bottom: 12px; }
+.social-import__save { gap: 10px; justify-content: flex-start; margin-top: 16px; padding-top: 12px; }
+.social-import__saved { padding: 24px 16px; gap: 12px; }
+@media (max-width: 1100px) { .social-import__workspace.is-empty .social-import__history { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .social-import__start, .social-import__gallery, .social-import__fields, .social-import__progress, .social-import__history { padding: 12px; }
+  .social-import__workspace.is-empty .social-import__history { grid-template-columns: 1fr; }
+  .social-import__url-form > div { gap: 8px; }
+  .social-import__url-form .admin-btn { min-height: 44px; }
+}

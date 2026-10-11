@@ -82,8 +82,8 @@ export default function Notifications({ navigate, route = '/notifications' }) {
       {!workspace && <nav className="sc-notifications__breadcrumb" aria-label="Breadcrumb"><button onClick={() => navigate('/')}>Home</button><ChevronRight size={13} /><button onClick={() => navigate('/profile')}>My Account</button><ChevronRight size={13} /><span>Notifications</span></nav>}
       <div className="sc-notifications__layout">{!workspace && <AccountSidebar user={user} navigate={navigate} logout={logout} activePath="/notifications" />}
         <div className="sc-notifications__main">
-          <header className="sc-notifications__heading"><button className="sc-notifications__back" onClick={() => navigate(workspace ? (admin ? '/admin' : '/seller') : '/profile')} aria-label={workspace ? 'Back to dashboard' : 'Back to profile'}><ArrowLeft size={21} /></button>
-            <div><p className="sc-notifications__eyebrow">{workspace ? 'STORE UPDATES' : 'MY ACCOUNT'}</p><h1>Notifications</h1><p>{unreadCount} unread update{unreadCount === 1 ? '' : 's'}</p></div>
+          <header className="sc-notifications__heading">{!workspace && <button className="sc-notifications__back" onClick={() => navigate(workspace ? (admin ? '/admin' : '/seller') : '/profile')} aria-label={workspace ? 'Back to dashboard' : 'Back to profile'}><ArrowLeft size={21} /></button>}
+            <div><p className="sc-notifications__eyebrow">{workspace ? 'STORE UPDATES' : 'MY ACCOUNT'}</p><h1 className={workspace ? 'sr-only' : undefined}>Notifications</h1><p>{unreadCount} unread update{unreadCount === 1 ? '' : 's'}</p></div>
             <button className="sc-notifications__mark-all" disabled={!!busy || !unreadCount} onClick={markAll}><CheckCheck size={17} />{busy === 'all' ? 'Updating...' : 'Mark all read'}</button>
           </header>
           <div className="sc-notifications__toolbar"><div className="sc-notifications__filters" role="group" aria-label="Notification categories">{filters.map(([value, label]) => <button key={value} aria-pressed={category === value} onClick={() => { setCategory(value); setPage(1); }}>{label}</button>)}</div>

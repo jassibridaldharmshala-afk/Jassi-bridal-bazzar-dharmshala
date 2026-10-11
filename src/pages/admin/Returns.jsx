@@ -1,7 +1,8 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import PrivateEvidenceMedia from '../../components/order/PrivateEvidenceMedia';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ClipboardCheck, Clock3, Download, Image as ImageIcon, PackageCheck, RefreshCw, RotateCcw, Search, Truck, WalletCards, X } from 'lucide-react';
-import PageHeader from '../../components/admin/PageHeader';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ShipmentPanel from '../../components/admin/ShipmentPanel';
 import api from '../../services/api';
@@ -39,7 +40,7 @@ export default function Returns({ route = '' }) {
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useAdminFeedback('', 'success', 'Returns');
   const [selected, setSelected] = useState(new Set());
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -175,25 +176,37 @@ export default function Returns({ route = '' }) {
   const summaryCards = [
     ['Awaiting review', stats?.awaitingReview, ClipboardCheck, 'Requested'], ['Pickup due', stats?.pickupDue, Truck, 'Approved'], ['In transit', stats?.inTransit, RotateCcw, 'In Transit'], ['QC pending', stats?.qcPending, PackageCheck, 'Received'], ['Refund pending', stats?.refundPending, WalletCards, 'Refund Initiated'], ['Needs attention', stats?.exceptions, AlertTriangle, '', '1'],
   ];
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const advancedFilterCount = [filters.qcStatus, filters.refundStatus, filters.from, filters.to].filter(Boolean).length;
 
   return <section className="returns-workspace">
-    <PageHeader title="Returns / Exchange" note="Review requests, arrange reverse pickup, inspect stock and reconcile refunds." />
+    <h1 className="sr-only">Returns / Exchange</h1>
     <div className="returns-summary" aria-label="Return case summary">{summaryCards.map(([label, value, Icon, status, attention = '']) => <button key={label} type="button" onClick={() => { setFilters(current => ({ ...current, status, attention })); setPage(1); }}><Icon size={19} /><span>{label}</span><strong>{Number(value || 0)}</strong></button>)}</div>
-    <div className="returns-toolbar">
-      <label className="returns-search"><Search size={17} /><input value={filters.search} onChange={event => setFilters(current => ({ ...current, search: event.target.value }))} placeholder="Search request, order, customer, product or courier" /></label>
-      <select aria-label="Status" value={filters.status} onChange={event => { setFilters(current => ({ ...current, status: event.target.value })); setPage(1); }}><option value="">All statuses</option>{ALL_STATUSES.map(status => <option key={status}>{status}</option>)}</select>
-      <select aria-label="Type" value={filters.type} onChange={event => setFilters(current => ({ ...current, type: event.target.value }))}><option value="">Return + exchange</option><option value="return">Returns</option><option value="exchange">Exchanges</option></select>
-      <select aria-label="Quality status" value={filters.qcStatus} onChange={event => setFilters(current => ({ ...current, qcStatus: event.target.value }))}><option value="">All QC states</option><option value="PENDING">QC pending</option><option value="PASSED">QC passed</option><option value="FAILED">QC failed</option></select>
-      <select aria-label="Refund status" value={filters.refundStatus} onChange={event => setFilters(current => ({ ...current, refundStatus: event.target.value }))}><option value="">All refund states</option><option value="PENDING">Refund pending</option><option value="INITIATED">Refund initiated</option><option value="PROCESSED">Refund processed</option><option value="FAILED">Refund failed</option><option value="NOT_REQUIRED">No refund required</option></select>
-      <label className="returns-date-filter">From<input aria-label="Returns from date" type="date" value={filters.from} max={filters.to || undefined} onChange={event => { setFilters(current => ({ ...current, from: event.target.value })); setPage(1); }} /></label>
-      <label className="returns-date-filter">To<input aria-label="Returns to date" type="date" value={filters.to} min={filters.from || undefined} onChange={event => { setFilters(current => ({ ...current, to: event.target.value })); setPage(1); }} /></label>
-      <button type="button" className={filters.sla === 'overdue' ? 'is-active' : ''} onClick={() => setFilters(current => ({ ...current, sla: current.sla ? '' : 'overdue' }))}><Clock3 size={16} /> Overdue {stats?.overdue ? `(${stats.overdue})` : ''}</button>
-      {Object.values(filters).some(Boolean) && <button type="button" onClick={() => { setFilters({ search: '', status: '', type: '', qcStatus: '', refundStatus: '', sla: '', attention: '', range: '', from: '', to: '' }); setPage(1); }}><X size={16} /> Clear</button>}
-      <button type="button" onClick={load} disabled={loading} aria-label="Refresh cases"><RefreshCw size={16} /></button>
-    </div>
-    {(selected.size > 0 || rows.length > 0) && <div className="returns-bulk"><span><strong>{selected.size}</strong> selected</span><button disabled={busy || !rows.some(row => selected.has(row._id) && row.allowedStatuses?.includes('Approved'))} onClick={bulkApprove}><CheckCircle2 size={16} />Approve eligible</button><button disabled={busy || !rows.some(row => selected.has(row._id) && row.status === 'Approved')} onClick={() => setPickupOpen(value => !value)}><Truck size={16} />Bulk pickup</button><button onClick={() => downloadCsv(selected.size ? rows.filter(row => selected.has(row._id)) : rows)}><Download size={16} />Export CSV</button></div>}
+    <section className="returns-filter-panel" aria-label="Filter returns and exchanges">
+      <div className="returns-filter-grid">
+        <label className="returns-filter-search">Search cases<span className="returns-search"><Search size={17} aria-hidden="true" /><input type="search" value={filters.search} onChange={event => setFilters(current => ({ ...current, search: event.target.value }))} placeholder="Request, order, customer or product" /></span></label>
+        <label>Status<select aria-label="Status" value={filters.status} onChange={event => { setFilters(current => ({ ...current, status: event.target.value })); setPage(1); }}><option value="">All statuses</option>{ALL_STATUSES.map(status => <option key={status}>{status}</option>)}</select></label>
+        <label>Type<select aria-label="Type" value={filters.type} onChange={event => setFilters(current => ({ ...current, type: event.target.value }))}><option value="">All types</option><option value="return">Returns</option><option value="exchange">Exchanges</option></select></label>
+        <div className="returns-filter-actions">
+          <button type="button" className={filters.sla === 'overdue' ? 'is-active' : ''} aria-pressed={filters.sla === 'overdue'} onClick={() => setFilters(current => ({ ...current, sla: current.sla ? '' : 'overdue' }))}><Clock3 size={16} /> Overdue {stats?.overdue ? `(${stats.overdue})` : ''}</button>
+          <button type="button" onClick={load} disabled={loading} aria-label="Refresh cases"><RefreshCw size={16} /></button>
+          <button type="button" disabled={loading || !rows.length} onClick={() => downloadCsv(selected.size ? rows.filter(row => selected.has(row._id)) : rows)}><Download size={16} />Export CSV</button>
+        </div>
+      </div>
+      <details className="returns-advanced-filters">
+        <summary>More filters{advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ''}</summary>
+        <div>
+          <label>Quality status<select aria-label="Quality status" value={filters.qcStatus} onChange={event => setFilters(current => ({ ...current, qcStatus: event.target.value }))}><option value="">All QC states</option><option value="PENDING">QC pending</option><option value="PASSED">QC passed</option><option value="FAILED">QC failed</option></select></label>
+          <label>Refund status<select aria-label="Refund status" value={filters.refundStatus} onChange={event => setFilters(current => ({ ...current, refundStatus: event.target.value }))}><option value="">All refund states</option><option value="PENDING">Refund pending</option><option value="INITIATED">Refund initiated</option><option value="PROCESSED">Refund processed</option><option value="FAILED">Refund failed</option><option value="NOT_REQUIRED">No refund required</option></select></label>
+          <label>From<input aria-label="Returns from date" type="date" value={filters.from} max={filters.to || undefined} onChange={event => { setFilters(current => ({ ...current, from: event.target.value })); setPage(1); }} /></label>
+          <label>To<input aria-label="Returns to date" type="date" value={filters.to} min={filters.from || undefined} onChange={event => { setFilters(current => ({ ...current, to: event.target.value })); setPage(1); }} /></label>
+        </div>
+      </details>
+      {activeFilterCount > 0 && <div className="returns-filter-active"><span>{activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'} applied</span><button type="button" onClick={() => { setFilters({ search: '', status: '', type: '', qcStatus: '', refundStatus: '', sla: '', attention: '', range: '', from: '', to: '' }); setPage(1); }}><X size={14} />Clear filters</button></div>}
+    </section>
+    {selected.size > 0 && <div className="returns-bulk"><span><strong>{selected.size}</strong> selected</span><button disabled={busy || !rows.some(row => selected.has(row._id) && row.allowedStatuses?.includes('Approved'))} onClick={bulkApprove}><CheckCircle2 size={16} />Approve eligible</button><button disabled={busy || !rows.some(row => selected.has(row._id) && row.status === 'Approved')} onClick={() => setPickupOpen(value => !value)}><Truck size={16} />Bulk pickup</button><button type="button" onClick={() => setSelected(new Set())}><X size={16} />Clear selection</button></div>}
     {pickupOpen && <div className="returns-pickup-plan"><strong>Schedule selected approved returns</strong><label>Pickup date<input type="date" value={pickupPlan.date} onChange={event => setPickupPlan(current => ({ ...current, date: event.target.value }))} /></label><label>Ready from<input type="time" value={pickupPlan.time} onChange={event => setPickupPlan(current => ({ ...current, time: event.target.value }))} /></label><label>Close time<input type="time" value={pickupPlan.closeTime} onChange={event => setPickupPlan(current => ({ ...current, closeTime: event.target.value }))} /></label><label className="returns-pickup-plan__confirm"><input type="checkbox" checked={pickupPlan.confirmed} onChange={event => setPickupPlan(current => ({ ...current, confirmed: event.target.checked }))} /> Create real courier bookings using the connected store account.</label><button className="returns-primary" disabled={busy || !pickupPlan.confirmed || !pickupPlan.date} onClick={bulkPickup}>{busy ? 'Creating pickups…' : 'Create reverse pickups'}</button></div>}
-    {notice && <p className="returns-notice" role="status">{notice}</p>}
+    <AdminFeedback message={notice} type="success" title="Returns" onDismiss={() => setNotice('')} />
     {error && <p className="returns-error" role="alert">{error} <button onClick={load}>Try again</button></p>}
     <div className="returns-list" aria-busy={loading}>
       <div className="returns-list__head"><span><input type="checkbox" aria-label="Select page" checked={rows.length > 0 && rows.every(row => selected.has(row._id))} onChange={event => setSelected(event.target.checked ? new Set(rows.map(row => row._id)) : new Set())} /></span><span>Case</span><span>Customer & order</span><span>Product</span><span>Stage</span><span>Next step</span></div>

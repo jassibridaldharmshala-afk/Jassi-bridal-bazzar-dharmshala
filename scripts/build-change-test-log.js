@@ -132,7 +132,7 @@ const tests = [
 ];
 
 const howTo = [
-  ['Jassi General Store — change test log'],
+  ['Jassi Bridal Bazar Dharmshala — change test log'],
   ['Generated for the current uncommitted + new files (source and config). node_modules is excluded.'],
   [`File count in this log: ${files.length}`],
   ['Date: 21 Aug 2026'],
@@ -173,8 +173,8 @@ let xmlOut = `<?xml version="1.0"?>
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
 <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
- <Title>Jassi General Store change test log</Title>
- <Author>Jassi General Store</Author>
+ <Title>Jassi Bridal Bazar Dharmshala change test log</Title>
+ <Author>Jassi Bridal Bazar Dharmshala</Author>
 </DocumentProperties>
 <Styles>
  <Style ss:ID="Default"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Font ss:FontName="Calibri" ss:Size="11"/></Style>

@@ -16,7 +16,9 @@ test('conflicting settings retain edits and show an explicit error', async () =>
   render(<RentalSettings />);
   fireEvent.change(await screen.findByLabelText('Business operations'), { target: { value: 'RENTAL_ONLY' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save rental settings' }));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Rental settings changed');
+  const notice = await screen.findByText('Rental settings changed. Reload before saving.');
+  expect(notice.closest('.app-toast')).toHaveClass('app-toast--error');
+  expect(notice.closest('.app-toast-region')).toHaveClass('app-toast-region--workspace');
   expect(screen.getByLabelText('Business operations')).toHaveValue('RENTAL_ONLY');
 });
 

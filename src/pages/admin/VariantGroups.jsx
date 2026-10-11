@@ -1,10 +1,11 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, Archive, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronLeft,
   ChevronRight, Eye, GitBranch, HeartPulse, PackageSearch, PencilLine, Plus, RefreshCcw,
-  RotateCcw, Search, ShieldCheck, SlidersHorizontal, Trash2, X,
+  RotateCcw, Search, ShieldCheck, Trash2, X,
 } from 'lucide-react';
-import PageHeader from '../../components/admin/PageHeader';
 import EmptyState from '../../components/admin/EmptyState';
 import PageState from '../../components/ui/PageState';
 import { getPrimaryImageUrl, normalizeImageUrl } from '../../services/normalize';
@@ -37,7 +38,7 @@ export default function VariantGroups({ route = '/admin/variant-groups', apiPref
   const [sort, setSort] = useState('updated');
   const [page, setPage] = useState(1);
   const [editor, setEditor] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useAdminFeedback(null, 'success', 'Variant Groups');
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteText, setDeleteText] = useState('');
@@ -127,32 +128,30 @@ export default function VariantGroups({ route = '/admin/variant-groups', apiPref
   if (error && !groups.length) return <PageState error={errorText(error)} onRetry={refetch} />;
 
   return <section className="variant-family-page">
-    <PageHeader title="Variant Families" note="Connect separate products as customer-facing colour, style, storage or material choices.">
+    <div className="variant-family-actions">
+      <details className="variant-family-guide"><summary>Variant guide</summary><p>Connect separate products as colour, size, style or material choices. Each product keeps its own price and stock.</p></details>
       <button type="button" className="admin-btn" onClick={openNew}><Plus size={17} /> Create family</button>
-    </PageHeader>
+    </div>
 
-    {message && <div className={`variant-family-alert is-${message.tone}`} role={message.tone === 'error' ? 'alert' : 'status'}>
-      <span>{message.text}</span><button type="button" onClick={() => setMessage(null)} aria-label="Dismiss message"><X size={16} /></button>
-    </div>}
+    <AdminFeedback message={message} type="success" title="Variant Groups" onDismiss={() => setMessage(null)} />
 
     <div className="variant-family-metrics">
       {[
         ['All families', summary.total, ''], ['Live', summary.active, 'active'],
         ['Drafts', summary.draft, 'draft'], ['Archived', summary.archived, 'archived'],
-      ].map(([label, value, key]) => <button key={label} type="button" className={status === key ? 'is-active' : ''} onClick={() => setStatus(key)}><span>{label}</span><strong>{value}</strong></button>)}
+      ].map(([label, value, key]) => <button key={label} type="button" aria-pressed={status === key} className={status === key ? 'is-active' : ''} onClick={() => setStatus(key)}><span>{label}</span><strong>{value}</strong></button>)}
     </div>
 
     <div className="admin-card variant-family-toolbar">
       <label className="variant-family-search"><Search size={17} /><input aria-label="Search variant families" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search family name…" />{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={15} /></button>}</label>
       <div>
-        <SlidersHorizontal size={16} />
-        <select aria-label="Filter family health" value={health} onChange={(event) => setHealth(event.target.value)}><option value="">All health</option><option value="healthy">Healthy</option><option value="attention">Needs attention</option></select>
-        <select aria-label="Sort variant families" value={sort} onChange={(event) => setSort(event.target.value)}><option value="updated">Recently updated</option><option value="oldest">Oldest first</option><option value="name">Name A–Z</option></select>
+        <select aria-label="Filter family health" value={health} onChange={(event) => setHealth(event.target.value)}><option value="">All health</option><option value="healthy">Healthy</option><option value="attention">To review</option></select>
+        <select aria-label="Sort variant families" value={sort} onChange={(event) => setSort(event.target.value)}><option value="updated">Updated</option><option value="oldest">Oldest first</option><option value="name">Name A–Z</option></select>
         <button type="button" onClick={refetch} aria-label="Refresh variant families"><RefreshCcw size={16} className={isFetching ? 'animate-spin' : ''} /></button>
       </div>
     </div>
 
-    {isLoading ? <PageState loading label="Loading variant families…" /> : !groups.length ? <div className="admin-card p-6"><EmptyState title="No matching variant families" note="Create a family or clear the current search and filters." /></div> : <div className="variant-family-grid">
+    {isLoading ? <PageState loading label="Loading variant families…" /> : !groups.length ? <div className="variant-family-empty"><EmptyState title="No matching variant families" note="Create a family or clear the current search and filters." /></div> : <div className="variant-family-grid">
       {groups.map((group) => <FamilyCard key={group._id} group={group} busy={busy} onEdit={() => openEdit(group)} onArchive={() => requestArchive(group)} onRestore={() => restore(group)} onDelete={() => { setDeleteTarget(group); setDeleteText(''); }} onRepair={() => runMutation(() => reconcileGroup({ id: group._id, apiPrefix: prefix }).unwrap(), 'Variant family repaired.')} />)}
     </div>}
 

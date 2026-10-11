@@ -37,6 +37,7 @@ import { couponApplyBody } from '../../utils/couponApply';
 import { shouldExitEmptyCheckout } from '../../utils/checkoutGuard';
 import { checkoutCart } from '../../utils/bag';
 import { checkoutPayloadSignature, clearCheckoutAttempt, getCheckoutAttempt } from '../../utils/checkoutAttempt';
+import { customerName, customerEmail } from '../../utils/customerIdentity';
 import CouponSelector from '../../components/coupon/CouponSelector';
 import '../../styles/MobileShoppingTheme.css';
 
@@ -83,6 +84,7 @@ function OnlinePaymentNote({ paymentMethod }) {
 
 const emptyAddress = {
   fullName: '',
+  email: '',
   mobile: '',
   pincode: '',
   state: '',
@@ -117,7 +119,7 @@ export default function Checkout({ navigate }) {
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState('');
-  const [addressForm, setAddressForm] = useState({ ...emptyAddress, fullName: user?.name || '', mobile: user?.phone || '' });
+  const [addressForm, setAddressForm] = useState({ ...emptyAddress, fullName: customerName(user?.name), email: customerEmail(user?.email), mobile: user?.phone || '' });
   const [couponCode, setCouponCode] = useState('');
   const [coupons, setCoupons] = useState([]);
   const [bestCouponCode, setBestCouponCode] = useState('');
@@ -177,7 +179,7 @@ export default function Checkout({ navigate }) {
 
   const adoptAddresses = useCallback((nextAddresses, preferredAddressId) => {
     if (!Array.isArray(nextAddresses)) throw new Error('Unable to load delivery addresses. Please try again.');
-    setAddresses(nextAddresses);
+    setAddresses(nextAddresses.map(address => ({ ...address, fullName: customerName(address.fullName), email: customerEmail(address.email) })));
     setSelectedAddressId(current => {
       if (preferredAddressId && nextAddresses.some(item => item._id === preferredAddressId)) return preferredAddressId;
       if (current && nextAddresses.some(item => item._id === current)) return current;
@@ -355,7 +357,7 @@ export default function Checkout({ navigate }) {
   const resetAddressEditor = () => {
     setShowAddressForm(false);
     setEditingAddressId('');
-    setAddressForm({ ...emptyAddress, fullName: user?.name || '', mobile: user?.phone || '' });
+    setAddressForm({ ...emptyAddress, fullName: customerName(user?.name), email: customerEmail(user?.email), mobile: user?.phone || '' });
   };
 
   const saveAddress = async (event) => {
@@ -499,6 +501,7 @@ export default function Checkout({ navigate }) {
     if (!user.isPhoneVerified) return showFeedback('Please verify your mobile number to continue checkout.', 'warning');
     if (!cart.items.length) return showFeedback('Your cart is empty.', 'warning');
     if (!selectedAddress) return showFeedback('Please select or add a delivery address.', 'warning');
+    if (!customerName(selectedAddress.fullName)) return showFeedback('Edit your delivery address and enter your full name before placing the order.', 'warning');
     if (addressLoading || addressError) return showFeedback('Please reload your delivery addresses before placing an order.', 'warning');
     if (!paymentMethod) return showFeedback('Please choose a payment method.', 'warning');
     if (!quoteReady) return showFeedback(quoteError || 'Please wait while we calculate your order total.', 'warning');
@@ -545,8 +548,8 @@ export default function Checkout({ navigate }) {
         amount: pendingPayment.amount,
         currency: pendingPayment.currency,
         orderId: razorpayOrderId,
-        name: selectedAddress?.fullName || user?.name,
-        email: user?.email,
+        name: selectedAddress?.fullName,
+        email: customerEmail(selectedAddress?.email),
         contact: selectedAddress?.mobile || user?.phone,
         preferredMethod: paymentMethod,
         onSuccess: async (response) => {
@@ -615,7 +618,7 @@ export default function Checkout({ navigate }) {
   const openNewAddressForm = () => {
     setError('');
     setEditingAddressId('');
-    setAddressForm({ ...emptyAddress, fullName: user?.name || '', mobile: user?.phone || '' });
+    setAddressForm({ ...emptyAddress, fullName: customerName(user?.name), email: customerEmail(user?.email), mobile: user?.phone || '' });
     setShowAddressForm(true);
   };
 
@@ -625,6 +628,8 @@ export default function Checkout({ navigate }) {
     setAddressForm({
       ...emptyAddress,
       ...address,
+      fullName: customerName(address.fullName),
+      email: customerEmail(address.email),
       mobile: address.mobile || address.phone || '',
       houseNo: address.houseNo || address.houseNumber || '',
     });
@@ -649,6 +654,7 @@ export default function Checkout({ navigate }) {
       showFeedback('Please select or add a delivery address.', 'warning');
       return;
     }
+    if (!customerName(selectedAddress.fullName)) { showFeedback('Edit your delivery address and enter your full name before continuing.', 'warning'); return; }
     setShowMobileAddressSelector(false);
     setShowAddressForm(false);
     setEditingAddressId('');
@@ -1058,10 +1064,11 @@ function DesktopAddressCard({ address, selected, onSelect, onEdit, onRemove }) {
       </button>
       <div className="sc-checkout__address-copy">
         <div className="sc-checkout__address-name">
-          <strong>{address.fullName || 'Samaira Customer'}</strong>
+          <strong>{address.fullName || 'Customer'}</strong>
           <span>{address.addressType || 'Home'}{address.isDefault ? ' (Default)' : ''}</span>
         </div>
         <p>{address.mobile || address.phone || '-'}</p>
+        {customerEmail(address.email) && <p>{customerEmail(address.email)}</p>}
         {lines.map((line) => <p key={line}>{line}</p>)}
         <div className="sc-checkout__address-actions">
           <button type="button" onClick={onEdit}><Pencil size={13} aria-hidden="true" /> Edit Address</button>
@@ -1307,6 +1314,7 @@ function AddressCopy({ address }) {
     <div className="sc-mobile-checkout__address-name"><strong>{address.fullName}</strong><span>{address.addressType || 'Home'}</span>{address.isDefault && <small>Default</small>}</div>
     <address>{buildAddressLines(address).map(line => <p key={line}>{line}</p>)}</address>
     <p className="sc-mobile-checkout__phone">Mobile: <strong>{address.mobile || address.phone}</strong></p>
+    {customerEmail(address.email) && <p className="sc-mobile-checkout__phone">Email: {customerEmail(address.email)}</p>}
   </div>;
 }
 

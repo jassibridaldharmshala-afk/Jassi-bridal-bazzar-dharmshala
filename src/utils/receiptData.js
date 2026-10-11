@@ -1,3 +1,4 @@
+import { customerName, customerEmail } from './customerIdentity';
 const clean = (value) => typeof value === 'string' ? value.trim() : '';
 const amount = (value) => Number.isFinite(Number(value)) ? Math.round(Number(value) * 100) / 100 : 0;
 export const invoiceMoney = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(amount(value));
@@ -35,7 +36,7 @@ export function amountInWords(value) {
 
 export function receiptView(receipt = {}) {
   const store = receipt.storeDetails || {};
-  const storeName = clean(store.storeName) || 'Jassi General Store';
+  const storeName = clean(store.storeName) || 'Jassi Bridal Bazar Dharmshala';
   const items = (Array.isArray(receipt.items) ? receipt.items : []).map((item, index) => ({
     number: index + 1, name: clean(item.name || item.productName) || 'Product', sku: clean(item.sku),
     variant: [item.size && `Size: ${item.size}`, item.color && `Colour: ${item.color}`].filter(Boolean).join(' | '),
@@ -71,8 +72,8 @@ export function receiptView(receipt = {}) {
     sellerAddress: invoiceAddress(store.billingAddress || store.address),
     sellerContact: [store.contactPhone || store.whatsappNumber, store.contactEmail].map(clean).filter(Boolean),
     gstin: clean(store.gstin), number, orderId, date: invoiceDate(receipt.invoiceDate || receipt.orderDate), orderDate: invoiceDate(receipt.orderDate),
-    customerName: clean(receipt.billingAddress?.fullName || receipt.shippingAddress?.fullName || receipt.customer?.name) || 'Customer',
-    customerEmail: clean(receipt.customer?.email),
+    customerName: customerName(receipt.billingAddress?.fullName) || customerName(receipt.shippingAddress?.fullName) || customerName(receipt.customer?.name) || 'Customer',
+    customerEmail: customerEmail(receipt.customer?.email),
     shipping: shipping.length ? shipping : ['Address not available'], billing: billing.length ? billing : shipping.length ? shipping : ['Address not available'],
     items, quantity: items.reduce((sum, item) => sum + item.quantity, 0), totals, total: amount(receipt.adjustedFinalAmount ?? receipt.finalAmount),
     totalWords: amountInWords(receipt.adjustedFinalAmount ?? receipt.finalAmount), paymentMethod, paymentProvider, paymentStatus, paymentNote,

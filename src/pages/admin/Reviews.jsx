@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, BarChart3, CheckCircle2, Download, Eye, Flag, Image as ImageIcon, MessageSquare, RotateCcw, Send, Sparkles, Star, X } from 'lucide-react';
 import ConfirmModal from '../../components/admin/ConfirmModal';
@@ -68,7 +70,7 @@ export default function Reviews({ route = '' }) {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useAdminFeedback(null, 'success', 'Reviews');
   const [busyId, setBusyId] = useState('');
   const [selected, setSelected] = useState([]);
   const [bulkAction, setBulkAction] = useState('PUBLISH');
@@ -244,15 +246,15 @@ export default function Reviews({ route = '' }) {
   const insightMax = Math.max(1, ...(stats.trend || []).map((item) => Number(item.count || 0)));
 
   return (
-    <section className="review-center space-y-5">
-      <PageHeader kicker={isSeller ? 'Seller' : 'Admin'} title="Review Trust Center" note="Protect review quality, respond to customers and learn what shoppers say about your products.">
+    <section className="review-center admin-compact space-y-5">
+      <PageHeader compact kicker={isSeller ? 'Seller' : 'Admin'} title="Review Trust Center" note="Protect review quality, respond to customers and learn what shoppers say about your products.">
         <button type="button" disabled={busyId === 'reminders' || !canReply} onClick={sendRequests} className="admin-btn-secondary inline-flex items-center gap-2 disabled:opacity-40"><Send size={15} />{busyId === 'reminders' ? 'Preparing...' : 'Request reviews'}</button>
         <button type="button" disabled={busyId === 'export' || !canExport} onClick={exportCsv} title={canExport ? 'Export matching reviews' : 'Your store role does not include review export'} className="admin-btn-secondary inline-flex items-center gap-2 disabled:opacity-40"><Download size={15} />Export CSV</button>
       </PageHeader>
 
-      {message ? <p role="status" className={`rounded-xl p-3 text-sm font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose/10 text-rose'}`}>{message.text}</p> : null}
+      <AdminFeedback message={message} type="success" title="Reviews" onDismiss={() => setMessage(null)} />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="admin-compact-stats">
         {[
           ['Average rating', `${Number(stats.average || 0).toFixed(1)} / 5`, Star, 'Across all recorded reviews'],
           ['Needs attention', stats.pending + stats.reported, Flag, `${stats.pending} pending · ${stats.reported} reported`],
@@ -273,7 +275,7 @@ export default function Reviews({ route = '' }) {
             <select aria-label="Rating filter" value={rating} onChange={(event) => { setRating(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold"><option value="">All ratings</option>{[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} star</option>)}</select>
             <select aria-label="Sentiment filter" value={sentiment} onChange={(event) => { setSentiment(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold"><option value="">All sentiment</option><option value="POSITIVE">Positive</option><option value="NEUTRAL">Neutral</option><option value="NEGATIVE">Negative</option></select>
           </SearchFilterBar>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="review-extra-filters">
             <select aria-label="Media filter" value={media} onChange={(event) => { setMedia(event.target.value); setPage(1); }} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="">With or without media</option><option value="true">Has photos</option><option value="false">No photos</option></select>
             <select aria-label="Verified purchase filter" value={verified} onChange={(event) => { setVerified(event.target.value); setPage(1); }} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="">All purchase types</option><option value="true">Verified purchases</option><option value="false">Unverified reviews</option></select>
             <select aria-label="Product filter" value={productId} onChange={(event) => { setProductId(event.target.value); setPage(1); }} className="h-10 max-w-64 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="">All reviewed products</option>{productOptions.map((product) => <option key={String(product.id)} value={String(product.id)}>{product.name}{product.sku ? ` · ${product.sku}` : ''}{isMaster && allStores && product.store?.name ? ` · ${product.store.name}` : ''} ({product.reviewCount})</option>)}</select>

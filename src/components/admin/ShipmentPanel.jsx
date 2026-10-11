@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Download, Package, RefreshCw, Truck } from 'lucide-react';
 import api from '../../services/api';
@@ -13,7 +15,7 @@ export default function ShipmentPanel({ orderId, order, returnId, replacement = 
     : `${apiBase}/orders/${orderId}/delivery`;
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useAdminFeedback('', 'success', 'Shipment Panel');
   const [busy, setBusy] = useState(false);
   const [parcel, setParcel] = useState({ weightKg: '', lengthCm: '', widthCm: '', heightCm: '' });
   const [slot, setSlot] = useState({ date: '', time: '10:00', closeTime: '18:00' });
@@ -41,7 +43,7 @@ export default function ShipmentPanel({ orderId, order, returnId, replacement = 
     setParcel({ weightKg: '', lengthCm: '', widthCm: '', heightCm: '' });
     load();
     return () => { generation.current += 1; };
-  }, [load]);
+  }, [load, setMessage]);
   useEffect(() => { if (order?.revision !== undefined) load(); }, [order?.revision, load]);
   const act = async (action, extra = {}) => {
     if (lock.current) return;
@@ -103,7 +105,7 @@ export default function ShipmentPanel({ orderId, order, returnId, replacement = 
   return <section className="admin-card min-w-0 p-5" aria-label={deliveryLabel}>
     <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2"><Truck size={19} />{!returnId && !integrated ? 'Manual & self delivery' : deliveryLabel}</h2><button type="button" className="admin-table-action-link inline-flex items-center gap-1" disabled={busy || saving} onClick={() => load(true)}><RefreshCw size={14} />Refresh tracking</button></header>
     {error && <p role="alert" className="my-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{error}</p>}
-    {message && <p role="status" className="my-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">{message}</p>}
+    <AdminFeedback message={message} type="success" title="Shipment Panel" onDismiss={() => setMessage('')} />
     {!data ? <p className="admin-note mt-3">{error ? 'Delivery details could not load.' : 'Loading delivery details...'}</p> : <>
       <div className="my-4 flex flex-wrap items-center justify-between gap-3"><div><strong>{human(shipment?.status)}</strong><p className="admin-note">{selfDelivery ? `Self delivery${shipment.deliveryReference ? ` · Reference ${shipment.deliveryReference}` : ' · Reference assigned when saved'}` : shipment?.trackingNumber || shipment?.awb ? `${shipment.courierName || 'Courier'} · Tracking ID ${shipment.trackingNumber || shipment.awb}` : integrated ? 'No courier AWB has been booked.' : 'Add courier tracking later, or deliver with your own team.'}</p></div>{integrated && (shipment?.environment || connection?.mode) === 'sandbox' && <strong className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900">SANDBOX · No real delivery</strong>}</div>
       {shipment?.providerRef && <p className="admin-note break-all">Booking reference: {shipment.providerRef}</p>}

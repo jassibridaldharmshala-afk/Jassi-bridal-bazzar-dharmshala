@@ -21,6 +21,7 @@ export default function ImageUploader({
   replaceOnUpload = false,
   disabled = false,
   onBusyChange,
+  compact = false,
 }) {
   const inputRef = useRef(null);
   const originalFiles = useRef(new Map());
@@ -129,23 +130,23 @@ export default function ImageUploader({
   const closeEditor = () => { setEditing(null); onBusyChange?.(false); };
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3${compact ? ' image-uploader--compact' : ''}`}>
       <button
         type="button"
         disabled={disabled || uploading}
         onClick={() => inputRef.current?.click()}
         onDrop={(event) => { event.preventDefault(); addFiles(event.dataTransfer.files); }}
         onDragOver={(event) => event.preventDefault()}
-        className="grid min-h-40 w-full place-items-center rounded-2xl border-2 border-dashed border-wine/30 bg-[#fbf8f4] p-5 text-center transition hover:border-wine"
+        className="image-uploader__dropzone grid min-h-40 w-full place-items-center rounded-2xl border-2 border-dashed border-wine/30 bg-[#fbf8f4] p-5 text-center transition hover:border-wine"
       >
-        <span>
-          <span className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-wine text-lg font-black text-white">+</span>
+        <span className="image-uploader__content">
+          <span className="image-uploader__icon mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-wine text-lg font-black text-white">+</span>
           <span className="block text-sm font-black text-charcoal">
             {uploading ? (phase === 'preparing' ? 'Preparing images...' : 'Uploading images...') : label}
           </span>
           <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{helpText}</span>
           <span className="block text-xs leading-5 text-slate-500">Photos up to {Math.min(maxUploadMb, 20)} MB · 60 MB per batch · original quality preserved</span>
-          <span className="mt-3 inline-flex rounded-xl bg-white px-4 py-2 text-xs font-black text-wine shadow-sm">Browse Files</span>
+          <span className="image-uploader__browse mt-3 inline-flex rounded-xl bg-white px-4 py-2 text-xs font-black text-wine shadow-sm">Browse Files</span>
         </span>
       </button>
       {uploading && (

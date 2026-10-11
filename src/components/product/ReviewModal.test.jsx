@@ -5,7 +5,7 @@ import ReviewModal from './ReviewModal';
 const product = {
   _id: 'product-1',
   name: 'Royal Zari Silk Saree',
-  brand: 'Jassi General Store',
+  brand: 'Jassi Bridal Bazar Dharmshala',
   images: [{ url: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==' }],
 };
 

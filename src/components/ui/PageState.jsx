@@ -10,6 +10,7 @@ export default function PageState({
   emptyTitle = 'Nothing to show yet',
   emptyNote = 'Try again in a moment or browse another page.',
   onRetry,
+  retryLabel = 'Try again',
   children,
 }) {
   if (loading) {
@@ -31,7 +32,7 @@ export default function PageState({
         <p className="text-sm font-bold text-rose">{error}</p>
         {onRetry ? (
           <button type="button" onClick={onRetry} className="mt-4 h-11 rounded-xl bg-wine px-5 text-sm font-black text-white">
-            Try again
+            {retryLabel}
           </button>
         ) : null}
       </div>

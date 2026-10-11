@@ -8,6 +8,8 @@ import './ProductInfoPanel.css';
 export default function ProductInfoPanel({
   product,
   rentalOnly = false,
+  onRent,
+  rentalContent,
   size,
   setSize,
   color,
@@ -82,7 +84,8 @@ export default function ProductInfoPanel({
           )}
         </button>
 
-        {!rentalOnly && <>{product.commerceMode === 'SALE_AND_RENTAL' && <span className="rental-eyebrow">BUY & KEEP · SALE PRICE</span>}<div className="sc-info__price-row">
+        {rentalOnly && rentalContent}
+        {!rentalOnly && <><div className="sc-info__price-row">
           <span className="sc-info__price">₹{formatIndian(currentPrice)}</span>
           {originalPrice > currentPrice ? <span className="sc-info__original">MRP ₹{formatIndian(originalPrice)}</span> : null}
           {discount > 0 ? <span className="sc-info__discount">({Math.round(discount)}% OFF)</span> : null}
@@ -220,7 +223,7 @@ export default function ProductInfoPanel({
 
         {sizes.length && !size ? <p className="sc-info__selection-message">Choose a size before adding this product to your bag.</p> : isOutOfStock ? <p className="sc-info__stock-message">This selection is currently out of stock. Choose another available size or colour.</p> : stockLimit !== null && stockLimit <= 5 ? <p className="sc-info__low-stock">Only {stockLimit} left in this selection</p> : null}
 
-        <div className={`sc-info__actions${storeWhatsappNumber ? '' : ' sc-info__actions--two'}`}>
+        <div className={`sc-info__actions${onRent ? '' : ' sc-info__actions--two'}`}>
           <button type="button" disabled={isOutOfStock || cartBusy} onClick={onAddToCart} className={`sc-info__action sc-info__action--primary${cartItem ? ' sc-info__action--active' : ''}`}>
             <ShoppingBag aria-hidden="true" />
             {cartBusy ? 'Adding…' : isOutOfStock ? 'Out of stock' : cartItem ? 'Add another' : 'Add to bag'}
@@ -228,20 +231,16 @@ export default function ProductInfoPanel({
           <button type="button" disabled={isOutOfStock || cartBusy} onClick={onBuyNow} className="sc-info__action sc-info__action--dark">
             {cartBusy ? 'Adding…' : isOutOfStock ? 'Unavailable' : 'Buy now'}
           </button>
-          {storeWhatsappNumber ? (
-            <button type="button" disabled={isOutOfStock} onClick={onOrderWhatsApp} className="sc-info__action sc-info__action--whatsapp">
-              <Store aria-hidden="true" />
-              WhatsApp
-            </button>
-          ) : null}
+          {onRent && <button type="button" disabled={cartBusy} onClick={onRent} className="sc-info__action sc-info__action--rental">Rent this item</button>}
         </div>
+        {storeWhatsappNumber && <button type="button" disabled={isOutOfStock} onClick={onOrderWhatsApp} className="sc-info__link sc-info__whatsapp-link"><Store aria-hidden="true" />Order on WhatsApp</button>}
 
         </>}
         {actionMessage && actionMessage !== deliveryResult?.message ? (
           <p role="status" className={`sc-info__message${positiveMessage ? ' sc-info__message--success' : ''}`}>{actionMessage}</p>
         ) : null}
 
-        <section className="sc-info__delivery">
+        {!rentalOnly && <section className="sc-info__delivery">
           <div className="sc-info__section-head">
             <h2><Truck aria-hidden="true" /> Delivery options</h2>
           </div>
@@ -271,7 +270,7 @@ export default function ProductInfoPanel({
               </div>
             </div>
           ) : null}
-        </section>
+        </section>}
       </div>
     </div>
   );

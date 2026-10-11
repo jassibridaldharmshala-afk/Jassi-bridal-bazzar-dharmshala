@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// Keep existing help/privacy controls clear of shopping and order actions.
+// Keep analytics privacy controls clear of shopping and order actions.
 export default function useRentalCheckoutUtility(route) {
   const [target, setTarget] = useState(null);
   useEffect(() => {

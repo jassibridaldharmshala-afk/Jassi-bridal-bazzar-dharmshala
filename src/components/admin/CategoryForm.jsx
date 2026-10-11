@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useEffect, useMemo, useState } from 'react';
 import { Eye, Link2, Search, Sparkles } from 'lucide-react';
 import api from '../../services/api';
@@ -42,7 +44,7 @@ export default function CategoryForm({ mode = 'Add', categoryId, onSaved, onCanc
   const [definitions, setDefinitions] = useState([]);
   const [loading, setLoading] = useState(Boolean(categoryId));
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [message, setMessage] = useAdminFeedback({ type: '', text: '' }, 'success', 'Categories');
   const [loadError, setLoadError] = useState('');
   const [reload, setReload] = useState(0);
   const [autoSlug, setAutoSlug] = useState(!categoryId);
@@ -85,7 +87,7 @@ export default function CategoryForm({ mode = 'Add', categoryId, onSaved, onCanc
       });
 
     return () => { cancelled = true; };
-  }, [categoryId, mode, reload]);
+  }, [categoryId, mode, reload, setMessage]);
 
   useEffect(() => {
     if (Array.isArray(availableCategories)) setCategories(availableCategories);
@@ -258,7 +260,7 @@ export default function CategoryForm({ mode = 'Add', categoryId, onSaved, onCanc
         <div className="category-form__tip"><Sparkles size={17} /><p><strong>Catalog tip</strong> Use a parent category for navigation and a product field template to keep specifications consistent.</p></div>
       </aside>
 
-      {message.text && <p role={message.type === 'error' ? 'alert' : 'status'} className={`category-form__message is-${message.type}`}>{message.text}</p>}
+      <AdminFeedback message={message} type="success" title="Categories" onDismiss={() => setMessage(null)} />
       <div className="category-form__actions">
         {onCancel ? <button type="button" onClick={cancel} className="admin-btn-ghost">Cancel</button> : categoryId ? <a href="/admin/categories" className="admin-btn-ghost">Back</a> : <button type="button" onClick={() => { const next = normalizedForm(); setForm(next); setAutoSlug(true); setRemovedMedia({ image: false, socialImage: false }); }} className="admin-btn-ghost">Reset</button>}
         <button disabled={saving || !form.name.trim()} className="admin-btn disabled:opacity-60">{saving ? 'Saving...' : `${mode} Category`}</button>

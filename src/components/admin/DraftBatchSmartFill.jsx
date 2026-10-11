@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, Save, Sparkles, X } from 'lucide-react';
 import api from '../../services/api';
@@ -33,7 +35,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
   const alive = useRef(true), operation = useRef(null);
   const lastAnalysisStart = useRef(0);
   const [records, setRecords] = useState(() => drafts.map(draft => ({ id: draftId(draft), baseline: snapshotForm(draft), notes: '', state: 'queued', rows: [], selected: [], replace: false, error: '', warnings: [] })));
-  const [busy, setBusy] = useState(''), [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(''), [notice, setNotice] = useAdminFeedback('', 'info', 'Smart Fill');
   useAdminActivity(Boolean(busy), busy === 'analysis' ? 'Smart Fill in progress' : 'Saving reviewed details', busy === 'analysis' ? 'generating' : 'saving');
   const [status, setStatus] = useState(null), [statusError, setStatusError] = useState('');
   const currentScope = () => batchScope(apiPrefix, authRef.current);
@@ -53,7 +55,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
     if (scope !== initialScope.current) {
       operation.current?.abort(); setRecords([]); setBusy(''); setNotice('Your account or store changed. Close this batch and select drafts again.'); onBusyChange?.(false);
     }
-  }, [scope, onBusyChange]);
+  }, [scope, onBusyChange, setNotice]);
 
   const run = async () => {
     if (operation.current || !status || !structure || currentScope() !== initialScope.current) return;
@@ -153,7 +155,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
         <button type="button" className="admin-btn" disabled={!!busy || !patches.length} onClick={save}><Save size={16} />{busy === 'save' ? 'Saving reviewed details…' : `Save selected details for ${patches.length} drafts`}</button></div>
       {statusError && <p role="alert" className="product-smart-fill__warning">{statusError} Close and reopen this batch to retry availability.</p>}
       {status?.enabled === false && <p role="status" className="product-smart-fill__warning">Photo AI is not configured. Enter notes per product to fill explicitly stated details.</p>}
-      {notice && <p role="status" className="product-smart-fill__notice">{notice}</p>}
+      <AdminFeedback message={notice} type="info" title="Smart Fill" onDismiss={() => setNotice('')} />
       <p className="product-smart-fill__hint">Empty listing fields are selected by default. Verify any suggested prices before selecting them.</p>
       {records.map((record, index) => <article key={record.id} className="draft-smart-batch__record" aria-label={`Smart Fill product ${index + 1}`}>
         <header>{smartPhotos(record.baseline)[0] && <img src={normalizeImageUrl(smartPhotos(record.baseline)[0])} alt="" />}<div><h3>{record.baseline.name || `Product ${index + 1}`}</h3><span>{smartPhotos(record.baseline).length} photos · {labels[record.state]}</span></div></header>

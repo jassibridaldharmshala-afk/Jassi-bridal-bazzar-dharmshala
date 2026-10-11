@@ -7,6 +7,7 @@ import './ProductFilterSidebar.css';
 const MULTI_FILTERS = ['category', 'size', 'color', 'fabric', 'occasion'];
 
 export default function ProductFilterSidebar({
+  shoppingMode,
   facets = {},
   filters = {},
   onFilterChange,
@@ -98,7 +99,7 @@ export default function ProductFilterSidebar({
       ) : null}
 
       {facets.prices?.length ? (
-        <FilterSection title="Price" defaultOpen>
+        <FilterSection title={shoppingMode === 'rental' ? 'Rent / use day' : 'Price'} defaultOpen>
           <RadioList
             name="desktop-price"
             options={facets.prices}
@@ -215,14 +216,14 @@ export default function ProductFilterSidebar({
         </FilterSection>
       ) : null}
 
-      <FilterSection title="Availability">
+      {shoppingMode !== 'rental' && <FilterSection title="Availability">
         <RadioList
           name="desktop-stock"
           options={facets.availability || []}
           selected={filters.stock || ''}
           onSelect={(option) => update('stock', filters.stock === option.value ? '' : option.value)}
         />
-      </FilterSection>
+      </FilterSection>}
     </aside>
   );
 }

@@ -6,15 +6,18 @@ import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, MapPin, RotateCcw
 import LazyBoundary from '../../components/ui/LazyBoundary';
 import { ProductVisual } from '../../components/product/ProductCard';
 import ProductDetailPage from '../../components/product/ProductDetailPage';
-import RentalModeSelector from '../../components/rentals/RentalModeSelector';
-import RentalOffer from '../../components/rentals/RentalOffer';
-import CompleteLook from '../../components/product/CompleteLook';
+import RelatedProductPrice, { isRentalRecommendation } from '../../components/product/RelatedProductPrice';
+import MobileRentalDetails from '../../components/rentals/MobileRentalDetails';
+import MobileProductPurchaseChoice from '../../components/product/MobileProductPurchaseChoice';
+import useProductRentalOffers from '../../hooks/useProductRentalOffers';
+import { rentalMoney } from '../../utils/rentals';
 import PublicReviewCard from '../../components/product/PublicReviewCard';
 import Icon from '../../components/layout/Icon';
 import MobileSearchOverlay from '../../components/layout/MobileSearchOverlay';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useRentalBag } from '../../context/RentalBagContext';
+import { shoppingBagDestination } from '../../utils/rentalShopping';
 import { useWishlist } from '../../context/WishlistContext';
 import { getPrimaryImageIndex, getPrimaryImageUrl, normalizeImageUrl, normalizeProduct, normalizeProducts } from '../../services/normalize';
 import { useGetProductQuery, useGetProductsQuery, useGetReviewsQuery, useGetSettingsQuery, useGetVariantGroupQuery } from '../../store/apiSlice';
@@ -23,7 +26,7 @@ import api from '../../services/api';
 import { activeVariants, findProductVariant, firstInStockVariant, hasManagedVariants, isColorAvailable, isSizeAvailable, variantStock } from '../../utils/variants';
 import { trackEvent } from '../../utils/analytics';
 import SeoHead from '../../components/seo/SeoHead';
-import { parseProductKey, storefrontPath } from '../../utils/routing';
+import { parseProductKey, pushAppRoute, rentalProductHref, storefrontPath } from '../../utils/routing';
 import { getSelectableSizes } from '../../utils/productSizing';
 import { useStorefront } from '../../context/StorefrontContext';
 import { isUnavailable, wishlistStock } from '../../utils/wishlist';
@@ -55,6 +58,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   const [touchStartX, setTouchStartX] = useState(0);
   const [actionMessage, setActionMessage] = useState('');
   const [cartBusy, setCartBusy] = useState(false);
+  const [bookingOpening, setBookingOpening] = useState(false);
   const purchasePending = useRef(false);
   const initializedSelectionFor = useRef('');
   const activeProductKey = useRef(productKey);
@@ -236,9 +240,21 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
   const purchaseEnabled = product?.purchaseEnabled !== false && settingsData?.commerceMode !== 'RENTAL_ONLY' && product?.commerceMode !== 'RENTAL_ONLY';
   const rentalOnly = !purchaseEnabled || (supportsRental && purchaseMode === 'rent');
   const selectedMode = rentalOnly ? 'rent' : 'buy';
-  const headerBagCount = rentalOnly ? rentalBag.itemCount : cart.itemCount;
-  useEffect(() => { setPurchaseMode(new URLSearchParams(route.split('?')[1] || '').get('mode') === 'rent' ? 'rent' : 'buy'); }, [route]);
-  const isOutOfStock = rentalOnly || (selectedStock !== null && Number(selectedStock) <= 0);
+  const mobileRental = useProductRentalOffers(productId, { storeSlug, requestedListing: new URLSearchParams(route.split('?')[1] || '').get('listing') || '', enabled: !isDesktop && supportsRental });
+  const changePurchaseMode = (mode) => {
+    if (purchasePending.current || bookingOpening || (mode === 'buy' && !purchaseEnabled) || (mode === 'rent' && !supportsRental)) return;
+    setPurchaseMode(mode);
+    setActionMessage('');
+    const [pathname, query = ''] = (route || window.location.pathname + window.location.search).split('?');
+    const params = new URLSearchParams(query);
+    params.set('mode', mode);
+    pushAppRoute(storefrontPath(`${pathname}?${params}`, storeSlug));
+  };
+  const headerBagCount = Number(cart.itemCount || 0) + Number(rentalBag.itemCount || 0);
+  const headerBagDestination = shoppingBagDestination(rentalOnly ? '?mode=rent' : '', cart.itemCount, rentalBag.itemCount);
+  useEffect(() => { setPurchaseMode(new URLSearchParams(route.split('?')[1] || '').get('mode') === 'rent' ? 'rent' : 'buy'); setBookingOpening(false); }, [route]);
+  const saleOutOfStock = selectedStock !== null && Number(selectedStock) <= 0;
+  const isOutOfStock = rentalOnly || saleOutOfStock;
   const sizeStock = (item) => {
     if (!hasManagedVariants(product || {})) return null;
     const matching = activeVariants(product || {}).filter((variant) => (
@@ -349,7 +365,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
       setActionMessage('This size and colour combination is unavailable. Please choose another option.');
       return { ok: false, reason: 'variant-unavailable' };
     }
-    if (isOutOfStock) {
+    if (!purchaseEnabled || saleOutOfStock) {
       setActionMessage('This product is out of stock.');
       return { ok: false, reason: 'out-of-stock' };
     }
@@ -561,6 +577,26 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
     }
   };
 
+  const bookRental = dates => {
+    if (!mobileRental.bookable || bookingOpening || purchasePending.current) return;
+    setBookingOpening(true);
+    navigate('/rental-book?' + new URLSearchParams({ product: productId, listing: mobileRental.listing._id, ...(dates?.pickupAt ? { pickup: dates.pickupAt, return: dates.returnDueAt } : {}) }));
+  };
+  const addRental = () => {
+    if (!mobileRental.bookable || !rentalBag.ready) return;
+    setActionMessage(rentalBag.add(mobileRental.listing._id)
+      ? 'Added to your rental bag. Choose dates when you are ready.'
+      : 'Your rental bag is full. Review its items before adding another.');
+  };
+  const mobileActions = () => {
+    if (!supportsRental && !purchaseEnabled) return null;
+    const busy = cartBusy || cart.loading || bookingOpening;
+    return <div className="mobile-product-booking-bar" aria-label={rentalOnly ? 'Rental booking actions' : 'Purchase actions'}><div className="mobile-product-booking-bar__actions">
+      <button type="button" className="mobile-product-booking-bar__bag" aria-label={rentalOnly ? 'Add to rental bag' : undefined} disabled={busy || (rentalOnly ? !rentalBag.ready || !mobileRental.bookable : saleOutOfStock)} onClick={rentalOnly ? addRental : add}><Icon name="bag" />{cartBusy ? 'Adding…' : rentalOnly ? 'Add to rental bag' : saleOutOfStock ? 'Out of Stock' : selectableSizes.length && !size ? 'Select size' : cartItem ? 'Add More' : 'Add to Bag'}</button>
+      <button type="button" className="mobile-product-booking-bar__primary" disabled={busy || (rentalOnly ? !mobileRental.bookable : saleOutOfStock)} onClick={rentalOnly ? bookRental : buyNow}>{bookingOpening ? 'Opening…' : cartBusy ? 'Adding…' : rentalOnly ? 'Book now' : 'Buy Now'}</button>
+    </div></div>;
+  };
+
   const orderOnWhatsApp = () => {
     if (!storeWhatsappNumber) {
       setActionMessage('Store WhatsApp number is not configured.');
@@ -582,7 +618,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
 
     const currentUrl = window.location.href;
     const lines = [
-      'Hello Jassi General Store,',
+      'Hello Jassi Bridal Bazar Dharmshala,',
       'I want to order this product:',
       '',
       `Product: ${product.name}`,
@@ -647,7 +683,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
         <ProductDetailPage
           product={product}
           purchaseMode={selectedMode}
-          onPurchaseMode={setPurchaseMode}
+          onPurchaseMode={changePurchaseMode}
           purchaseEnabled={purchaseEnabled}
           navigate={navigate}
           route={route}
@@ -721,12 +757,12 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-3 md:hidden">
         <div className="flex min-w-0 items-center gap-2">
           <button type="button" onClick={backToCatalog} className="grid h-10 w-10 place-items-center rounded-full text-slate-700 active:bg-slate-100" aria-label="Back to products"><ChevronLeft className="h-6 w-6" /></button>
-          <span className="truncate text-[14px] font-semibold text-charcoal">Product Details</span>
+          <span className="truncate text-[14px] font-semibold text-charcoal">{rentalOnly ? 'Rental Details' : 'Product Details'}</span>
         </div>
         <div className="flex items-center gap-0.5 text-slate-800">
           <button type="button" onClick={() => setSearchOpen(true)} className="grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label="Search"><Icon name="search" className="h-5 w-5" /></button>
           <button type="button" onClick={handleShare} className="grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label="Share product"><Share2 className="h-5 w-5" /></button>
-          <button type="button" onClick={() => navigate(rentalOnly ? '/rental-cart' : '/cart')} className="relative grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label={headerBagCount ? `${rentalOnly ? 'Rental bag' : 'Cart'}, ${headerBagCount} items` : rentalOnly ? 'Rental bag' : 'Cart'}><Icon name="bag" className="h-5 w-5" />{headerBagCount > 0 ? <span aria-hidden="true" className="absolute right-0 top-0 rounded-full bg-rose px-1 text-[8px] font-bold leading-4 text-white">{headerBagCount > 99 ? '99+' : headerBagCount}</span> : null}</button>
+          <button type="button" onClick={() => navigate(headerBagDestination)} className="relative grid h-10 w-10 place-items-center rounded-full active:bg-slate-100" aria-label={headerBagCount ? `Cart, ${headerBagCount} items` : 'Cart'}><Icon name="bag" className="h-5 w-5" />{headerBagCount > 0 ? <span aria-hidden="true" className="absolute right-0 top-0 rounded-full bg-rose px-1 text-[8px] font-bold leading-4 text-white">{headerBagCount > 99 ? '99+' : headerBagCount}</span> : null}</button>
         </div>
       </header>
       <div className="mx-auto max-w-6xl md:grid md:grid-cols-[0.95fr_1fr] md:gap-8 md:px-6">
@@ -782,7 +818,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
         <div className="space-y-3 px-3 pt-3 md:space-y-7 md:px-0 md:pt-0">
           <div className="rounded-[14px] bg-white px-4 py-4 md:rounded-none md:bg-transparent md:px-0 md:py-0">
             <div className="relative pr-12">
-            <p className="text-[16px] font-bold leading-tight text-slate-900 md:text-xl">{product.brand || 'Jassi General Store'}</p>
+            <p className="text-[16px] font-bold leading-tight text-slate-900 md:text-xl">{product.brand || 'Jassi Bridal Bazar Dharmshala'}</p>
             <h1 className="mt-1.5 text-[14px] font-medium leading-5 text-slate-600 md:text-[22px] md:text-slate-900">
               {product.name}
             </h1>
@@ -797,7 +833,12 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
               <Icon name="heart" className="h-4.5 w-4.5 md:h-5 md:w-5" />
             </button>
             </div>
-            {supportsRental && <RentalModeSelector product={product} value={selectedMode} onChange={setPurchaseMode} purchaseEnabled={purchaseEnabled} />}
+            {supportsRental && purchaseEnabled
+              ? <MobileProductPurchaseChoice mode={selectedMode} onChange={changePurchaseMode} salePrice={dealPrice} rental={mobileRental} disabled={cartBusy || bookingOpening} />
+              : supportsRental && <p className="mt-2 text-[10px] font-semibold text-wine">Rental product</p>}
+            {rentalOnly && <div className="mt-4">
+              {mobileRental.listing ? <><p className="flex items-baseline gap-1.5"><strong className="text-[20px] font-bold text-charcoal">{rentalMoney(mobileRental.listing.dailyRatePaise)}</strong><span className="text-[12px] text-slate-500">/ use day</span></p><p className="mt-1 text-[11px] text-slate-500">Refundable deposit {rentalMoney(mobileRental.listing.depositPaise)}</p></> : <p className="text-[12px] text-slate-500">{mobileRental.loading ? 'Loading rental price…' : 'Contact the store for rental availability'}</p>}
+            </div>}
             {!rentalOnly && <><div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <span className="text-[20px] font-bold text-charcoal md:text-2xl">{formatRupees(dealPrice)}</span>
               {originalPrice > dealPrice && <span className="text-[13px] text-slate-400">MRP <span className="line-through">{formatRupees(originalPrice)}</span></span>}
@@ -807,9 +848,11 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
             <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-bold text-white">{Number(product.rating || 0).toFixed(1)} <Star className="h-3 w-3 fill-white" /></span>
               <span className="text-[11px] font-medium text-slate-500">{product.numReviews || reviews.length || 0} rating{(product.numReviews || reviews.length || 0) === 1 ? '' : 's'}</span>
-              <span className="ml-auto text-[11px] font-semibold text-slate-500">{rentalOnly ? 'Check rental dates below' : isOutOfStock ? 'Out of stock' : 'In stock'}</span>
+              <span className="ml-auto text-[11px] font-semibold text-slate-500">{rentalOnly ? mobileRental.loading ? 'Loading rental…' : mobileRental.bookable ? 'Choose dates at checkout' : 'Online booking unavailable' : isOutOfStock ? 'Out of stock' : 'In stock'}</span>
             </div>
           </div>
+
+          {supportsRental && rentalOnly && <MobileRentalDetails key={productId} rental={mobileRental} product={product} navigate={navigate} storeSlug={storeSlug} onChooseDates={bookRental} />}
 
           {!rentalOnly && <><div className="rounded-[14px] bg-white p-4 md:rounded-2xl">
             <div className="flex items-center justify-between gap-3">
@@ -910,7 +953,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
                   const variantProduct = normalizeProduct(member.product);
                   const variantId = variantProduct._id || variantProduct.id;
                   const isCurrent = String(variantId) === String(productId);
-                  const available = Number(variantProduct.stock || 0) > 0;
+                  const available = rentalOnly ? ['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(variantProduct.commerceMode) : Number(variantProduct.stock || 0) > 0;
                   const image = variantProduct.primaryImageUrl;
                   const difference = Number(variantProduct.price || 0) - Number(product.price || 0);
                   const compatibleSize = size && getSelectableSizes(variantProduct).includes(size) ? size : '';
@@ -919,14 +962,14 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
                       key={variantId}
                       type="button"
                       disabled={!available && !isCurrent}
-                      onClick={() => navigate(`/product?id=${encodeURIComponent(variantId)}${compatibleSize ? `&size=${encodeURIComponent(compatibleSize)}` : ''}`)}
+                      onClick={() => navigate(`/product?id=${encodeURIComponent(variantId)}${rentalOnly ? '&mode=rent' : compatibleSize ? `&size=${encodeURIComponent(compatibleSize)}` : ''}`)}
                       aria-current={isCurrent ? 'true' : undefined}
                       className={`flex min-w-0 items-center gap-2 rounded-xl border p-2 text-left transition disabled:cursor-not-allowed disabled:opacity-45 ${isCurrent ? 'border-wine bg-[#fff2f6] shadow-[inset_0_0_0_1px_#7a1f36]' : 'border-slate-200 bg-white hover:border-[#bd7589]'}`}
                     >
                       {member.swatch && /^#[0-9a-f]{3,8}$/i.test(member.swatch) ? <span className="h-9 w-9 shrink-0 rounded-lg border border-black/10" style={{ backgroundColor: member.swatch }} /> : image ? <img src={image} alt="" className="h-11 w-9 shrink-0 rounded-lg object-cover" /> : <span className="grid h-11 w-9 shrink-0 place-items-center rounded-lg bg-[#f5e9e4] text-[9px] font-black text-[#8c2947]">SC</span>}
                       <span className="min-w-0 flex-1">
                         <b className="block truncate text-[10px] font-bold text-charcoal md:text-[11px]" title={member.label}>{member.label || variantProduct.variantColor || variantProduct.name}</b>
-                        <small className={`mt-1 block text-[9px] font-semibold ${available ? 'text-emerald-700' : 'text-rose'}`}>{available ? `₹${Number(variantProduct.price || 0).toLocaleString('en-IN')}${difference ? ` · ${difference > 0 ? '+' : '−'}₹${Math.abs(difference).toLocaleString('en-IN')}` : ''}` : 'Out of stock'}</small>
+                        <small className={`mt-1 block text-[9px] font-semibold ${available ? 'text-emerald-700' : 'text-rose'}`}>{rentalOnly ? available ? variantProduct.rentalPreview ? `${rentalMoney(variantProduct.rentalPreview.dailyRatePaise)} / use day` : 'View rental details' : 'Sale only' : available ? `₹${Number(variantProduct.price || 0).toLocaleString('en-IN')}${difference ? ` · ${difference > 0 ? '+' : '−'}₹${Math.abs(difference).toLocaleString('en-IN')}` : ''}` : 'Out of stock'}</small>
                       </span>
                       {isCurrent && <CheckCircle2 className="h-4 w-4 shrink-0 text-wine" />}
                     </button>
@@ -936,22 +979,16 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
             </section>
           ) : null}
 
-          {!rentalOnly && <div className="hidden gap-3 md:flex">
-            <button disabled={isOutOfStock || cartBusy || cart.loading} onClick={add} className={`h-14 flex-1 rounded-xl px-5 py-4 text-sm font-black text-white disabled:opacity-50 ${cartItem ? 'bg-emerald-600' : 'bg-rose'}`}>
-              {cartBusy ? 'Adding…' : cartItem ? 'Add More' : 'Add to Cart'}
-            </button>
-            <button disabled={isOutOfStock || cartBusy || cart.loading} onClick={buyNow} className="h-14 flex-1 rounded-xl bg-charcoal px-5 py-4 text-sm font-black text-white disabled:opacity-50">{cartBusy ? 'Adding…' : 'Buy Now'}</button>
-            <button disabled={isOutOfStock} onClick={orderOnWhatsApp} className="h-14 flex-1 rounded-xl border border-emerald-600 px-5 py-4 text-sm font-black text-emerald-700 disabled:opacity-50">
-              Order on WhatsApp
-            </button>
-          </div>}
+          {mobileActions()}
 
           {actionMessage && <p className="rounded-[14px] bg-[#fff4f7] px-4 py-3 text-[12px] font-semibold leading-5 text-rose md:rounded-2xl" role="status">{actionMessage}</p>}
+          {rentalOnly && actionMessage && rentalBag.itemCount > 0 && <button type="button" className="mobile-rental-details__link" onClick={() => navigate('/rental-cart')}>View rental bag →</button>}
 
           {!supportsRental && !purchaseEnabled && <section className="rental-card"><h2>Rental setup is not available for this item</h2><p>The store is currently rental-only. Choose a ready rental from the collection or contact the store.</p><button type="button" className="rental-button" onClick={() => navigate('/products?mode=rent')}>Browse rental collection</button><button type="button" className="rental-text-button" onClick={() => navigate('/contact')}>Contact store</button></section>}
-          {supportsRental && rentalOnly && <RentalOffer productId={productId} commerceMode={product.commerceMode} navigate={navigate} />}
 
-          <section className="rounded-[14px] bg-white p-4 md:space-y-2 md:rounded-none md:bg-transparent md:p-0 md:pt-2">
+          {!rentalOnly && storeWhatsappNumber && <button type="button" disabled={isOutOfStock} onClick={orderOnWhatsApp} className="px-4 py-2 text-[12px] font-semibold text-emerald-700 disabled:opacity-50">Order on WhatsApp</button>}
+
+          {!rentalOnly && <section className="rounded-[14px] bg-white p-4 md:space-y-2 md:rounded-none md:bg-transparent md:p-0 md:pt-2">
             <div className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-charcoal" />
               <h2 className="text-[14px] font-bold uppercase tracking-[.04em] text-charcoal md:text-xl">Delivery & services</h2>
@@ -977,25 +1014,24 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
               />
               <ServiceRow icon={ShieldCheck} title="Payment options at checkout" detail="Available payment methods are confirmed before you place the order." />
             </div>
-          </section>
-
-          <DetailsCard product={product} returnPolicy={returnPolicyText} />
+          </section>}
+          <DetailsCard product={product} returnPolicy={rentalOnly ? '' : returnPolicyText} />
 
           <section className="hidden grid-cols-2 gap-2 text-center md:grid">
             <TrustBadge title="Genuine Product" />
             <TrustBadge title="Quality Checked" />
           </section>
 
-          <section className="hidden md:block">
+          {!rentalOnly && <section className="hidden md:block">
             <h2 className="section-title text-xl">Easy returns and exchanges</h2>
             <p className="body-text text-slate-600">{product.returnPolicy || 'Choose to return or exchange for a different size, if available, within the allowed return window.'}</p>
-          </section>
+          </section>}
         </div>
       </div>
 
       {related.length > 0 && (
         <div className="mx-auto mt-4 max-w-6xl space-y-9 px-4 md:px-6">
-          <ProductRail title="You may also like" subtitle="More available styles from this collection" products={related.slice(0, 10)} navigate={navigate} />
+          <ProductRail title="You may also like" subtitle="More available styles from this collection" products={related.slice(0, 10)} navigate={navigate} purchaseMode={selectedMode} />
         </div>
       )}
 
@@ -1019,7 +1055,7 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
       <div className="mx-auto mt-9 max-w-6xl px-4 md:px-6">
         <div className="rounded-[14px] border border-slate-200 bg-white p-4 md:rounded-3xl md:p-5">
           {[
-            `More ${product.category} by ${product.brand || 'Jassi General Store'}`,
+            `More ${product.category} by ${product.brand || 'Jassi Bridal Bazar Dharmshala'}`,
             `More ${product.colors?.[0] || ''} ${product.category}`,
             `More ${product.category}`,
           ].map((label) => (
@@ -1032,25 +1068,9 @@ export default function ProductDetail({ navigate: navigateRoute, route = '' }) {
         <p className="small-text mt-8 text-slate-500">Product Code: {product.sku || productId}</p>
       </div>
 
-      {!rentalOnly && <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2.5 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
-        <div className={`grid gap-2 ${storeWhatsappNumber ? 'grid-cols-[.9fr_1.2fr_.9fr]' : 'grid-cols-2'}`}>
-          <button disabled={isOutOfStock || cartBusy || cart.loading} onClick={buyNow} className="h-12 rounded-[10px] border border-wine bg-white px-2 text-[12px] font-bold text-wine disabled:border-slate-200 disabled:text-slate-400">
-            {cartBusy ? 'Adding…' : selectableSizes.length && !size ? 'Select size' : 'Buy Now'}
-          </button>
-          <button disabled={isOutOfStock || cartBusy || cart.loading} onClick={add} className={`flex h-12 items-center justify-center gap-1.5 rounded-[10px] px-2 text-[12px] font-bold text-white disabled:bg-slate-300 ${cartItem ? 'bg-emerald-600' : 'bg-wine'}`}>
-            <Icon name="bag" className="h-4 w-4" />
-            {cartBusy ? 'Adding…' : isOutOfStock ? 'Out of Stock' : selectableSizes.length && !size ? 'Select size' : cartItem ? 'Add More' : 'Add to Bag'}
-          </button>
-          {storeWhatsappNumber ? <button disabled={isOutOfStock} onClick={orderOnWhatsApp} className="h-12 rounded-[10px] border border-emerald-600 px-2 text-[12px] font-bold text-emerald-700 disabled:border-slate-200 disabled:text-slate-400">
-            WhatsApp
-          </button> : null}
-        </div>
-      </div>}
-
         </section>
       </div>}
 
-      <CompleteLook key={`${storeSlug}:${productId}`} productId={productId} storeSlug={storeSlug} navigate={navigate} />
 
       {reviewModalOpen && <LazyBoundary><Suspense fallback={<p role="status" className="p-4 text-sm">Loading review form…</p>}><ReviewModal
         open={reviewModalOpen}
@@ -1232,14 +1252,14 @@ function TrustBadge({ title }) {
   );
 }
 
-function ProductRail({ title, subtitle, products, navigate }) {
+function ProductRail({ title, subtitle, products, navigate, purchaseMode }) {
   if (!products.length) return null;
   return (
     <section>
       <h2 className="section-title text-xl md:text-xl">{title}</h2>
       {subtitle && <p className="small-text mt-1 font-bold text-amber-600">{subtitle}</p>}
       <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
-        {products.map((product) => <RailProduct key={product.id} product={product} navigate={navigate} />)}
+        {products.map((product) => <RailProduct key={product.id} product={product} navigate={navigate} purchaseMode={purchaseMode} />)}
       </div>
     </section>
   );
@@ -1263,21 +1283,23 @@ function readCatalogReturnRoute(storeSlug) {
   return fallback;
 }
 
-function RailProduct({ product, navigate }) {
+function RailProduct({ product, navigate, purchaseMode }) {
   const cart = useCart();
   const image = getPrimaryImageUrl(product.images);
   const cartItem = cart.getCartItem(product);
-  const unavailable = isUnavailable(product) || wishlistStock(product) === 0;
+  const rental = isRentalRecommendation(product, purchaseMode);
+  const detailsHref = rental ? rentalProductHref(product) : `/product?id=${product._id || product.id || product.slug}`;
+  const unavailable = !rental && (isUnavailable(product) || wishlistStock(product) === 0);
   const needsSize = getSelectableSizes(product).length > 0;
   return (
-    <article className="w-40 shrink-0 md:w-52">
-      <button type="button" onClick={() => navigate(`/product?id=${product._id || product.id || product.slug}`)} className="block w-full overflow-hidden rounded-2xl border border-slate-200 bg-[#f6efe8]">
+    <article className="flex w-40 shrink-0 flex-col md:w-52" aria-label={product.name}>
+      <button type="button" onClick={() => navigate(detailsHref)} className="block w-full overflow-hidden rounded-2xl border border-slate-200 bg-[#f6efe8]">
         {image ? <img loading="lazy" decoding="async" src={normalizeImageUrl(image)} alt={product.name} className="h-48 w-full object-cover md:h-64" /> : <ProductVisual product={product} compact />}
       </button>
       <h3 className="product-name mt-2 truncate" title={product.name}>{product.name}</h3>
-      <p className="mt-1"><span className="old-price text-slate-400 line-through">Rs. {product.originalPrice}</span> <span className="price">Rs. {product.price}</span></p>
-      <button type="button" disabled={unavailable || cart.loading} onClick={() => needsSize ? navigate(`/product?id=${product._id || product.id || product.slug}`) : cart.addToCart(product)} className={`mt-3 h-10 w-full rounded-xl border disabled:opacity-50 ${cartItem ? 'border-emerald-600 text-emerald-700' : 'border-rose text-rose'}`}>
-        {unavailable ? 'Out of stock' : needsSize ? 'Select size' : cartItem ? 'Add More' : 'Add to Cart'}
+      <RelatedProductPrice product={product} rental={rental} />
+      <button type="button" disabled={unavailable || (!rental && cart.loading)} onClick={() => rental || needsSize ? navigate(detailsHref) : cart.addToCart(product)} className={`mt-3 h-10 w-full rounded-xl border disabled:opacity-50 ${cartItem && !rental ? 'border-emerald-600 text-emerald-700' : 'border-rose text-rose'}`}>
+        {rental ? 'View rental details' : unavailable ? 'Out of stock' : needsSize ? 'Select size' : cartItem ? 'Add More' : 'Add to Cart'}
       </button>
     </article>
   );

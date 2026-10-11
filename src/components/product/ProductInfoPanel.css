@@ -504,9 +504,14 @@
     color: #fff;
   }
 
-  .sc-info__action--whatsapp {
-    border-color: #128c7e;
+  .sc-info__action--rental {
+    border-color: var(--site-primary, #970f3e);
     background: #fff;
+    color: var(--site-primary, #970f3e);
+  }
+
+  .sc-info__whatsapp-link {
+    margin-top: 12px;
     color: #08786d;
   }
 
@@ -633,7 +638,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .sc-info__action--whatsapp {
+  .sc-info__action--rental {
     grid-column: 1 / -1;
   }
 }

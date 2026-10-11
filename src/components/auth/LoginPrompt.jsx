@@ -27,7 +27,7 @@ export default function LoginPrompt({ open, onClose, onContinue }) {
             <button type="button" onClick={onClose} className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-lg leading-none text-slate-600" aria-label="Close login prompt">
               ×
             </button>
-            <p className="small-text font-bold uppercase tracking-[0.22em] text-wine">Jassi General Store</p>
+            <p className="small-text font-bold uppercase tracking-[0.22em] text-wine">Jassi Bridal Bazar Dharmshala</p>
             <h2 className="mt-2 text-[22px] font-bold leading-[1.15] text-charcoal">Login or Signup</h2>
             <p className="body-text mt-2 max-w-sm text-slate-600">Get faster checkout, saved carts, and order tracking.</p>
           </div>

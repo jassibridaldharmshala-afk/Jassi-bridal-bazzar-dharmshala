@@ -6,9 +6,9 @@ import api from '../../services/api';
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn(), put: jest.fn(), patch: jest.fn(), delete: jest.fn() }));
 const photo = 'https://media.example.test/kurta.jpg';
 const product = { _id: 'product-1', name: 'Rose cotton kurta', price: 1299, url: 'https://shop.example.test/product/rose', images: [photo, 'https://media.example.test/detail.jpg'] };
-const account = { _id: 'account-1', name: 'Jassi General Store', provider: 'instagram', status: 'connected', subscribed: true, capabilities: { inbox: true, publish: true } };
+const account = { _id: 'account-1', name: 'Jassi Bridal Bazar Dharmshala', provider: 'instagram', status: 'connected', subscribed: true, capabilities: { inbox: true, publish: true } };
 const thread = { _id: 'thread-1', connectionId: account._id, provider: 'instagram', participantId: 'customer-1', participantName: 'Ananya', preview: 'Is medium available?', lastMessageAt: '2026-09-06T09:00:00Z', lastInboundAt: '2026-09-06T09:00:00Z', unread: true, canReply: true };
-const status = { configured: true, missing: [], mediaStorage: 'r2', store: { id: 'store-1', name: 'Jassi General Store' }, stores: [], accounts: [account], permissions: { connect: true, inbox: true, reply: true, publish: true, catalog: true } };
+const status = { configured: true, missing: [], mediaStorage: 'r2', store: { id: 'store-1', name: 'Jassi Bridal Bazar Dharmshala' }, stores: [], accounts: [account], permissions: { connect: true, inbox: true, reply: true, publish: true, catalog: true } };
 let fixtureStatus, fixtureThread, drafts, messageList;
 beforeEach(() => {
   jest.clearAllMocks(); window.history.replaceState({}, '', '/admin/social'); window.scrollTo = jest.fn(); sessionStorage.removeItem('samira_seller_store_id');
@@ -58,7 +58,7 @@ test('product selection fills a draft without publishing; publishing requires a 
   expect(api.post).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Review & publish' })).toBeDisabled();
   fireEvent.change(caption, { target: { value: 'New season. Rose cotton kurta.' } });
-  fireEvent.click(screen.getByRole('checkbox', { name: /Jassi General Store instagram/i }));
+  fireEvent.click(screen.getByRole('checkbox', { name: /Jassi Bridal Bazar Dharmshala instagram/i }));
   fireEvent.click(screen.getByRole('button', { name: 'Review & publish' }));
   const confirmation = await screen.findByRole('dialog', { name: 'Ready to share?' });
   expect(api.post.mock.calls.filter(([path]) => path.includes('/publish'))).toHaveLength(0);

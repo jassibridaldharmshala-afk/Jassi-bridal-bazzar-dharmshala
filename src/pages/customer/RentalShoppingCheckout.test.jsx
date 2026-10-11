@@ -1,24 +1,24 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import RentalShoppingCheckout from './RentalShoppingCheckout';
 import api from '../../services/api';
 import { openRentalPayment } from '../../utils/rentals';
 const listingId = '700000000000000000000001', productId = '600000000000000000000001';
-let mockUser, mockBag;
+let mockUser, mockBag, mockMobile;
 const mockSend = jest.fn(), mockResend = jest.fn(), mockVerify = jest.fn();
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
 jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: mockUser, sendOtp: mockSend, resendOtp: mockResend, verifyOtp: mockVerify }) }));
 jest.mock('../../context/StorefrontContext', () => ({ useStorefront: () => ({ storeSlug: 'bridal-shop' }) }));
 jest.mock('../../context/RentalBagContext', () => ({ useRentalBag: () => mockBag }));
 jest.mock('../../context/BrandIdentityContext', () => ({ useBrandIdentity: () => ({ websiteName: 'Bridal shop' }) }));
-jest.mock('@mantine/hooks', () => ({ useMediaQuery: () => true }));
+jest.mock('@mantine/hooks', () => ({ useMediaQuery: () => mockMobile }));
 jest.mock('../../utils/analytics', () => ({ trackEvent: jest.fn() }));
 jest.mock('../../utils/rentals', () => ({ ...jest.requireActual('../../utils/rentals'), openRentalPayment: jest.fn() }));
 const config = { mode: 'SALE_AND_RENTAL', policy: { timezone: 'Asia/Kolkata', slotMinutes: 60, pickupStart: '10:00', pickupEnd: '18:00', deliveryModes: ['STORE_PICKUP', 'SELF_DELIVERY'], paymentPlans: ['ADVANCE', 'FULL', 'PICKUP'], terms: 'Return on time.' }, contact: {} };
 const offer = { _id: listingId, productId, title: 'Bridal lehenga', dailyRatePaise: 150000, depositPaise: 200000, product: { name: 'Bridal lehenga' } };
 function quoted(body) { const due = body.paymentPlan === 'PICKUP' ? 0 : body.paymentPlan === 'FULL' ? 350000 : 245000; return { quoteFingerprint: body.paymentPlan, policyRevision: 1, timezone: 'Asia/Kolkata', terms: config.policy.terms, schedule: { days: body.useDates.length }, quote: { items: [{ title: 'Bridal lehenga', listingId, rentPaise: 150000, feesPaise: 0 }], totalPaise: 350000, dueNowPaise: due, remainingPaise: 350000 - due, depositPaise: 200000, paymentPlan: body.paymentPlan } }; }
 beforeEach(() => {
-  sessionStorage.clear(); jest.clearAllMocks(); window.scrollTo = jest.fn();
+  sessionStorage.clear(); jest.clearAllMocks(); window.scrollTo = jest.fn(); mockMobile = true;
   mockUser = { _id: 'customer', name: 'Meera', phone: '9000000001', isPhoneVerified: true }; mockBag = { ready: true, items: [{ listingId, quantity: 1 }], consume: jest.fn() };
   api.get.mockImplementation(path => Promise.resolve(path.includes('/configuration') ? config : path.includes('/payment-methods') ? [{ key: 'UPI', label: 'UPI', enabled: true }] : path.includes('/catalogue') ? { rows: [offer] } : path.includes('/slots') ? { rows: [{ time: '10:00', available: true }, { time: '11:00', available: true }, { time: '17:00', available: false }] } : []));
   api.post.mockImplementation((path, body) => Promise.resolve(path.includes('/quote') ? quoted(body) : path.endsWith('/bookings?store=bridal-shop') ? { _id: 'booking', status: 'CONFIRMED', quote: quoted(body).quote } : {}));
@@ -36,6 +36,85 @@ async function dates(review = true) {
   fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
   await screen.findByLabelText('Full name'); if (review) await contactReview();
 }
+
+test('generated login name and email stay blank until the customer enters the identity saved with the rental', async () => {
+  mockUser = { ...mockUser, name: 'Jassi User 0001', email: 'phone+9000000001@samira.local' };
+  render(<RentalShoppingCheckout navigate={jest.fn()} />);
+  await dates(false);
+  expect(screen.getByLabelText('Full name')).toHaveValue(''); expect(screen.getByLabelText('Email for updates (optional)')).toHaveValue('');
+  fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Priya Sharma' } });
+  fireEvent.change(screen.getByLabelText('Email for updates (optional)'), { target: { value: 'priya@example.com' } });
+  await contactReview();
+  expect(screen.getByText('Priya Sharma')).toBeInTheDocument(); expect(screen.getByText('priya@example.com')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Pay at pickup/ }));
+  await waitFor(() => expect(screen.getByLabelText(/I have reviewed/)).toBeEnabled());
+  fireEvent.click(screen.getByLabelText(/I have reviewed/)); fireEvent.click(screen.getByRole('button', { name: 'Confirm booking' }));
+  await waitFor(() => expect(api.post).toHaveBeenCalledWith('/rentals/bookings?store=bridal-shop', expect.objectContaining({ customer: expect.objectContaining({ name: 'Priya Sharma', email: 'priya@example.com' }) }), { silent: true }));
+});
+
+test('the initial estimate includes quantity and deposit, then charges only selected use days', async () => {
+  const view = render(<RentalShoppingCheckout navigate={jest.fn()} />);
+  await screen.findByLabelText('Rental price summary');
+  const price = within(screen.getByLabelText('Rental price summary'));
+  expect(price.getByText('Estimate for 1 use day')).toBeInTheDocument();
+  expect(price.getByText('₹3,500.00')).toBeInTheDocument();
+  expect(within(screen.getByRole('group', { name: 'Rental checkout total' })).getByText('₹3,500.00')).toBeInTheDocument();
+  expect(screen.getByLabelText('Use day / occasion date')).toHaveValue('');
+
+  mockBag = { ...mockBag, items: [{ listingId, quantity: 2 }] };
+  mockMobile = false;
+  view.rerender(<RentalShoppingCheckout navigate={jest.fn()} />);
+  expect(price.getByText('₹7,000.00')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Use day / occasion date'), { target: { value: '2030-01-10' } });
+  fireEvent.click(screen.getByRole('button', { name: '+ Add another use day' }));
+  fireEvent.change(screen.getByLabelText('Additional use day 1'), { target: { value: '2030-01-12' } });
+  fireEvent.change(screen.getByLabelText('Pickup date'), { target: { value: '2030-01-08' } });
+  fireEvent.change(screen.getByLabelText('Return date'), { target: { value: '2030-01-14' } });
+  expect(price.getByText('Rent · 2 use days')).toBeInTheDocument();
+  expect(price.getByText('₹6,000.00')).toBeInTheDocument();
+  expect(price.getByText('₹4,000.00')).toBeInTheDocument();
+  expect(price.getByText('₹10,000.00')).toBeInTheDocument();
+  expect(price.queryByText('Estimate for 1 use day')).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+  await waitFor(() => expect(screen.getByLabelText('Pickup time')).toHaveValue('10:00'));
+  await waitFor(() => expect(screen.getByLabelText('Return time')).toHaveValue('10:00'));
+});
+
+test('the verified quote replaces the estimate with service, delivery and payment totals', async () => {
+  api.post.mockImplementation((path, body) => Promise.resolve({ ...quoted(body), quote: { items: [{ rentPaise: 180000, feesPaise: 20000 }], depositPaise: 200000, deliveryFeePaise: 7000, returnFeePaise: 3000, totalPaise: 410000, dueNowPaise: 70000, remainingPaise: 340000, tax: { taxPaise: 20000 } } }));
+  render(<RentalShoppingCheckout navigate={jest.fn()} />);
+  await dates(false);
+  const price = within(screen.getByLabelText('Rental price summary'));
+  expect(price.getByText('Total')).toBeInTheDocument();
+  expect(price.getByText('₹4,100.00')).toBeInTheDocument();
+  expect(price.getByText('Cleaning / alteration services')).toBeInTheDocument();
+  expect(price.getByText('Delivery & collection')).toBeInTheDocument();
+  expect(price.getByText('₹100.00')).toBeInTheDocument();
+  expect(price.getByText('Pay now')).toBeInTheDocument();
+  expect(price.getByText('₹700.00')).toBeInTheDocument();
+  expect(price.getByText('Remaining at pickup')).toBeInTheDocument();
+  expect(price.getByText('₹3,400.00')).toBeInTheDocument();
+  expect(price.getByText('Tax included in rent')).toBeInTheDocument();
+  expect(price.queryByText('Estimated total')).not.toBeInTheDocument();
+  expect(mockBag.consume).not.toHaveBeenCalled();
+});
+
+test('desktop back navigation returns through Contact and Dates without losing the rental plan', async () => {
+  mockMobile = false;
+  const navigate = jest.fn();
+  render(<RentalShoppingCheckout navigate={navigate} />);
+  await dates();
+  fireEvent.click(screen.getByLabelText(/I have reviewed/));
+  fireEvent.click(screen.getByRole('button', { name: 'Back to contact details' }));
+  expect(screen.getByRole('heading', { name: 'Contact details' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Full name')).toHaveValue('Meera');
+  fireEvent.click(screen.getByRole('button', { name: 'Back to rental dates' }));
+  expect(screen.getByLabelText('Use day / occasion date')).toHaveValue('2030-01-10');
+  expect(screen.queryByLabelText(/I have reviewed/)).not.toBeInTheDocument();
+  expect(navigate).not.toHaveBeenCalled();
+  expect(mockBag.consume).not.toHaveBeenCalled();
+  await waitFor(() => expect(screen.getByLabelText('Return time')).toHaveValue('10:00'));
+});
 
 const existingBookingId = '800000000000000000000001';
 const ownerConflict = () => Object.assign(new Error("You've already booked this lehenga for these dates."), { code: 'RENTAL_ALREADY_BOOKED', booking: { id: existingBookingId } });
@@ -255,8 +334,8 @@ test('duplicate use days fail with a specific correction before any quote or res
 });
 
 test('refresh on Review re-quotes the same schedule and never restores rental-policy acceptance', async () => {
-  const first = render(<RentalShoppingCheckout navigate={jest.fn()} />); await dates();
-  fireEvent.click(screen.getByLabelText(/I have reviewed/)); first.unmount();
+  const view = render(<RentalShoppingCheckout navigate={jest.fn()} />); await dates();
+  fireEvent.click(screen.getByLabelText(/I have reviewed/)); view.unmount();
   const posts = api.post.mock.calls.length; render(<RentalShoppingCheckout navigate={jest.fn()} />);
   await screen.findByRole('heading', { name: 'Review your booking' });
   expect(api.post.mock.calls.length).toBeGreaterThan(posts); expect(screen.getByLabelText(/I have reviewed/)).not.toBeChecked();
@@ -275,11 +354,11 @@ test('a changed quote at reservation clears consent and requires date/price revi
 test('a recovered reservation after refresh uses the identical attempt and accepted payload even if fresh quotes are unavailable', async () => {
   const navigate = jest.fn(); const post = api.post.getMockImplementation();
   api.post.mockImplementation((path, body) => path.includes('/bookings?') ? Promise.reject(new Error('Unknown network outcome')) : post(path, body));
-  const first = render(<RentalShoppingCheckout navigate={navigate} />); await dates();
+  const view = render(<RentalShoppingCheckout navigate={navigate} />); await dates();
   fireEvent.click(screen.getByRole('button', { name: /Pay at pickup/ })); await waitFor(() => expect(screen.getByLabelText(/I have reviewed/)).toBeEnabled());
   fireEvent.click(screen.getByLabelText(/I have reviewed/)); fireEvent.click(screen.getByRole('button', { name: 'Confirm booking' }));
   await screen.findByRole('button', { name: 'Recover booking' });
-  const accepted = api.post.mock.calls.find(([path]) => path.includes('/bookings?'))[1]; first.unmount();
+  const accepted = api.post.mock.calls.find(([path]) => path.includes('/bookings?'))[1]; view.unmount();
   api.post.mockImplementation((path, body) => path.includes('/quote') ? Promise.reject(new Error('Store paused')) : Promise.resolve({ _id: 'booking', status: 'CONFIRMED', quote: quoted(body).quote }));
   render(<RentalShoppingCheckout navigate={navigate} />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'Recover booking' })).toBeEnabled()); fireEvent.click(screen.getByRole('button', { name: 'Recover booking' }));

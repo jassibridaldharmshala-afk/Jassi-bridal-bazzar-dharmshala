@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyRound, ShieldCheck } from 'lucide-react';
 import api from '../../services/api';
@@ -11,7 +13,7 @@ export default function SmsSettings({ apiBase = '/admin/settings', onDirtyChange
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useAdminFeedback('', 'success', 'Sms Settings');
   const [retryAfter, setRetryAfter] = useState(0);
   const [consent, setConsent] = useState(false);
   const lock = useRef(false);
@@ -56,7 +58,7 @@ export default function SmsSettings({ apiBase = '/admin/settings', onDirtyChange
   return <section aria-label="OTP and SMS settings" onKeyDown={event => { if (event.key === 'Enter' && event.target.tagName === 'INPUT') event.preventDefault(); }}>
     <div className="store-settings__tip"><ShieldCheck size={20} /><p>This setting controls SMS login, phone verification and COD OTPs for this entire backend, including administrator login. Each separately deployed client has its own configuration. Email OTP is unchanged.</p></div>
     {error && <div className="store-settings__notice" role="alert"><p>{error}</p><button type="button" className="admin-btn-ghost" disabled={busy} onClick={load}>Reload OTP settings</button><small>Reload discards unsaved credential inputs, never the active provider.</small></div>}
-    {message && <p role="status" className="my-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">{message}</p>}
+    <AdminFeedback message={message} type="success" title="Sms Settings" onDismiss={() => setMessage('')} />
     {!data ? <p className="admin-note mt-4">{busy ? 'Loading OTP settings…' : 'Only a verified deployment administrator can manage this configuration.'}</p> : <fieldset disabled={busy} className="min-w-0 space-y-5">
       <div className="rounded-xl border border-slate-200 p-4"><strong>Active provider: {label(data.active.provider)}</strong><p className="admin-note">{data.active.source === 'environment' ? 'Using backend environment configuration.' : 'Using verified, encrypted Settings configuration.'} {data.active.configured ? '' : 'SMS setup is incomplete.'}</p>{data.active.verifiedAt && <p className="admin-note">Last verified {new Date(data.active.verifiedAt).toLocaleString('en-IN')}</p>}</div>
       {data.demoMode && <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm">Customer OTP demo mode is enabled on the backend. Saving a provider does not turn demo mode off. Set OTP_MODE=production on the backend for real customer OTPs. The test below always sends a real SMS and may incur provider charges.</p>}

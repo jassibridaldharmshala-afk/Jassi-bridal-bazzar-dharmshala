@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, Plus } from 'lucide-react';
 import api from '../../services/api';
@@ -27,7 +29,7 @@ export default function QuickAddProduct() {
   const [saving, setSaving] = useState(false);
   const [mediaBusy, setMediaBusy] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useAdminFeedback('', 'info', 'Quick Add Product');
   const [visionNote, setVisionNote] = useState('');
   const [visionEnabled, setVisionEnabled] = useState(null);
   const [created, setCreated] = useState(null);
@@ -237,7 +239,7 @@ export default function QuickAddProduct() {
       setCreated(createdProduct);
       setMessage('Product added');
     } catch (error) {
-      setMessage(error.message);
+      setMessage(error.message, 'error');
     } finally {
       setSaving(false);
     }
@@ -495,7 +497,7 @@ export default function QuickAddProduct() {
           </p>
         </div>
 
-        {message && !created && <p role="status" className="admin-quick-add__message">{message}</p>}
+        <AdminFeedback message={message} type="info" title="Quick Add Product" onDismiss={() => setMessage('')} />
 
         <div className="admin-form-actions admin-quick-add__actions">
           <a href="/admin/products" className="admin-btn-ghost">Cancel</a>

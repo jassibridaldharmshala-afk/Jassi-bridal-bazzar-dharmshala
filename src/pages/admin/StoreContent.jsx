@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { memo, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, Clock3, Columns2, History, Laptop, ListFilter, PencilLine, Plus, Redo2, RotateCcw, Save, Search, Send, Settings, Smartphone, Trash2, Undo2, X } from 'lucide-react';
 import PageHeader from '../../components/admin/PageHeader';
@@ -92,7 +94,7 @@ export default function StoreContent({ route = '' }) {
   const [historyMeta, setHistoryMeta] = useState({ page: 1, hasMore: false, total: 0 });
   const [historyError, setHistoryError] = useState('');
   const [historyQuery, setHistoryQuery] = useState('');
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useAdminFeedback(null, 'success', 'Store Content');
   const [busy, setBusy] = useState('');
   const [query, setQuery] = useState('');
   const [changedOnly, setChangedOnly] = useState(false);
@@ -130,7 +132,7 @@ export default function StoreContent({ route = '' }) {
       } else { setHistory([]); setHistoryError(historyResult.reason?.message || 'Publish history could not be loaded.'); }
     } catch (error) { setMessage({ type: 'error', text: error.message || 'Content workspace could not be loaded.' }); }
     finally { setBusy(''); }
-  }, [endpoint, historyUrl, recoveryKey]);
+  }, [endpoint, historyUrl, recoveryKey, setMessage]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     if (!dirty || !draft || !data) return undefined;
@@ -220,14 +222,14 @@ export default function StoreContent({ route = '' }) {
   const changedCount = useMemo(() => draft && data?.published ? ['sections', 'blocks'].reduce((total, group) => total + draft[group].filter((item) => isChanged(group, item)).length, 0) : 0, [data, draft, isChanged]);
   const previewConfig = useMemo(() => applyPreviewContent(data?.previewConfig, deferredDraft), [data?.previewConfig, deferredDraft]);
 
-  if (!data) return <section className="space-y-5"><PageHeader title="Store content" note="Loading your content workspace…" /><div className="admin-card p-6">{message?.text ? <><p className="text-red-700">{message.text}</p><button type="button" className="admin-btn-ghost mt-4" onClick={load}>Retry</button></> : 'Loading content…'}</div></section>;
-  if (!data.available) return <section className="space-y-5"><PageHeader title="Store content" note="Manage storefront wording without changing design." /><div className="admin-card p-8 text-center"><PencilLine className="mx-auto h-10 w-10 text-wine" /><h2 className="mt-4 font-display text-2xl font-bold">Publish your first website design</h2><p className="mx-auto mt-2 max-w-lg text-sm text-slate-500">Content Studio becomes available after the storefront has an initial design.</p><a className="admin-btn mt-5 inline-flex" href={data.designerPath}>Open Website Designer</a></div></section>;
+  if (!data) return <section className="space-y-5"><PageHeader compact title="Store content" note="Loading your content workspace…" /><div className="admin-card p-6">{message?.text ? <><p className="text-red-700">{message.text}</p><button type="button" className="admin-btn-ghost mt-4" onClick={load}>Retry</button></> : 'Loading content…'}</div></section>;
+  if (!data.available) return <section className="space-y-5"><PageHeader compact title="Store content" note="Manage storefront wording without changing design." /><div className="admin-card p-8 text-center"><PencilLine className="mx-auto h-10 w-10 text-wine" /><h2 className="mt-4 font-display text-2xl font-bold">Publish your first website design</h2><p className="mx-auto mt-2 max-w-lg text-sm text-slate-500">Content Studio becomes available after the storefront has an initial design.</p><a className="admin-btn mt-5 inline-flex" href={data.designerPath}>Open Website Designer</a></div></section>;
   const canWrite = data.capabilities?.write !== false;
   const canPublish = data.capabilities?.publish !== false;
 
-  return <section className="content-studio space-y-5 pb-24">
-    <PageHeader kicker={seller ? 'Seller workspace' : 'Admin'} title="Content Operations Studio" note="Write, review, schedule and restore storefront copy without changing layout, products or styling."><button type="button" className="admin-btn-ghost" onClick={() => setHistoryOpen(true)}><History size={16} /> History</button></PageHeader>
-    {message && <div role="status" className={`content-notice content-notice--${message.type}`}>{message.type === 'error' || message.type === 'warning' ? <AlertTriangle /> : <Check />}{message.text}<button aria-label="Dismiss message" onClick={() => setMessage(null)}><X /></button></div>}
+  return <section className="content-studio admin-compact space-y-5 pb-24">
+    <PageHeader compact kicker={seller ? 'Seller workspace' : 'Admin'} title="Content Operations Studio" note="Write, review, schedule and restore storefront copy without changing layout, products or styling."><button type="button" className="admin-btn-ghost" onClick={() => setHistoryOpen(true)}><History size={16} /> History</button></PageHeader>
+    <AdminFeedback message={message} type="success" title="Store Content" onDismiss={() => setMessage(null)} />
     {!canWrite && <div className="content-notice content-notice--info"><AlertTriangle /><span><strong>Read-only access</strong><small>Your store role can review content and history but cannot edit or publish it.</small></span></div>}
     {recovery && <div className="content-notice content-notice--warning"><Clock3 /><span><strong>{recovery.stale ? 'Unsaved edits from an older server version' : 'Recovered browser draft available'}</strong><small> Saved {formatDate(recovery.savedAt)}. Your copy is preserved until you choose.</small></span>{canWrite && <><button type="button" className="admin-btn-ghost" onClick={() => recover(false)}>{recovery.stale ? 'Merge my edits' : 'Restore'}</button>{recovery.stale && <button type="button" className="admin-btn-ghost" onClick={() => recover(true)}>Use recovered values</button>}</>}<button type="button" className="admin-btn-ghost" onClick={() => { storage.remove(recoveryKey); setRecovery(null); }}>Discard</button></div>}
     {data.scheduledFor && <div className={`content-schedule ${data.scheduledStatus === 'FAILED' ? 'is-failed' : ''}`}><div><strong>{data.scheduledStatus === 'FAILED' ? 'Scheduled release needs attention' : data.scheduledStatus === 'PROCESSING' ? 'Scheduled release is publishing' : 'Scheduled content release'}</strong><span>{formatDate(data.scheduledFor)}{data.scheduledNote ? ` · ${data.scheduledNote}` : ''}{data.scheduledError ? ` · ${data.scheduledError}` : ''}</span></div>{canPublish && <div>{data.scheduledStatus === 'FAILED' && <button type="button" className="admin-btn-ghost" disabled={Boolean(busy)} onClick={retrySchedule}>Retry release</button>}<button type="button" className="admin-btn-ghost" disabled={Boolean(busy) || data.scheduledStatus === 'PROCESSING'} onClick={cancelSchedule}>Cancel schedule</button></div>}</div>}

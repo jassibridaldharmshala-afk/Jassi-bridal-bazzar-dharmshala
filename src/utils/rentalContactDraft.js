@@ -1,5 +1,6 @@
 import { readRentalSession, saveRentalSession, clearRentalSession } from './rentalPlan';
 import { rentalAddressFields } from './rentalDetails';
+import { customerName, customerEmail } from './customerIdentity';
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const text = (value, limit) => typeof value === 'string' ? value.slice(0, limit) : '';
 function clean(value) {
@@ -7,7 +8,7 @@ function clean(value) {
   const address = value => Object.fromEntries(rentalAddressFields.map(([key]) => [key, text(object(value)[key], key === 'pincode' ? 6 : key === 'mobile' ? 25 : 120)]));
   const contact = (value, authorised) => !value ? null : { name: text(object(value).name, 100), phone: text(object(value).phone, 25), ...(authorised ? { relationship: text(object(value).relationship, 100), authorised: object(value).authorised === true } : {}) };
   return {
-    customer: { name: text(customer.name, 100), email: text(customer.email, 150), whatsappConsent: customer.whatsappConsent === true },
+    customer: { name: customerName(text(customer.name, 100)), email: customerEmail(text(customer.email, 254)), whatsappConsent: customer.whatsappConsent === true },
     eventAt: text(source.eventAt, 30),
     details: { version: 1, deliveryAddress: address(details.deliveryAddress), collectionAddress: address(details.collectionAddress), sameAsDelivery: details.sameAsDelivery !== false,
       alternateContact: contact(details.alternateContact, false), pickupContact: contact(details.pickupContact, true), returnContact: contact(details.returnContact, true),

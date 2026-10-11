@@ -1,5 +1,5 @@
 {
-  "name": "jassi-general-store",
+  "name": "jassi-bridal-bazar-dharmshala",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -70,5 +70,5 @@
     "resolve-url-loader": "5.0.0",
     "svgo": "2.8.4"
   },
-  "description": "Jassi General Store Boutique — Sale & Rental commerce application"
+  "description": "Jassi Bridal Bazar Dharmshala Boutique — Sale & Rental commerce application"
 }

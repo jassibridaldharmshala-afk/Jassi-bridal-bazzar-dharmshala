@@ -1,6 +1,26 @@
+import { ShoppingBag } from 'lucide-react';
 import { rentalMoney } from '../../utils/rentals';
+
 export default function RentalCheckoutSummary({ data, estimate }) {
-  if (!data) return estimate ? <div className="sc-mobile-checkout__prices"><h2>Estimated total</h2><div className="rental-price-row"><span>Rent · {estimate.days} use {estimate.days === 1 ? 'day' : 'days'}</span><strong>{rentalMoney(estimate.rent)}</strong></div><div className="rental-price-row"><span>Refundable security</span><span>{rentalMoney(estimate.deposit)}</span></div><div className="rental-price-row rental-price-row--total"><strong>Estimated total</strong><strong>{rentalMoney(estimate.total)}</strong></div><p className="rental-shopping-hint">Availability, packages, services and the final amount are confirmed before booking.</p></div> : <><h2>Your total</h2><p className="rental-shopping-hint">Choose your use day and collection times to check availability and the final amount.</p></>;
-  const q = data.quote;
-  return <div className="sc-mobile-checkout__prices"><h2>Price details</h2><div className="rental-price-row"><span>Rent · {data.schedule.days} use {data.schedule.days === 1 ? 'day' : 'days'}</span><strong>{rentalMoney(q.items.reduce((n, i) => n + i.rentPaise, 0))}</strong></div>{q.items.some(i => i.feesPaise) && <div className="rental-price-row"><span>Cleaning / alteration services</span><span>{rentalMoney(q.items.reduce((n, i) => n + i.feesPaise, 0))}</span></div>}{q.deliveryFeePaise + q.returnFeePaise > 0 && <div className="rental-price-row"><span>Delivery & collection</span><span>{rentalMoney(q.deliveryFeePaise + q.returnFeePaise)}</span></div>}<div className="rental-price-row"><span>Refundable security</span><span>{rentalMoney(q.depositPaise)}</span></div><div className="rental-price-row rental-price-row--total"><strong>Total</strong><strong>{rentalMoney(q.totalPaise)}</strong></div><div className="rental-price-row"><span>Pay now</span><strong>{rentalMoney(q.dueNowPaise)}</strong></div><div className="rental-price-row"><span>Remaining at pickup</span><strong>{rentalMoney(q.remainingPaise)}</strong></div>{q.tax?.taxPaise > 0 && <div className="rental-price-row"><span>Tax included in rent</span><span>{rentalMoney(q.tax.taxPaise)}</span></div>}<p className="rental-shopping-hint">Applicable taxes included. Security is settled after return inspection. Cancellation and any refund are reviewed by the store.</p></div>;
+  const quote = data?.quote;
+  if (!quote && !estimate) return <div className="rental-price-summary"><h2><ShoppingBag size={17} aria-hidden="true" />Price summary</h2><p className="rental-shopping-hint">Review unavailable items in your bag to see the total.</p></div>;
+
+  const days = quote ? data.schedule.days : estimate.days;
+  const rent = quote ? quote.items.reduce((sum, item) => sum + item.rentPaise, 0) : estimate.rent;
+  const services = quote?.items.reduce((sum, item) => sum + (item.feesPaise || 0), 0) || 0;
+  const delivery = (quote?.deliveryFeePaise || 0) + (quote?.returnFeePaise || 0);
+  const deposit = quote ? quote.depositPaise : estimate.deposit;
+  const total = quote ? quote.totalPaise : estimate.total;
+  return <div className="sc-mobile-checkout__prices rental-price-summary" aria-label="Rental price summary">
+    <h2><ShoppingBag size={17} aria-hidden="true" />Price summary</h2>
+    {!quote && estimate.assumedDays && <p className="rental-price-summary__basis">Estimate for 1 use day</p>}
+    <div className="rental-price-row"><span>Rent · {days} use {days === 1 ? 'day' : 'days'}</span><strong>{rentalMoney(rent)}</strong></div>
+    {services > 0 && <div className="rental-price-row"><span>Cleaning / alteration services</span><strong>{rentalMoney(services)}</strong></div>}
+    {delivery > 0 && <div className="rental-price-row"><span>Delivery & collection</span><strong>{rentalMoney(delivery)}</strong></div>}
+    <div className="rental-price-row"><span>Refundable deposit</span><strong>{rentalMoney(deposit)}</strong></div>
+    {quote?.tax?.taxPaise > 0 && <div className="rental-price-row"><span>Tax included in rent</span><strong>{rentalMoney(quote.tax.taxPaise)}</strong></div>}
+    <div className="rental-price-row rental-price-row--total rental-price-summary__total"><span><strong>{quote ? 'Total' : 'Estimated total'}</strong><small>Includes refundable deposit</small></span><strong>{rentalMoney(total)}</strong></div>
+    {quote && <div className="rental-price-summary__payment"><div className="rental-price-row"><span>Pay now</span><strong>{rentalMoney(quote.dueNowPaise)}</strong></div><div className="rental-price-row"><span>Remaining at pickup</span><strong>{rentalMoney(quote.remainingPaise)}</strong></div></div>}
+    <p className="rental-shopping-hint rental-price-summary__note">{quote ? 'Deposit is settled after return inspection. Applicable taxes are included.' : estimate.assumedDays ? 'Select your use days to update this estimate. Availability and any additional fees are confirmed next.' : 'Pickup and return days add no rent. Availability and any additional fees are confirmed next.'}</p>
+  </div>;
 }

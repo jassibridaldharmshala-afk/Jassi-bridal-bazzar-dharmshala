@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import ProductInfoPanel from './ProductInfoPanel';
 
 const baseProps = {
-  product: { name: 'Silk Saree', brand: 'Jassi General Store', price: 1299, originalPrice: 2499, discountPercentage: 48 },
+  product: { name: 'Silk Saree', brand: 'Jassi Bridal Bazar Dharmshala', price: 1299, originalPrice: 2499, discountPercentage: 48 },
   size: '',
   setSize: jest.fn(),
   color: '',
@@ -23,6 +23,16 @@ const baseProps = {
 
 describe('desktop product purchase information', () => {
   beforeEach(() => jest.clearAllMocks());
+
+  test('rental keeps title and booking actions without an upper mode selector', () => {
+    render(<ProductInfoPanel {...baseProps} rentalOnly rentalContent={<button>Book rental</button>} />);
+    const title = screen.getByRole('heading', { name: baseProps.product.name });
+    const book = screen.getByRole('button', { name: 'Book rental' });
+    expect(title.compareDocumentPosition(book) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Buy or rent this product' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Buy now' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Delivery options')).not.toBeInTheDocument();
+  });
 
   test('does not invent unavailable size or colour values', () => {
     render(<ProductInfoPanel {...baseProps} />);

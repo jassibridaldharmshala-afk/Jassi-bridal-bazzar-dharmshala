@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import Reports from './Reports';
 import api from '../../services/api';
 
@@ -28,6 +28,37 @@ function mockReports(overrides = {}) {
 }
 
 beforeEach(() => { jest.clearAllMocks(); mockReports(); });
+
+test('equivalent permission responses do not restart the same report requests', async () => {
+  render(<Reports />);
+  await screen.findByText('Collections and refund trend');
+  await waitFor(() => expect(api.get).toHaveBeenCalledWith(expect.stringContaining('/reports/options'), expect.any(Object)));
+  expect(api.get.mock.calls.filter(([path]) => path.includes('/center/summary?'))).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+  fireEvent.change(screen.getByLabelText('Traffic device'), { target: { value: 'mobile' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+  await waitFor(() => expect(api.get.mock.calls.filter(([path]) => path.includes('/center/summary?') && path.includes('device=mobile'))).toHaveLength(1));
+  await screen.findByText('Collections and refund trend');
+  expect(api.get.mock.calls.filter(([path]) => path.includes('/center/summary?'))).toHaveLength(2);
+});
+
+test('a late previous report cannot overwrite the newly filtered totals', async () => {
+  let finishOldSummary;
+  const oldSummary = new Promise(resolve => { finishOldSummary = resolve; });
+  const filteredSummary = { ...responses.summary, data: { ...responses.summary.data, metrics: { ...responses.summary.data.metrics, recognizedRevenue: { value: 12345 } } } };
+  mockReports();
+  const normalGet = api.get.getMockImplementation();
+  api.get.mockImplementation(path => path.includes('/center/summary?')
+    ? path.includes('device=mobile') ? Promise.resolve(filteredSummary) : oldSummary
+    : normalGet(path));
+  render(<Reports />);
+  fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+  fireEvent.change(screen.getByLabelText('Traffic device'), { target: { value: 'mobile' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
+  expect(await screen.findByText('₹12,345.00')).toBeInTheDocument();
+  await act(async () => { finishOldSummary(responses.summary); });
+  expect(screen.getByText('₹12,345.00')).toBeInTheDocument();
+});
 
 test('seller Reports Center loads every permitted section from seller-scoped APIs', async () => {
   render(<Reports route="/seller/reports" />);

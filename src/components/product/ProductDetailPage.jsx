@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { ChevronRight, Star } from 'lucide-react';
 import ProductGallery from './ProductGallery';
 import ProductInfoPanel from './ProductInfoPanel';
-import RentalModeSelector from '../rentals/RentalModeSelector';
 import RentalOffer from '../rentals/RentalOffer';
 import ProductTrustPanel from './ProductTrustPanel';
 import ProductTabs from './ProductTabs';
@@ -126,10 +125,10 @@ export default function ProductDetailPage({
           />
 
           <div className="sc-pdp__info-stack">{product.commerceMode === 'SALE_ONLY' && !purchaseEnabled && <section className="rental-card"><h2>This item has no rental offer</h2><button type="button" className="rental-button" onClick={() => navigate('/products?mode=rent')}>Browse rental collection</button><button type="button" className="rental-text-button" onClick={() => navigate('/contact')}>Contact store</button></section>}
-            {['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode) && <RentalModeSelector product={product} value={purchaseMode} onChange={onPurchaseMode} purchaseEnabled={purchaseEnabled} />}
-            {['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode) && (purchaseMode === 'rent' || !purchaseEnabled || product.commerceMode === 'RENTAL_ONLY') && <RentalOffer productId={product._id || product.id} commerceMode={product.commerceMode} navigate={navigate} />}
             <ProductInfoPanel
               product={product}
+              onRent={['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode) ? () => onPurchaseMode?.('rent') : undefined}
+              rentalContent={['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode) && <RentalOffer compact productId={product._id || product.id} commerceMode={product.commerceMode} navigate={navigate} onBuy={purchaseEnabled && product.commerceMode === 'SALE_AND_RENTAL' ? () => onPurchaseMode?.('buy') : undefined} />}
               rentalOnly={purchaseMode === 'rent' || !purchaseEnabled || product.commerceMode === 'RENTAL_ONLY'}
               size={size}
               setSize={setSize}
@@ -168,13 +167,14 @@ export default function ProductDetailPage({
               isColorAvailable={isColorAvailable}
             />
 
-            <ProductTrustPanel settings={settings} returnPolicy={returnPolicy} />
+            <ProductTrustPanel settings={settings} returnPolicy={returnPolicy} rentalOnly={purchaseMode === 'rent' || !purchaseEnabled || product.commerceMode === 'RENTAL_ONLY'} />
           </div>
         </div>
 
         <div className="sc-pdp__below">
           <ProductTabs
             product={product}
+            rentalOnly={purchaseMode === 'rent' || !purchaseEnabled || product.commerceMode === 'RENTAL_ONLY'}
             returnPolicy={returnPolicy}
             shippingPolicy={settings.shippingPolicy || ''}
             freeShippingMinimum={settings.freeShippingMinAmount}
@@ -201,7 +201,7 @@ export default function ProductDetailPage({
           />
         </div>
 
-        <RelatedProductCarousel products={relatedProducts} navigate={navigate} />
+        <RelatedProductCarousel products={relatedProducts} navigate={navigate} purchaseMode={purchaseMode === 'rent' || !purchaseEnabled || product.commerceMode === 'RENTAL_ONLY' ? 'rent' : 'buy'} />
       </div>
     </section>
   );

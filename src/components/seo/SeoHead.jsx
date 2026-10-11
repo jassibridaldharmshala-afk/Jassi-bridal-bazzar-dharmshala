@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useStorefront } from '../../context/StorefrontContext';
 
-const DEFAULT_TITLE = 'Jassi General Store';
-const DEFAULT_DESCRIPTION = 'Ethnic wear, festive styles and everyday luxury from Jassi General Store.';
+const DEFAULT_TITLE = 'Jassi Bridal Bazar Dharmshala';
+const DEFAULT_DESCRIPTION = 'Ethnic wear, festive styles and everyday luxury from Jassi Bridal Bazar Dharmshala.';
 
 function upsertMeta(attr, key, content) {
   if (!content) return;

@@ -16,6 +16,7 @@ test('admin can add missing bridal categories without exposing them immediately'
     : []);
   api.post.mockResolvedValue({ created: ['Bridal Jewellery', 'Jaimala & Varmala'], missing: [], existing: ['Lehengas'], archived: [], conflicts: [], structureUpdated: false });
   render(<Categories />);
+  fireEvent.click(await screen.findByText('Category setup'));
   fireEvent.click(await screen.findByRole('button', { name: 'Add bridal categories' }));
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/categories/bridal-setup', {}));
   expect(await screen.findByText(/2 bridal categories added as hidden/)).toBeInTheDocument();

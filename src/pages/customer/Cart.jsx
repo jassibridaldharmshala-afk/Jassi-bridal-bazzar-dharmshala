@@ -19,6 +19,7 @@ import '../../styles/MobileShoppingTheme.css';
 import { SETTINGS_CHANGED_EVENT, SETTINGS_STORAGE_KEY } from '../../config/storeSettings';
 import StorefrontBannerSlot from '../../components/banners/StorefrontBannerSlot';
 import MobileOverlayLoader from '../../components/ui/MobileOverlayLoader';
+import BagTypeTabs from '../../components/cart/BagTypeTabs';
 
 const money = value => '₹' + Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 export default function Cart({ navigate, route = '' }) {
@@ -163,7 +164,7 @@ export default function Cart({ navigate, route = '' }) {
   return <section className="sc-bag">
     <header className="sc-bag__mobile-header"><button onClick={() => navigate(shop)} aria-label="Continue shopping"><ArrowLeft size={21} /></button><div><h1>Shopping bag</h1><span>{bagCount}</span></div><button onClick={() => navigate('/wishlist')} aria-label="Open wishlist"><Heart size={21} /></button></header>
     <div className="sc-bag__shell">
-      <div className="sc-bag__top"><div><h1>Shopping bag <span>{bagCount}</span></h1></div><p className="sc-bag__secure"><LockKeyhole size={15} /> Secure checkout</p></div>
+      <div className="sc-bag__heading-row"><div className="sc-bag__top"><div><h1>Shopping bag <span>{bagCount}</span></h1></div><p className="sc-bag__secure"><LockKeyhole size={15} /> Secure checkout</p></div><BagTypeTabs active="buy" navigate={navigate} storeSlug={storeSlug} /></div>
       <nav className="sc-bag__steps" aria-label="Checkout progress"><span aria-current="step"><b>1</b> Bag</span><i /><span><b>2</b> Address</span><i /><span><b>3</b> Payment</span></nav>
       {cart.error && <div className="sc-bag__alert" role="alert"><p>{cart.error}</p><button onClick={cart.refresh} disabled={busy || cart.loading}>Retry</button></div>}
       {storeOrderIssue && <div className="sc-bag__alert" role="status"><p>{storeOrderIssue}</p></div>}
@@ -220,7 +221,7 @@ function BagItem({ item, busy, settings, onSelect, onEdit, onRemove, onQuantity,
   const returnText = product.returnPolicy || settings?.returnPolicy || (settings?.returnWindowDays > 0 ? settings.returnWindowDays + '-day returns, subject to store policy' : '');
   return <article className={'sc-bag-item sc-bag__panel' + (item.selected === false ? ' is-unselected' : '')} aria-label={product.name}>
     <div className="sc-bag-item__picture"><button onClick={onOpen} disabled={unavailable} aria-label={'View ' + product.name}><BagImage product={product} /></button><input type="checkbox" checked={item.selected !== false} onChange={onSelect} disabled={busy || item.localOnly} aria-label={'Select ' + product.name} /></div>
-    <div className="sc-bag-item__body"><p className="sc-bag-item__brand">{product.brand || 'Jassi General Store'}</p><button className="sc-bag-item__name" onClick={onOpen} disabled={unavailable}>{product.name}</button><p className="sc-bag-item__seller">Sold by {product.sellerName || 'Jassi General Store'}</p>
+    <div className="sc-bag-item__body"><p className="sc-bag-item__brand">{product.brand || 'Jassi Bridal Bazar Dharmshala'}</p><button className="sc-bag-item__name" onClick={onOpen} disabled={unavailable}>{product.name}</button><p className="sc-bag-item__seller">Sold by {product.sellerName || 'Jassi Bridal Bazar Dharmshala'}</p>
       <div className="sc-bag-item__options"><button onClick={onEdit} disabled={busy || unavailable || item.localOnly} aria-label={'Change size and colour for ' + product.name}>Size: <strong>{item.size || 'One size'}</strong><ChevronDown size={13} /></button>{item.color && <span>{item.color}</span>}<div className="sc-bag-item__quantity"><button onClick={() => onQuantity(item.quantity - 1)} disabled={busy || item.quantity <= 1 || item.localOnly} aria-label={'Decrease quantity for ' + product.name}><Minus size={13} /></button><span aria-label={'Quantity ' + item.quantity}>Qty: {item.quantity}</span><button onClick={() => onQuantity(item.quantity + 1)} disabled={busy || item.quantity >= 20 || stock === 0 || (stock !== null && item.quantity >= stock) || item.localOnly} aria-label={'Increase quantity for ' + product.name}><Plus size={13} /></button></div></div>
       <div className="sc-bag-item__price"><strong>{money((item.price ?? product.price) * item.quantity)}</strong>{discount > 0 && <><del>{money((item.originalPrice ?? product.originalPrice) * item.quantity)}</del><span>{discount}% OFF</span></>}</div>
       {item.quantity > 1 && <p className="sc-bag-item__unit">{money(item.price ?? product.price)} each</p>}
@@ -274,7 +275,7 @@ function EditBagItem({ item, cart, onClose }) {
   };
   const columns = getSizeChartColumns(product).filter(column => product.sizeChart?.rows?.some(row => Number(row[column.key]) > 0));
   return <BagDialog title="Choose your perfect fit" onClose={onClose} busy={saving}><div className="sc-bag-dialog__body">
-    <div className="sc-bag-dialog__product"><div><BagImage product={product} /></div><section><small>{product.brand || 'Jassi General Store'}</small><h3>{product.name}</h3><strong>{money(wishlistPrice(product, variant).price)}</strong><p>Price per item, inclusive of taxes</p></section></div>
+    <div className="sc-bag-dialog__product"><div><BagImage product={product} /></div><section><small>{product.brand || 'Jassi Bridal Bazar Dharmshala'}</small><h3>{product.name}</h3><strong>{money(wishlistPrice(product, variant).price)}</strong><p>Price per item, inclusive of taxes</p></section></div>
     {loading ? <p role="status">Checking available sizes and colours…</p> : <>
       <fieldset><legend>Select size</legend><div className="sc-bag-dialog__choices">{options.sizes.map(value => <button key={value} aria-label={'Size ' + (value || 'One size')} aria-pressed={value === size} disabled={!ready || saving || !availableSize(value)} onClick={() => changeSize(value)}>{value || 'One size'}</button>)}</div></fieldset>
       {options.colors.some(Boolean) && <fieldset><legend>Select colour</legend><div className="sc-bag-dialog__choices">{options.colors.map(value => <button key={value} aria-pressed={value === color} disabled={!ready || saving || !availableColor(value)} onClick={() => { setColor(value); setError(''); if (options.managed && !activeVariants(product).some(row => row.size === size && row.color === value && row.stock > 0)) setSize(''); }}>{value || 'As shown'}</button>)}</div></fieldset>}

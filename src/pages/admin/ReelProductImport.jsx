@@ -1,16 +1,16 @@
 import { productAttributeDefinitions } from '../../utils/catalogOptions';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft, Check, FileVideo, GitMerge, Info, MoveRight, Plus, RefreshCcw,
+  ArrowLeft, Check, FileVideo, GitMerge, Info, MoveRight, RefreshCcw,
   Scissors, Search, Sparkles, Trash2, Upload, WandSparkles, X,
 } from 'lucide-react';
-import PageHeader from '../../components/admin/PageHeader';
 import EmptyState from '../../components/admin/EmptyState';
 import Loader from '../../components/admin/Loader';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ImportSizeFields from '../../components/admin/ImportSizeFields';
 import { socialPublishMissing } from '../../utils/socialImport';
 import './SocialProductImport.css';
+import './ReelProductImport.css';
 import { Select, TextArea, TextInput } from '../../components/ui/Field';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -169,12 +169,15 @@ function ImportWorkspace({ navigate }) {
   };
 
   return (
-    <section className="space-y-5">
-      <PageHeader title="Reel Product Import" note="Turn a product reel into review-ready Product Drafts. Nothing is published automatically." />
-
-      <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
-        <div className="admin-card p-4 md:p-6">
+    <section className="reel-import-workspace">
+      <div className="reel-import-toolbar">
+        <details className="reel-import-guide"><summary>Reel guide</summary><ul>{['Keep each dress visible for 2–4 seconds.', 'Show a clear front view in good lighting.', 'Keep the complete outfit inside the frame.', 'Pause briefly before the next dress.', 'Avoid very fast transitions or multiple dresses together.'].map(tip => <li key={tip}>{tip}</li>)}</ul></details>
+        <a href="/admin/product-drafts" className="admin-btn-ghost">Product drafts <MoveRight size={16} /></a>
+      </div>
+      <div>
+        <div className="admin-card reel-import-upload">
           <h2 className="text-lg font-black text-charcoal">Upload Product Reel</h2>
+          <p className="reel-import-note">Review the suggested products before publishing.</p>
           {capabilities && !capabilities.ready && (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-900" role="alert">
               <p>Reel Import needs attention before uploads can start:</p>
@@ -187,14 +190,11 @@ function ImportWorkspace({ navigate }) {
             onDrop={(event) => { event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files); }}
             onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
-            className={`mt-4 grid min-h-56 w-full place-items-center rounded-[22px] border-2 border-dashed p-5 text-center transition ${dragging ? 'border-wine bg-blush' : 'border-wine/30 bg-[#fbf8f4] hover:border-wine'}`}
+            className={`reel-import-dropzone ${dragging ? 'is-dragging' : ''}`}
           >
-            <span>
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-wine text-white"><Plus className="h-6 w-6" /></span>
-              <span className="mt-4 block text-base font-black text-charcoal">Drop a reel here or select a file</span>
-              <span className="mt-2 block text-xs font-semibold text-slate-500">MP4, MOV or WebM · up to {capabilities?.maxDurationSeconds || 180} seconds · maximum {capabilities?.maxFileSizeMb || 250}MB</span>
-              <span className="mt-4 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-black text-wine shadow-sm">Select file</span>
-            </span>
+            <Upload size={24} aria-hidden="true" />
+            <span><strong>Drop a reel here or select a file</strong><small>MP4, MOV or WebM · up to {capabilities?.maxDurationSeconds || 180} seconds · maximum {capabilities?.maxFileSizeMb || 250}MB</small></span>
+            <span className="reel-import-file-action">Select file</span>
           </button>
           <input ref={inputRef} type="file" accept=".mp4,.mov,.webm" className="hidden" onChange={(event) => chooseFile(event.target.files)} />
           {file && (
@@ -221,23 +221,14 @@ function ImportWorkspace({ navigate }) {
           </div>
         </div>
 
-        <aside className="admin-card p-5">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-wine">For better results</p>
-          <ul className="mt-4 space-y-3 text-sm font-semibold leading-5 text-slate-600">
-            {['Keep each dress visible for 2–4 seconds.', 'Show a clear front view in good lighting.', 'Keep the complete outfit inside the frame.', 'Pause briefly before the next dress.', 'Avoid very fast transitions or multiple dresses together.'].map((tip) => (
-              <li key={tip} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-wine" />{tip}</li>
-            ))}
-          </ul>
-          <div className="mt-5 rounded-2xl bg-blush p-4 text-xs font-bold leading-5 text-wine">The system prepares possible products and their best images. You verify every draft before publishing.</div>
-        </aside>
       </div>
 
-      <div className="admin-card p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="admin-card reel-import-history">
+        <div className="reel-import-history-toolbar">
           <div><h2 className="text-lg font-black text-charcoal">Import history</h2><p className="text-xs font-semibold text-slate-500">{pagination.total || items.length} imports</p></div>
-          <div className="flex flex-1 flex-wrap justify-end gap-2">
-            <label className="sc-field-shell flex h-10 min-w-[190px] items-center gap-2 rounded-xl border border-slate-200 px-3"><Search className="h-4 w-4 text-slate-400" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPagination((current) => ({ ...current, page: 1 })); }} placeholder="Search reels" className="w-full bg-transparent text-sm outline-none" /></label>
-            <Select value={status} onChange={(event) => { setStatus(event.target.value); setPagination((current) => ({ ...current, page: 1 })); }} className="h-10">
+          <div className="reel-import-history-filters">
+            <label className="reel-import-search"><Search size={17} /><input aria-label="Search reels" value={search} onChange={(event) => { setSearch(event.target.value); setPagination((current) => ({ ...current, page: 1 })); }} placeholder="Search reels" /></label>
+            <Select aria-label="Filter reel status" value={status} onChange={(event) => { setStatus(event.target.value); setPagination((current) => ({ ...current, page: 1 })); }}>
               {STATUS_OPTIONS.map((option) => <option key={option || 'all'} value={option}>{option ? labelStatus(option) : 'All statuses'}</option>)}
             </Select>
           </div>
@@ -573,12 +564,10 @@ function ReviewWorkspace({ jobId }) {
   const analyzedCount = candidates.filter((candidate) => candidate.analysis?.status === 'completed').length;
 
   return (
-    <section className="space-y-5">
-      <PageHeader title="Review Reel Products" note={job.sourceVideo?.originalFilename || 'Product reel'}>
-        <a href="/admin/reel-import" className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-charcoal"><ArrowLeft className="h-4 w-4" />Import history</a>
-      </PageHeader>
+    <section className="reel-import-workspace reel-import-review">
+      <div className="reel-import-toolbar"><h2 className="reel-import-filename">{job.sourceVideo?.originalFilename || 'Product reel'}</h2><a href="/admin/reel-import" className="admin-btn-ghost"><ArrowLeft size={16} />Import history</a></div>
       {publishedProducts.length > 0 && <div role="status" className="admin-card p-5"><p className="font-bold text-emerald-800">Your products are published and ready to edit.</p><div className="mt-3 flex flex-wrap gap-3">{publishedProducts.map((product) => <a key={product._id} href={'/admin/products/edit?id=' + product._id} className="admin-btn-ghost">Edit {product.name}</a>)}</div></div>}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="reel-import-stats">
         <Stat label="Status" value={labelStatus(job.status)} />
         <Stat label="Extracted" value={job.statistics?.extractedFrames || 0} />
         <Stat label="Rejected" value={job.statistics?.rejectedFrames || 0} />

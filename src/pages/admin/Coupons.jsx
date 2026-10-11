@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, BadgePercent, CheckCircle2, Clock3, Copy, Download, Eye, FlaskConical, PencilLine, Plus, RotateCcw, Share2, ToggleLeft, Users, X } from 'lucide-react';
 import CouponForm from '../../components/admin/CouponForm';
@@ -33,7 +35,7 @@ export default function Coupons() {
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
   const [actionId, setActionId] = useState('');
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useAdminFeedback(null, 'success', 'Coupons');
   const [loadError, setLoadError] = useState('');
   const loadSequence = useRef(0);
   const deferredQuery = useDeferredValue(query);
@@ -218,12 +220,12 @@ export default function Coupons() {
   const toggleSelected = (id) => setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
 
   return (
-    <section className="space-y-5">
-      <PageHeader title="Coupons" note="Create targeted offers and manage their schedule, limits and visibility.">
+    <section className="admin-compact space-y-5">
+      <PageHeader compact title="Coupons" note="Create targeted offers and manage their schedule, limits and visibility.">
         <button type="button" onClick={openCreate} className="admin-btn"><Plus className="h-4 w-4" /> Create Coupon</button>
       </PageHeader>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="admin-compact-stats">
         <Metric icon={BadgePercent} label="Total coupons" value={stats.total} tone="wine" />
         <Metric icon={CheckCircle2} label="Live now" value={stats.live} tone="green" />
         <Metric icon={Clock3} label="Scheduled" value={stats.scheduled} tone="amber" />
@@ -233,12 +235,12 @@ export default function Coupons() {
 
       {showEditor ? <div id="coupon-editor"><CouponForm coupon={editingCoupon} products={products} categories={categories} customers={customers} loadProductOptions={(search, ids) => searchCouponOptions('PRODUCT', search, ids)} loadCategoryOptions={(search, ids) => searchCouponOptions('CATEGORY', search, ids)} loadCustomerOptions={(search, ids) => searchCouponOptions('CUSTOMER', search, ids)} apiBase={base} timezone={stats.timezone || 'Asia/Kolkata'} onSaved={handleSaved} onCancel={() => { setEditingCoupon(null); setShowEditor(false); }} /></div> : null}
 
-      {message ? <p role="status" className={`rounded-xl p-3 text-sm font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose/10 text-rose'}`}>{message.text}</p> : null}
+      <AdminFeedback message={message} type="success" title="Coupons" onDismiss={() => setMessage(null)} />
 
       <div className="flex gap-2 overflow-x-auto">{[['active', 'Current'], ['archived', 'Archived'], ['all', 'All']].map(([value, label]) => <button key={value} onClick={() => { setArchive(value); setPage(1); }} className={`min-w-max rounded-full px-4 py-2 text-xs font-black ${archive === value ? 'bg-wine text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>{label}</button>)}</div>
 
       <SearchFilterBar search={query} onSearch={setQuery} placeholder="Search coupon code, title or description">
-        <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold">
+        <select aria-label="Coupon status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold">
           <option value="">All Status</option>
           <option value="live">Live</option>
           <option value="scheduled">Scheduled</option>
@@ -247,8 +249,8 @@ export default function Coupons() {
           <option value="paused">Paused</option>
           <option value="exhausted">Exhausted</option>
         </select>
-        <select value={benefitType} onChange={(event) => { setBenefitType(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold"><option value="">All benefits</option><option value="DISCOUNT">Price discount</option><option value="FREE_SHIPPING">Free delivery</option><option value="BUY_X_GET_Y">Buy X get Y</option></select>
-        <select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold"><option value="priority">Priority</option><option value="newest">Newest</option><option value="ending">Ending soon</option><option value="usage">Most used</option><option value="budget">Highest spend</option></select>
+        <select aria-label="Coupon benefit" value={benefitType} onChange={(event) => { setBenefitType(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold"><option value="">All benefits</option><option value="DISCOUNT">Price discount</option><option value="FREE_SHIPPING">Free delivery</option><option value="BUY_X_GET_Y">Buy X get Y</option></select>
+        <select aria-label="Sort coupons" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold"><option value="priority">Priority</option><option value="newest">Newest</option><option value="ending">Ending soon</option><option value="usage">Most used</option><option value="budget">Highest spend</option></select>
       </SearchFilterBar>
 
       {filtered.length ? <div className="admin-card flex flex-wrap items-center justify-between gap-3 p-3"><label className="flex items-center gap-2 text-xs font-bold text-slate-600"><input type="checkbox" disabled={!selectableCoupons.length} checked={allVisibleSelected} onChange={() => setSelected(allVisibleSelected ? selected.filter((id) => !selectableCoupons.some((coupon) => coupon._id === id)) : Array.from(new Set([...selected, ...selectableCoupons.map((coupon) => coupon._id)])))} className="h-4 w-4 accent-wine disabled:opacity-40" />Select editable coupons on this page</label>{selected.length ? <div className="flex flex-wrap items-center gap-2"><span className="text-xs font-black text-wine">{selected.length} selected</span>{archive !== 'archived' ? <><button onClick={() => runBulk('ACTIVATE')} disabled={!!actionId} className="admin-table-action-link">Activate</button><button onClick={() => runBulk('PAUSE')} disabled={!!actionId} className="admin-table-action-link">Pause</button><button onClick={() => runBulk('ARCHIVE')} disabled={!!actionId} className="admin-table-action-link is-danger">Archive</button></> : <button onClick={() => runBulk('RESTORE')} disabled={!!actionId} className="admin-table-action-link">Restore</button>}</div> : null}</div> : null}
@@ -368,7 +370,7 @@ function CouponInsights({ details, loading, products, customers, base, onRange, 
   const summary = details.summary || {};
   const [simulation, setSimulation] = useState({ productId: '', quantity: '1', cartTotal: '1000', deliveryCharge: '99', paymentMethod: 'COD', pincode: '', salesChannel: 'STOREFRONT', customerId: '' });
   const [result, setResult] = useState(null);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useAdminFeedback('', 'success', 'Coupons');
   const [testing, setTesting] = useState(false);
   const runTest = async (event) => {
     event.preventDefault(); setTesting(true); setResult(null);
@@ -402,7 +404,7 @@ function CouponInsights({ details, loading, products, customers, base, onRange, 
   return <aside className="fixed inset-0 z-[80] flex justify-end bg-black/35" role="dialog" aria-modal="true" aria-label={`${coupon.code} performance`}><div className="h-full w-full overflow-y-auto bg-[#fffaf6] shadow-2xl sm:max-w-2xl"><div className="sticky top-0 z-10 flex items-start justify-between border-b border-theme-border bg-white px-5 py-4"><div><span className="text-[10px] font-black uppercase tracking-widest text-wine">Coupon performance</span><h2 className="mt-1 text-xl font-black text-charcoal">{coupon.code}</h2><p className="text-xs text-slate-500">{coupon.title || benefitLabel(coupon)}</p></div><button type="button" onClick={onClose} aria-label="Close coupon details" className="grid h-10 w-10 place-items-center rounded-full border border-slate-200"><X className="h-5 w-5" /></button></div>
     <div className="space-y-5 p-5">
       <div className="flex flex-wrap gap-2"><select value={details.days || 30} onChange={(event) => onRange(Number(event.target.value))} disabled={loading} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option></select><button type="button" onClick={onExport} className="admin-btn-ghost"><Download className="h-4 w-4" /> Export CSV</button><button type="button" onClick={() => copyText(coupon.code || '', 'Coupon code copied.')} className="admin-btn-ghost"><Copy className="h-4 w-4" /> Copy code</button><button type="button" onClick={share} className="admin-btn-ghost"><Share2 className="h-4 w-4" /> Share campaign</button></div>
-      {notice ? <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">{notice}</p> : null}
+      <AdminFeedback message={notice} type="success" title="Coupons" onDismiss={() => setNotice('')} />
       {loading ? <p className="rounded-xl bg-white p-5 text-sm text-slate-500">Loading coupon performance...</p> : <>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Insight label="Orders" value={summary.orders} /><Insight label="Paid revenue" value={`Rs. ${formatNumber(summary.paidRevenue)}`} /><Insight label="Customers" value={summary.uniqueCustomers} /><Insight label="Avg. order" value={`Rs. ${formatNumber(summary.averageOrderValue)}`} /><Insight label="Offer spend" value={`Rs. ${formatNumber(summary.saving)}`} /><Insight label="Cancelled" value={summary.cancelled} /><Insight label="Returns" value={summary.returned} /><Insight label="Budget left" value={summary.remainingBudget == null ? 'Unlimited' : `Rs. ${formatNumber(summary.remainingBudget)}`} /></div>
         <div className="admin-card p-4"><h3 className="font-black text-charcoal">Daily performance</h3>{details.daily?.length ? <div className="mt-4 space-y-2">{details.daily.slice(-14).map((row) => <div key={row.date} className="grid grid-cols-[90px_1fr_auto] items-center gap-3 text-xs"><span className="text-slate-500">{row.date}</span><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-wine" style={{ width: `${Math.max(4, Math.min(100, Number(row.orders || 0) * 12))}%` }} /></div><strong>{row.orders} orders</strong></div>)}</div> : <p className="mt-3 text-xs text-slate-500">No coupon orders in this period.</p>}</div>

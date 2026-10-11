@@ -1,8 +1,10 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useContext, useEffect, useState, useSyncExternalStore } from 'react';
+import { AdminFeedbackContext } from '../../context/AdminFeedbackContext';
 import { getAdminActivitySnapshot, installAdminActionGuard, subscribeAdminActivity } from '../../utils/adminActivity';
 import useAdminActivity from '../../hooks/useAdminActivity';
 
 export default function AdminActivityIndicator({ enabled }) {
+  const feedback = useContext(AdminFeedbackContext);
   const activity = useSyncExternalStore(subscribeAdminActivity, getAdminActivitySnapshot, getAdminActivitySnapshot);
   const [visible, setVisible] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -14,7 +16,7 @@ export default function AdminActivityIndicator({ enabled }) {
     const delayed = window.setTimeout(() => setSlow(true), Math.max(0, activity.startedAt + 10000 - Date.now()));
     return () => { window.clearTimeout(reveal); window.clearTimeout(delayed); };
   }, [enabled, activity.active, activity.startedAt]);
-  if (!enabled || !activity.active || !visible) return null;
+  if (!enabled || !activity.active || !visible || ['error', 'warning'].includes(feedback.toast?.type)) return null;
   return <aside className="admin-activity" role="status" aria-live="polite" aria-atomic="true" aria-label="Admin progress" data-admin-activity data-kind={activity.kind}>
     <span className="admin-activity__mark" aria-hidden="true"><span className="admin-activity__ring" /><span className="admin-activity__gem" /></span>
     <span className="admin-activity__copy"><strong>{activity.label}</strong><small>{slow ? 'Taking a little longer. Please wait.' : 'Please wait. Your request is in progress.'}</small></span>

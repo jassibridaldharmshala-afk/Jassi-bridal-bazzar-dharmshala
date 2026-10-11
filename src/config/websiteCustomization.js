@@ -7,7 +7,7 @@ export const HOME_SECTION_DEFAULTS = [
   { id: 'promotional', label: 'Promotional Banners', visible: true, order: 30, heading: 'Featured Collections', description: '', buttonText: 'Shop Now', buttonLink: '/products', image: '', backgroundImage: '' },
   { id: 'featured', label: 'Featured Products', visible: true, order: 40, heading: 'Featured Products', description: 'A curated edit from the collection.', buttonText: 'View All', buttonLink: '/products?featured=true', image: '', backgroundImage: '' },
   { id: 'newArrivals', label: 'New Arrivals', visible: true, order: 50, heading: 'New Arrivals', description: 'Fresh styles added to the collection.', buttonText: 'View All', buttonLink: '/products?newArrival=true', image: '', backgroundImage: '' },
-  { id: 'bestSellers', label: 'Best Sellers', visible: true, order: 60, heading: 'Best Sellers', description: 'Customer favourites from Jassi General Store.', buttonText: 'View All', buttonLink: '/products?bestSeller=true', image: '', backgroundImage: '' },
+  { id: 'bestSellers', label: 'Best Sellers', visible: true, order: 60, heading: 'Best Sellers', description: 'Customer favourites from Jassi Bridal Bazar Dharmshala.', buttonText: 'View All', buttonLink: '/products?bestSeller=true', image: '', backgroundImage: '' },
   { id: 'ethnicSets', label: 'Ethnic Sets', visible: true, order: 64, heading: 'Complete Occasion-Ready Looks', description: 'Coordinated silhouettes for weddings, celebrations, and everyday elegance.', buttonText: 'View All', buttonLink: '/products?search=Set', image: '', backgroundImage: '' },
   { id: 'accessories', label: 'Accessories', visible: true, order: 66, heading: 'The Finishing Touch', description: 'Complete every look with thoughtfully selected accessories.', buttonText: 'View All', buttonLink: '/products?search=Accessory', image: '', backgroundImage: '' },
   { id: 'trending', label: 'Trending Products', visible: true, order: 70, heading: 'Trending Now', description: 'Styles customers are discovering now.', buttonText: 'View All', buttonLink: '/products?trending=true', image: '', backgroundImage: '' },
@@ -19,7 +19,7 @@ export const HOME_SECTION_DEFAULTS = [
 
 export const DEFAULT_WEBSITE_CONFIG = {
   schemaVersion: 2,
-  branding: { websiteName: 'Jassi General Store', tagline: 'Elegance for every celebration', logo: '', favicon: '' },
+  branding: { websiteName: 'Jassi Bridal Bazar Dharmshala', tagline: 'Elegance for every celebration', logo: '', favicon: '' },
   colors: { primary: '#6d1f34', secondary: '#fff0f4', accent: '#b8914a', background: '#fffaf2', surface: '#ffffff', text: '#17161a', mutedText: '#6f6470' },
   header: {
     background: '#fffaf2', textColor: '#17161a', logoSize: 72, menuAlignment: 'left', sticky: true,
@@ -51,7 +51,7 @@ export const DEFAULT_WEBSITE_CONFIG = {
       policies: [{ label: 'Track Your Order', path: '/orders' }, { label: 'Returns & Refunds', path: '/returns' }, { label: 'Shipping Policy', path: '/shipping-policy' }, { label: 'Contact Us', path: '/contact' }],
       about: [{ label: 'Our Story', path: '/our-story' }, { label: 'Reviews', path: '/products?bestSeller=true' }],
     },
-    copyrightText: '© Jassi General Store. All rights reserved.',
+    copyrightText: '© Jassi Bridal Bazar Dharmshala. All rights reserved.',
   },
   layout: { mode: 'full', maxWidth: 1520, sectionSpacing: 72, gridGap: 20, productsPerRow: { desktop: 4, tablet: 3, mobile: 2 } },
   mobile: {

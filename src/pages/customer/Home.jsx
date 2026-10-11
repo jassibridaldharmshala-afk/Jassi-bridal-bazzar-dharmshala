@@ -18,12 +18,11 @@ import { getSelectableSizes } from '../../utils/productSizing';
 import { trackEvent } from '../../utils/analytics';
 import { clearRecentProducts } from '../../utils/recentProducts';
 import useShoppingDiscovery from '../../hooks/useShoppingDiscovery';
-import ShoppingShortcuts from '../../components/storefront/ShoppingShortcuts';
 
 const DesktopLuxuryHome = lazy(() => import('./DesktopLuxuryHome'));
 const emptyList = [];
 const SHARED_HOME_SECTIONS = new Set(['services', 'reviews', 'newsletter', 'instagram', 'recentlyViewed', 'recommended']);
-const MOBILE_SHARED_HOME_SECTIONS = new Set(['services', 'instagram', 'recentlyViewed', 'recommended', 'shoppingShortcuts']);
+const MOBILE_SHARED_HOME_SECTIONS = new Set(['services', 'instagram', 'recentlyViewed', 'recommended']);
 const INDUSTRY_SECTION_ALIASES = {
   sale: ['offers'],
   promotional: ['wedding', 'artistSpotlight', 'todaySpecial', 'customOrders'],
@@ -250,7 +249,6 @@ export default function Home({ navigate, storeSlug = '', industry = 'fashion', i
           ['categories', feedWarnings.has('categories')
             ? <MobileSectionNotice message="Categories could not be loaded." onRetry={refetch} />
             : <MobileCategoryScroller heading={mobileSection('categories')?.heading} categories={mobileCustom && websiteConfig.mobile.useDesktopCatalog ? themedCategories : categories} navigate={navigate} />],
-          ['shoppingShortcuts', discovery && <ShoppingShortcuts data={discovery} navigate={navigate} />],
           ['sale', feedWarnings.has('banners')
             ? <MobileSectionNotice message="Current offers could not be loaded." onRetry={refetch} />
             : bannersForPosition(banners, 'Offer Strip').length
@@ -269,7 +267,7 @@ export default function Home({ navigate, storeSlug = '', industry = 'fashion', i
             onClear={entry.id === 'recentlyViewed' ? () => clearRecentProducts(storeSlug) : undefined}
           /> : null]),
         ].filter(([id, content]) => content && mobileSection(id)?.visible !== false && isIndustryHomepageSectionAllowed(industry, industrySections, id))
-          .map(([id, content]) => <MobileSection key={id} id={id} section={id === 'shoppingShortcuts' ? { order: (mobileLayoutSection('categories')?.order ?? 20) + 1 } : mobileLayoutSection(id)} storeSlug={storeSlug}>{content}</MobileSection>)}
+          .map(([id, content]) => <MobileSection key={id} id={id} section={mobileLayoutSection(id)} storeSlug={storeSlug}>{content}</MobileSection>)}
         <StorefrontCustomBlocks blocks={mobileCustomBlocks} catalog={catalog} categories={themedCategories} navigate={navigate} mobile storeSlug={storeSlug} />
       </div>}
 

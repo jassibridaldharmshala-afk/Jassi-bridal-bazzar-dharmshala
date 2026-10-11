@@ -6,9 +6,12 @@ test('bulk review keeps per-row revisions and fitting, saves real separate price
   const save = jest.fn(async row => { if (row._id === 'two') throw new Error('This draft changed'); return { ...row, revision: 8 }; });
   render(<DraftCommercialGrid drafts={[draft, { ...draft, _id: 'two', name: 'Necklace' }]} onSave={save} onClose={jest.fn()} />);
   fireEvent.change(screen.getByLabelText('Daily rent for Lehenga'), { target: { value: '950.50' } });
+  fireEvent.change(screen.getByLabelText('Rental pieces for Lehenga'), { target: { value: '3' } });
+  fireEvent.change(screen.getByLabelText('Rental pieces for Necklace'), { target: { value: '1' } });
+  fireEvent.change(screen.getByLabelText('Rack for Lehenga'), { target: { value: 'A-01' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save reviewed values' }));
   await screen.findByText('This draft changed'); expect(save).toHaveBeenCalledTimes(2);
-  expect(save.mock.calls[0][0]).toEqual(expect.objectContaining({ revision: 7, sellingPrice: 9000, stock: 2, rentalPricing: expect.objectContaining({ dailyRatePaise: 95050, depositPaise: 200000, advancePercent: 40, fitting: { adjustable: true } }) }));
+  expect(save.mock.calls[0][0]).toEqual(expect.objectContaining({ revision: 7, sellingPrice: 9000, stock: 2, rentalPricing: expect.objectContaining({ dailyRatePaise: 95050, depositPaise: 200000, advancePercent: 40, inventory: [{ componentIndex: 0, quantity: 3, location: 'A-01', status: 'READY' }], fitting: { adjustable: true } }) }));
   expect(screen.getByText('Saved — review before publishing')).toBeInTheDocument();
 });
 test('invalid or missing rental rates do not invent prices or create physical stock', async () => {

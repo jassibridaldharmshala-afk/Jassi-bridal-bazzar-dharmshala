@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, ArrowDown, ArrowUp, BarChart3, Copy, Eye, Image as ImageIcon, MousePointerClick, PauseCircle, Pencil, PlayCircle, Plus, RotateCcw } from 'lucide-react';
 import BannerForm from '../../components/admin/BannerForm';
@@ -17,7 +19,7 @@ export default function Banners() {
   const { user } = useAuth();
   const base = user?.activeMode === 'seller' ? '/seller' : '/admin';
   const [banners, setBanners] = useState([]), [products, setProducts] = useState([]), [categories, setCategories] = useState([]), [coupons, setCoupons] = useState([]);
-  const [loading, setLoading] = useState(true), [saving, setSaving] = useState(false), [loadError, setLoadError] = useState(''), [message, setMessage] = useState(null);
+  const [loading, setLoading] = useState(true), [saving, setSaving] = useState(false), [loadError, setLoadError] = useState(''), [message, setMessage] = useAdminFeedback(null, 'success', 'Banners');
   const [search, setSearch] = useState(''), [status, setStatus] = useState(''), [position, setPosition] = useState(''), [archive, setArchive] = useState('active');
   const [editing, setEditing] = useState(null), [showForm, setShowForm] = useState(false), [confirmTarget, setConfirmTarget] = useState(null), [actionId, setActionId] = useState('');
   const sequence = useRef(0);
@@ -87,11 +89,11 @@ export default function Banners() {
     finally { setActionId(''); }
   };
 
-  return <section className="space-y-5">
-    <PageHeader title="Banners and campaigns" note="Publish responsive storefront creatives and measure their real performance."><a href={`${base}/campaigns`} className="admin-btn-ghost"><BarChart3 className="h-4 w-4" />Open campaigns</a><button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="admin-btn"><Plus className="h-4 w-4" />Add New Banner</button></PageHeader>
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Metric icon={ImageIcon} label="Banners" value={stats.total} /><Metric icon={PlayCircle} label="Live" value={stats.live} /><Metric icon={Eye} label="Impressions" value={formatNumber(stats.impressions)} /><Metric icon={MousePointerClick} label="Clicks" value={formatNumber(stats.clicks)} /><Metric icon={BarChart3} label="Revenue" value={`Rs. ${formatNumber(stats.revenue)}`} /></div>
+  return <section className="admin-compact space-y-5">
+    <PageHeader compact title="Banners and campaigns" note="Publish responsive storefront creatives and measure their real performance."><a href={`${base}/campaigns`} className="admin-btn-ghost"><BarChart3 className="h-4 w-4" />Open campaigns</a><button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="admin-btn"><Plus className="h-4 w-4" />Add New Banner</button></PageHeader>
+    <div className="admin-compact-stats"><Metric icon={ImageIcon} label="Banners" value={stats.total} /><Metric icon={PlayCircle} label="Live" value={stats.live} /><Metric icon={Eye} label="Impressions" value={formatNumber(stats.impressions)} /><Metric icon={MousePointerClick} label="Clicks" value={formatNumber(stats.clicks)} /><Metric icon={BarChart3} label="Revenue" value={`Rs. ${formatNumber(stats.revenue)}`} /></div>
     {showForm ? <BannerForm initialValues={editing} saving={saving} message={message?.type === 'error' ? message.text : ''} products={products} categories={categories} coupons={coupons} onSubmit={save} onCancel={() => { setShowForm(false); setEditing(null); }} /> : null}
-    {message && !showForm ? <p role="status" className={`rounded-xl p-3 text-sm font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose/10 text-wine'}`}>{message.text}</p> : null}
+    {!showForm && <AdminFeedback message={message} type="success" title="Banners" onDismiss={() => setMessage(null)} />}
     <div className="flex gap-2 overflow-x-auto">{[['active', 'Current'], ['archived', 'Archived'], ['all', 'All']].map(([value, label]) => <button key={value} onClick={() => setArchive(value)} className={`min-w-max rounded-full px-4 py-2 text-xs font-black ${archive === value ? 'bg-wine text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>{label}</button>)}</div>
     <SearchFilterBar search={search} onSearch={setSearch} placeholder="Search title, campaign or destination"><Select value={position} onChange={(event) => setPosition(event.target.value)}><option value="">All positions</option>{positions.filter(Boolean).map((item) => <option key={item}>{item}</option>)}</Select><Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All status</option>{['live', 'scheduled', 'paused', 'ended', 'archived'].map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}</Select></SearchFilterBar>
     {loadError ? <div className="admin-card p-8 text-center"><p className="font-bold text-rose">{loadError}</p><button type="button" onClick={() => load()} className="admin-btn mt-4">Try again</button></div> : loading ? <div className="admin-card p-10 text-center font-bold text-slate-500">Loading banners...</div> : !filtered.length ? <div className="admin-card p-10 text-center"><h2>No banners found</h2><p className="admin-note mt-2">Clear filters or create a new campaign creative.</p></div> : <div className="grid gap-4 xl:grid-cols-2">{filtered.map((banner) => <BannerCard key={banner._id} banner={banner} base={base} busy={actionId === banner._id} onEdit={() => { setEditing(banner); setShowForm(true); }} onAction={(action) => action === 'archive' ? setConfirmTarget(banner) : act(banner, action)} onMove={move} />)}</div>}

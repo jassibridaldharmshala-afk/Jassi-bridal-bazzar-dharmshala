@@ -6,7 +6,10 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import PageState from '../ui/PageState';
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../admin/AdminFeedback';
 import './CustomerWorkspace.css';
+import '../admin/AdminCompact.css';
 
 const FALLBACK_SEGMENTS = ['All customers', 'VIP', 'Repeat Customer', 'New Customer', 'At Risk', 'Inactive', 'Abandoned Cart', 'High-value Cart', 'Frequent Return', 'High RTO', 'Checkout Restricted', 'COD Restricted', 'Needs Follow-up', 'No marketing consent', 'Active cart', 'Birthday upcoming', 'Anniversary upcoming', 'Instagram Customer', 'Facebook Customer', 'WhatsApp Customer'];
 const SORTS = [['spend', 'Highest net spend'], ['recent', 'Recent order'], ['orders', 'Most orders'], ['name', 'Customer name'], ['returns', 'Most returns'], ['rto', 'Highest RTO'], ['oldest', 'Needs re-engagement']];
@@ -25,7 +28,7 @@ export default function CustomerWorkspace({ apiPrefix = '/admin' }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useAdminFeedback(null, 'info', 'Customers');
   const [selected, setSelected] = useState([]);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -100,7 +103,7 @@ export default function CustomerWorkspace({ apiPrefix = '/admin' }) {
       setRestrictionEdit(restrictionForm(response.profile?.restrictions));
     } catch (detailError) { setNotice({ type: 'error', message: detailError.message }); setDetail(null); }
     finally { setDetailLoading(false); }
-  }, [crmPath, storeSlug]);
+  }, [crmPath, storeSlug, setNotice]);
 
   useEffect(() => {
     if (!directCustomerId.current || directCustomerOpened.current) return;
@@ -204,9 +207,9 @@ export default function CustomerWorkspace({ apiPrefix = '/admin' }) {
   if (!data && error) return <PageState error={error} onRetry={load} />;
 
   return (
-    <section className="customer-workspace">
+    <section className="customer-workspace admin-compact">
       <header className="customer-hero">
-        <div><p className="customer-eyebrow">Customer intelligence</p><h1>Customer 360</h1><p>Accurate revenue, buying behaviour, service history and respectful engagement for this store.</p></div>
+        <h1 className="sr-only">Customer 360</h1>
         <div className="customer-hero__actions">
           {masterStores.length > 0 && <label className="customer-store-picker"><span>Active store</span><select aria-label="Active customer store" value={storeSlug} onChange={(event) => { setStoreSlug(event.target.value); setPage(1); setSelected([]); setDetail(null); }}><option value="">{masterStores.find((store) => store.isDefault)?.name || 'Default store'}</option>{masterStores.filter((store) => !store.isDefault).map((store) => <option key={store.id} value={store.slug}>{store.name}</option>)}</select></label>}
           {capabilities.canManageRules && <button type="button" className="customer-button customer-button--glass" onClick={() => setShowRules(true)}><SlidersHorizontal /> Segment rules</button>}
@@ -218,11 +221,11 @@ export default function CustomerWorkspace({ apiPrefix = '/admin' }) {
           <Metric icon={RefreshCw} label="Repeat" value={data.summary?.repeat || 0} />
           <Metric icon={Crown} label="VIP" value={data.summary?.vip || 0} />
           <Metric icon={AlertTriangle} label="Need attention" value={data.summary?.atRisk || 0} />
-          <Metric icon={ShoppingBag} label="Net revenue" value={money(data.summary?.netRevenue)} moneyValue />
+          <Metric icon={ShoppingBag} label="Net revenue" value={data.summary?.netRevenue} moneyValue />
         </div>
       </header>
 
-      {notice && <Notice value={notice} close={() => setNotice(null)} />}
+      <AdminFeedback message={notice} onDismiss={() => setNotice(null)} />
       {error && <Notice value={{ type: 'error', message: error }} close={() => setError('')} />}
 
       <div className="customer-toolbar">

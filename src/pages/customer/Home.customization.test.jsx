@@ -63,16 +63,16 @@ beforeEach(() => {
   };
 });
 
-test('occasion and rental shortcuts appear below existing categories without adding mobile search', async () => {
+test('mobile home retains categories without occasion and rental promotion blocks', async () => {
   const navigate = jest.fn();
   api.get.mockResolvedValue({ mode: 'SALE_AND_RENTAL', rentalEnabled: true, occasions: [{ key: 'wedding', label: 'Wedding' }], recentlyViewed: [] });
   const { container } = render(<Home navigate={navigate} industry="jewellery" industrySections={['hero', 'categories', 'featured']} storeSlug="nishaya" />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Wedding' }));
-  expect(navigate).toHaveBeenCalledWith('/products?occasion=Wedding');
-  fireEvent.click(screen.getByRole('button', { name: 'Explore rentals & check dates' }));
-  expect(navigate).toHaveBeenCalledWith('/rental-book');
+  await waitFor(() => expect(api.get).toHaveBeenCalled());
+  expect(screen.queryByRole('heading', { name: 'Shop by occasion' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Your look. Your choice.' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Explore rentals & check dates' })).not.toBeInTheDocument();
   expect(container.querySelector('[data-home-section="categories"]')).toBeInTheDocument();
-  expect(container.querySelector('[data-home-section="shoppingShortcuts"]')).toHaveStyle({ order: '21' });
+  expect(container.querySelector('[data-home-section="shoppingShortcuts"]')).not.toBeInTheDocument();
   expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
 });
 

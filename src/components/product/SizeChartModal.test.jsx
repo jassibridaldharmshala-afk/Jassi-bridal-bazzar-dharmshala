@@ -4,7 +4,7 @@ import SizeChartModal from './SizeChartModal';
 
 const product = {
   name: 'Rose Fit and Flare Dress',
-  brand: 'Jassi General Store',
+  brand: 'Jassi Bridal Bazar Dharmshala',
   category: 'Dresses',
   price: 1499,
   sizes: ['S'],

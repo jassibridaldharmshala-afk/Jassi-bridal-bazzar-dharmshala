@@ -20,9 +20,9 @@ test('a deleted linked offer requires an explicit alternative and cannot silentl
   api.get.mockResolvedValue({ enabled: true, listings: [{ _id: 'other', title: 'Lehenga', size: 'Free size', dailyRatePaise: 150000, depositPaise: 200000 }] });
   const navigate = jest.fn(); render(<RentalOffer productId="one" commerceMode="RENTAL_ONLY" navigate={navigate} />);
   expect(await screen.findByRole('alert')).toHaveTextContent('linked rental option is no longer available');
-  expect(screen.queryByRole('button', { name: 'Book this rental' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Book now' })).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Available rental options'), { target: { value: 'other' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Book this rental' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Book now' }));
   expect(navigate).toHaveBeenCalledWith('/rental-book?product=one&listing=other');
   window.history.replaceState({}, '', '/');
 });

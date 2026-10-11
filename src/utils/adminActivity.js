@@ -71,8 +71,41 @@ export function beginAdminRequest(args, { cached = false } = {}) {
   const uploading = /(?:uploads?|bulk-upload|\/proofs|\/background)(?:\/|$)/.test(path);
   const generating = /(?:smart-fill|quick-analyze|generate)(?:\/|$)/.test(path);
   const kind = uploading && method !== 'GET' ? 'uploading' : generating && method !== 'GET' ? 'generating' : method === 'GET' ? 'loading' : 'saving';
-  const label = kind === 'uploading' ? 'Uploading media' : kind === 'generating' ? 'Preparing Smart Fill' : kind === 'saving' ? 'Saving changes' : 'Loading workspace';
+  const label = adminRequestLabel(path, method, kind);
   return beginAdminActivity({ kind, label });
+}
+
+function adminRequestLabel(path, method, kind) {
+  if (kind === 'uploading') return /bulk-upload/.test(path) ? 'Uploading product photos' : 'Uploading media';
+  if (kind === 'generating') return 'Preparing Smart Fill';
+  const resource = path.replace(/^\/(?:admin|seller|master)\//, '').split('/')[0];
+  const names = {
+    products: ['product', 'products'], categories: ['category', 'categories'],
+    orders: ['order', 'orders'], customers: ['customer', 'customers'],
+    coupons: ['coupon', 'coupons'], banners: ['banner', 'banners'],
+    reviews: ['review', 'reviews'], returns: ['return case', 'return cases'],
+    inventory: ['inventory', 'inventory'], settings: ['settings', 'settings'],
+    notifications: ['notification', 'notifications'], 'product-drafts': ['product draft', 'product drafts'],
+    campaigns: ['campaign', 'campaigns'], customization: ['store design', 'store design'],
+    content: ['store content', 'store content'], reports: ['report', 'reports'],
+  };
+  if (resource === 'rentals') {
+    if (method === 'GET') return /bookings/.test(path) ? 'Loading rental bookings' : /assets/.test(path) ? 'Loading rental pieces' : 'Loading rentals';
+    if (/bookings/.test(path)) return 'Updating rental booking';
+    if (/assets/.test(path)) return 'Saving rental pieces';
+    return 'Saving rental setup';
+  }
+  if (/\/products\/[^/]+\/stock$/.test(path)) return 'Updating product stock';
+  if (/\/categories\/reorder$/.test(path)) return 'Updating category order';
+  const [single, plural] = names[resource] || ['changes', 'workspace'];
+  if (method === 'GET') return `Loading ${plural}`;
+  if (/\/(?:archive|restore|duplicate)$/.test(path)) {
+    const verb = /\/archive$/.test(path) ? 'Archiving' : /\/restore$/.test(path) ? 'Restoring' : 'Copying';
+    return `${verb} ${single}`;
+  }
+  if (method === 'DELETE') return `Removing ${single}`;
+  if (method === 'POST' && path.replace(/^\/(?:admin|seller|master)\//, '').split('/').length === 1) return `Creating ${single}`;
+  return `Saving ${single}`;
 }
 
 // Protect only the control/form that started a request. Navigation, editing,

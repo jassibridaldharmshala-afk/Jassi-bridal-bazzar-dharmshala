@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { isAdminWorkspace } from '../utils/adminActivity';
 
 export default function useDesktopFeedback() {
   const { setToast } = useAuth();
@@ -16,7 +17,7 @@ export default function useDesktopFeedback() {
 
   const notify = useCallback((message, type = 'info', title = '') => {
     if (!message) return false;
-    if (isDesktop) {
+    if (isDesktop || isAdminWorkspace()) {
       setToast({ message, type, title });
       return true;
     }

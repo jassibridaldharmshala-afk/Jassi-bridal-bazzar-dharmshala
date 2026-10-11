@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronDown, Copy, FileText, Sparkles, Undo2, X } from 'lucide-react';
 import api from '../../services/api';
@@ -21,9 +23,9 @@ const defaultBase = () => window.location.pathname.startsWith('/seller') ? '/sel
 const workspaceScope = base => { try { return base.startsWith('/seller') ? sessionStorage.getItem('samira_seller_store_id') || '' : new URLSearchParams(window.location.search).get('storeId') || sessionStorage.getItem('samira_store_slug') || ''; } catch { return ''; } };
 
 export function CopySmartDraft({ value }) {
-  const [message, setMessage] = useState('');
-  useEffect(() => setMessage(''), [value]);
-  return <div className="mt-3"><button type="button" className="admin-btn-ghost" disabled={!value} onClick={async () => { try { if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable'); await navigator.clipboard.writeText(value); setMessage('Reply copied. Nothing was sent.'); } catch { setMessage('Clipboard unavailable. Select the reply text and copy it manually.'); } }}><Copy size={15} />Copy reviewed reply</button>{message && <p role="status" className="mt-2 text-sm text-theme-muted">{message}</p>}</div>;
+  const [message, setMessage] = useAdminFeedback('', 'info', 'Smart Fill');
+  useEffect(() => setMessage(''), [value, setMessage]);
+  return <div className="mt-3"><button type="button" className="admin-btn-ghost" disabled={!value} onClick={async () => { try { if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable'); await navigator.clipboard.writeText(value); setMessage('Reply copied. Nothing was sent.'); } catch { setMessage('Clipboard unavailable. Select the reply text and copy it manually.'); } }}><Copy size={15} />Copy reviewed reply</button><AdminFeedback message={message} type="info" title="Smart Fill" onDismiss={() => setMessage('')} /></div>;
 }
 
 export function SmartFillReview({ rows, form, disabled = false, onApply, title = 'Review suggestions' }) {
@@ -52,12 +54,12 @@ export function SmartFillReview({ rows, form, disabled = false, onApply, title =
 export default function WorkflowSmartFill({ workflow, form, onChange, apiBase, context = {}, disabled = false, documents = false, protectedPaths = [], title }) {
   const base = apiBase || defaultBase(); const id = useId();
   const [open, setOpen] = useState(false), [notes, setNotes] = useState(''), [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState(null), [error, setError] = useState(''), [notice, setNotice] = useState('');
+  const [preview, setPreview] = useState(null), [error, setError] = useState(''), [notice, setNotice] = useAdminFeedback('', 'info', 'Smart Fill');
   const [undo, setUndo] = useState(null), [document, setDocument] = useState(null), [consent, setConsent] = useState(false), [status, setStatus] = useState(null);
   const active = useRef(null), alive = useRef(true), currentForm = useRef(form); currentForm.current = form;
   const fileRevision = useRef(0);
   const scopeKey = JSON.stringify({ base, workflow, context, store: workspaceScope(base) });
-  useEffect(() => { alive.current = true; fileRevision.current += 1; setBusy(false); setNotes(''); setPreview(null); setUndo(null); setDocument(null); setStatus(null); setConsent(false); setError(''); setNotice(''); return () => { alive.current = false; fileRevision.current += 1; active.current?.abort(); active.current = null; }; }, [scopeKey]);
+  useEffect(() => { alive.current = true; fileRevision.current += 1; setBusy(false); setNotes(''); setPreview(null); setUndo(null); setDocument(null); setStatus(null); setConsent(false); setError(''); setNotice(''); return () => { alive.current = false; fileRevision.current += 1; active.current?.abort(); active.current = null; }; }, [scopeKey, setNotice]);
   useEffect(() => {
     if (!open || !documents) return undefined;
     let valid = true; api.get(smartEndpoint(base, 'status'), { silent: true, cache: 'no-store' }).then(value => { if (valid) setStatus(value); }).catch(() => { if (valid) setStatus({ documentExtraction: false }); });
@@ -101,7 +103,7 @@ export default function WorkflowSmartFill({ workflow, form, onChange, apiBase, c
       {!['support', 'returns'].includes(workflow) && <label className="workflow-smart__source"><span>Source notes / brief</span><textarea aria-label={`${titles[workflow]} source notes`} maxLength={16000} value={notes} disabled={busy || disabled} placeholder={examples[workflow] || 'Paste verified source details'} onChange={event => setNotes(event.target.value)} /></label>}
       {documents && <div className="workflow-smart__document"><label><FileText size={16} />Optional document (photos up to 20 MB, PDF up to 512 KB)<input type="file" aria-label="Smart Fill source document" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={busy || disabled || !status?.documentExtraction} onChange={chooseDocument} /></label><small>{status?.documentExtraction ? 'The configured Gemini extracts text only. Check every machine-extracted value.' : 'Document extraction needs the existing backend Gemini configuration. Pasted notes work without AI.'}</small>{document && <><button type="button" className="admin-btn-ghost" disabled={busy} onClick={() => { setDocument(null); setConsent(false); }}>Remove document</button><label className="workflow-smart__choice"><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} /><span>I may use this document and agree to send it to the configured AI for text extraction. Remove unnecessary personal information first.</span></label></>}</div>}
       <div className="workflow-smart__actions"><button type="button" className="admin-btn" disabled={disabled || busy || (!!document && !consent)} onClick={analyze}><Sparkles size={15} />{busy ? 'Preparing suggestions…' : 'Suggest draft fields'}</button>{busy && <button type="button" className="admin-btn-ghost" onClick={() => { active.current?.abort(); active.current = null; setBusy(false); }}>Cancel analysis</button>}{undo && <button type="button" className="admin-btn-ghost" disabled={disabled || busy} onClick={() => { const result = applySmartReview(currentForm.current, undo.filter(row => !protectedPaths.includes(row.path)), undo.map(row => row.path), true, true); if (onChange(result.form, result.applied, true) === false) return; setUndo(null); setNotice('Last fill undone. Later manual edits were preserved.'); }}><Undo2 size={15} />Undo last fill</button>}</div>
-      {error && <p role="alert" className="workflow-smart__warning">{error}</p>}{notice && <p role="status" className="workflow-smart__notice">{notice}</p>}
+      {error && <p role="alert" className="workflow-smart__warning">{error}</p>}<AdminFeedback message={notice} type="info" title="Smart Fill" onDismiss={() => setNotice('')} />
       {preview && <>{preview.warnings?.map((warning, index) => <p key={index} className="workflow-smart__warning">{warning}</p>)}{preview.extractedText && <details><summary>Compare extracted source text</summary><pre className="workflow-smart__value">{preview.extractedText}</pre></details>}{stale && <p role="status" className="workflow-smart__warning">Source changed. Refresh suggestions before applying.</p>}{reviewRows.length ? <SmartFillReview key={JSON.stringify(reviewRows)} rows={reviewRows} form={form} disabled={busy || disabled || stale} onApply={(rows, replace) => { const result = applySmartReview(currentForm.current, rows, rows.map(row => row.path), replace); if (result.applied.length) { if (onChange(result.form, result.applied, false, preview) === false) return; setUndo(result.applied); setNotice(`${result.applied.length} fields filled in the draft. Use the existing Save action after reviewing.`); setPreview(null); } }} /> : <p role="status">No safe changes found. Add explicit source details or edit the form manually.</p>}<button type="button" className="admin-btn-ghost" disabled={busy} onClick={() => setPreview(null)}><X size={14} />Discard suggestions</button></>}
     </div>}
   </section>;

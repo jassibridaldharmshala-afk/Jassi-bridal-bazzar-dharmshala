@@ -1,4 +1,3 @@
-import RentalShop from './RentalShop';
 import ShoppingModeTabs from '../../components/rentals/ShoppingModeTabs';
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -29,10 +28,7 @@ import { buildCatalogFacets } from '../../utils/catalogFacets';
 const PAGE_SIZE = 24;
 const CATALOG_RETURN_KEY = 'samira_catalog_return';
 
-export default function Products(props) {
-  return new URLSearchParams((props.route || '').split('?')[1] || '').get('mode') === 'rent' ? <RentalShop {...props} /> : <BuyProducts {...props} />;
-}
-function BuyProducts({ navigate, route = '/products' }) {
+export default function Products({ navigate, route = '/products' }) {
   const dispatch = useDispatch();
   const { storeSlug } = useStorefront();
   const [openFilters, setOpenFilters] = useState(false);
@@ -45,19 +41,22 @@ function BuyProducts({ navigate, route = '/products' }) {
   const routePath = route.split('?')[0];
   const basePath = storefrontPath(routePath.endsWith('/search') ? '/search' : '/products', storeSlug);
   const routeQuery = useMemo(() => new URLSearchParams(route.split('?')[1] || ''), [route]);
+  const rental = routeQuery.get('mode') === 'rent';
+  const commerceMode = rental ? 'rent' : 'buy';
+  const shoppingMode = rental ? 'rental' : undefined;
   const filters = useSelector(selectCatalogFilters);
   const params = useMemo(() => createCatalogSearchParams(filters), [filters]);
-  const requestKey = `${storeSlug || 'default'}?${params.toString()}`;
+  const requestKey = `${storeSlug || 'default'}:${commerceMode}?${params.toString()}`;
   const requestPage = catalogState.key === requestKey ? page : 1;
   const requestParams = useMemo(() => ({
     ...Object.fromEntries(params.entries()),
-    mode: 'buy',
+    mode: commerceMode,
     store: storeSlug,
     page: requestPage,
     limit: PAGE_SIZE,
     ...(requestPage === 1 ? { includeFacets: 'true' } : {}),
     ...(requestPage > 1 ? { silent: true } : {}),
-  }), [params, requestPage, storeSlug]);
+  }), [commerceMode, params, requestPage, storeSlug]);
   const { data: categories = [] } = useGetCategoriesQuery({ store: storeSlug });
   const { data: banners = [] } = useGetBannersQuery({ store: storeSlug });
   const { currentData: productData, isLoading, isFetching, error, refetch } = useGetProductsQuery(requestParams);
@@ -99,11 +98,15 @@ function BuyProducts({ navigate, route = '/products' }) {
     return () => { active = false; };
   }, [storeSlug]);
   const fallbackDynamicFacets = useMemo(() => buildDynamicFacets(catalogStructure, catalog), [catalog, catalogStructure]);
-  const fallbackFacets = useMemo(() => buildCatalogFacets(catalog, categories, filters), [catalog, categories, filters]);
+  const fallbackFacets = useMemo(() => {
+    const products = rental ? catalog.map(product => ({ ...product, price: (product.rentalPreview?.dailyRatePaise || 0) / 100, discountPercentage: 0 })) : catalog;
+    const result = buildCatalogFacets(products, categories, filters);
+    return rental ? { ...result, discounts: [], availability: [] } : result;
+  }, [catalog, categories, filters, rental]);
   const facets = useMemo(() => normalizeServerFacets(catalogState.facets, categories) || fallbackFacets, [catalogState.facets, categories, fallbackFacets]);
   const dynamicFacets = catalogState.facets?.dynamicFacets || fallbackDynamicFacets;
   const visibleProducts = catalog;
-  const collectionLabel = useMemo(() => getCollectionLabel(routeQuery, filters), [routeQuery, filters]);
+  const collectionLabel = useMemo(() => rental && !filters.search && !routeQuery.get('collection') ? 'Rental products' : getCollectionLabel(routeQuery, filters), [routeQuery, filters, rental]);
   const categorySeo = useMemo(() => {
     const selected = splitFilterValues(filters.category);
     if (selected.length !== 1) return null;
@@ -117,8 +120,13 @@ function BuyProducts({ navigate, route = '/products' }) {
   }, [categories, filters.category]);
 
   useLayoutEffect(() => {
-    dispatch(replaceCatalogFilters(normalizeCatalogQuery(routeQuery)));
-  }, [dispatch, routeQuery]);
+    const next = normalizeCatalogQuery(routeQuery);
+    if (rental) {
+      next.stock = ''; next.discount = '';
+      if (next.sort === 'discount' || next.sort === 'stock') next.sort = 'newest';
+    }
+    dispatch(replaceCatalogFilters(next));
+  }, [dispatch, rental, routeQuery]);
 
   useEffect(() => {
     if (filters.search) trackEvent('SEARCH', { searchQuery: filters.search });
@@ -152,6 +160,7 @@ function BuyProducts({ navigate, route = '/products' }) {
 
   const syncCatalogRoute = (nextFilters) => {
     const nextParams = createCatalogSearchParams(nextFilters);
+    nextParams.set('mode', commerceMode);
     const collection = routeQuery.get('collection');
     if (collection) nextParams.set('collection', collection);
     navigate(`${basePath}${nextParams.toString() ? `?${nextParams}` : ''}`);
@@ -191,16 +200,14 @@ function BuyProducts({ navigate, route = '/products' }) {
   const showCatalogBanner = !filters.search && !appliedMobileFilters.length && page === 1;
 
   return (
-    <section className="min-h-screen bg-ivory px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 md:p-0 lg:bg-white">
+    <section className="sc-catalog min-h-screen bg-ivory px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 md:p-0 lg:bg-white">
       <SeoHead route={route} page={categorySeo || undefined} />
-      <ShoppingModeTabs mode="buy" navigate={navigate} />
+      <ShoppingModeTabs mode={commerceMode} navigate={navigate} className="rental-shopping-tabs--mobile" />
       {showCatalogBanner && <StorefrontBannerSlot banners={banners} position="Category - Featured" navigate={navigate} compact className="max-w-[1500px] px-0 md:px-6" />}
       {(
         <DesktopNewArrivalsLayout
+          shoppingMode={shoppingMode}
           navigate={navigate}
-          storeSlug={storeSlug}
-          route={route}
-          routeQuery={routeQuery}
           collectionLabel={collectionLabel}
           loading={loading}
           error={error}
@@ -236,7 +243,7 @@ function BuyProducts({ navigate, route = '/products' }) {
               <option value="bestSeller">Popular</option>
               <option value="priceLowHigh">Low-High</option>
               <option value="priceHighLow">High-Low</option>
-              <option value="discount">Discount</option>
+              {!rental && <option value="discount">Discount</option>}
               <option value="rating">Rating</option>
             </select>
           </label>
@@ -274,12 +281,13 @@ function BuyProducts({ navigate, route = '/products' }) {
       {appliedMobileFilters.length ? <div className="hide-scrollbar mt-2 flex gap-2 overflow-x-auto" aria-label="Applied filters">{appliedMobileFilters.map((item) => <button key={`${item.key}-${item.value}`} type="button" onClick={() => removeMobileFilter(item, filters, updateParams)} className="inline-flex min-w-max items-center gap-1 rounded-full bg-blush px-3 py-1.5 text-[10px] font-bold text-wine" aria-label={`Remove ${item.label} filter`}>{item.label}<span aria-hidden="true">×</span></button>)}</div> : null}
       </div>
       <div className="lg:hidden">
-        {error && page === 1 && !catalog.length ? <div className="rounded-2xl bg-white p-8 text-center font-bold text-rose"><p>Store data service is temporarily unavailable.</p><button type="button" className="mt-4 h-11 rounded-xl bg-wine px-5 text-sm font-black text-white" onClick={refetch}>Try again</button></div> : loading ? <StorefrontSkeleton hero={false} /> : <ProductGrid products={visibleProducts} navigate={navigate} onBeforeProductOpen={rememberCatalogPosition} priorityCount={4} />}
+        {error && page === 1 && !catalog.length ? <div className="rounded-2xl bg-white p-8 text-center font-bold text-rose"><p>Store data service is temporarily unavailable.</p><button type="button" className="mt-4 h-11 rounded-xl bg-wine px-5 text-sm font-black text-white" onClick={refetch}>Try again</button></div> : loading ? <StorefrontSkeleton hero={false} /> : <ProductGrid products={visibleProducts} navigate={navigate} shoppingMode={shoppingMode} onBeforeProductOpen={rememberCatalogPosition} priorityCount={4} />}
         {error && page === 1 && catalog.length > 0 && <div role="status" className="mt-4 rounded-xl bg-amber-50 p-4 text-sm"><p>The collection could not be refreshed. Showing the last loaded products.</p><button type="button" className="mt-2 min-h-11 font-bold text-wine" onClick={refetch}>Try again</button></div>}
         {!loading && !error && <CatalogLoadMore ref={mobileLoadMoreRef} hasMore={hasMore} loading={loadingMore} shown={catalog.length} total={totalProducts} onLoadMore={() => setPage((current) => Math.min(totalPages, current + 1))} />}
         {error && page > 1 ? <div className="mt-5 rounded-xl bg-red-50 p-4 text-center text-xs font-semibold text-red-700"><p>More products could not be loaded.</p><button type="button" onClick={refetch} className="mt-2 rounded-lg bg-white px-4 py-2 text-wine">Try again</button></div> : null}
       </div>
       <MobileFilterSheet
+        shoppingMode={shoppingMode}
         open={openFilters}
         onClose={() => setOpenFilters(false)}
         categories={categories}

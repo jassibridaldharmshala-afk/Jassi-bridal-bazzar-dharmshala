@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BookOpen, CheckCircle2, ChevronDown, CircleHelp, LifeBuoy, Lightbulb, Printer, Search, X } from 'lucide-react';
 import './ContextualHelp.css';
-import useRentalCheckoutUtility from '../../hooks/useRentalCheckoutUtility';
 
 const EMPTY_GUIDE = {
   id: 'loading', area: 'User manual', title: 'Help for this page',
@@ -15,7 +14,6 @@ export default function ContextualHelp({ route = '/', navigate }) {
   const [loadError, setLoadError] = useState('');
   const [view, setView] = useState('current');
   const [query, setQuery] = useState('');
-  const utilityTarget = useRentalCheckoutUtility(route);
   const launcherRef = useRef(null);
   const panelRef = useRef(null);
 
@@ -123,7 +121,7 @@ export default function ContextualHelp({ route = '/', navigate }) {
       <CircleHelp size={21} /><span>Help</span>
     </button>;
   return <>
-    {utilityTarget ? createPortal(launcher, utilityTarget) : launcher}
+    {launcher}
     {typeof document !== 'undefined' && overlay ? createPortal(overlay, document.body) : null}
   </>;
 }

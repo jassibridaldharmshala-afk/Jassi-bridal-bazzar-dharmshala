@@ -1,5 +1,5 @@
 import { useRentalBag } from '../../context/RentalBagContext';
-import { rentalShoppingRoute } from '../../utils/rentalShopping';
+import { rentalShoppingRoute, shoppingBagDestination } from '../../utils/rentalShopping';
 import RentalStorefrontLink from '../rentals/RentalStorefrontLink';
 import NotificationBell from '../notifications/NotificationBell';
 import { useEffect, useMemo, useState } from 'react';
@@ -13,7 +13,7 @@ import { useWebsiteCustomization } from '../../context/WebsiteCustomizationConte
 import { normalizeImageUrl } from '../../services/normalize';
 import { getDesktopActiveLink } from '../../utils/navbarActive';
 import { parseStoreSlug } from '../../utils/attribution';
-import { storefrontPath } from '../../utils/routing';
+import { boutiquePath, storefrontPath } from '../../utils/routing';
 import './Navbar.css';
 
 const desktopLinks = [
@@ -57,11 +57,28 @@ export default function Navbar({
     && (!headerConfig.announcementEndsAt || new Date(headerConfig.announcementEndsAt).getTime() >= announcementClock);
   const configuredLogo = normalizeImageUrl(websiteConfig.branding.logo) || logoSrc;
   const routePath = route.split('?')[0];
+  const logicalRoutePath = boutiquePath(routePath).replace(/^\/store\/[^/]+/, '') || '/';
   const routeParams = useMemo(() => new URLSearchParams(route.split('?')[1] || ''), [route]);
-  const activeLinkLabel = useMemo(() => getDesktopActiveLink(routePath, routeParams), [routeParams, routePath]);
+  const activeLinkLabel = useMemo(() => getDesktopActiveLink(logicalRoutePath, routeParams), [routeParams, logicalRoutePath]);
+  const activeLinkIndex = useMemo(() => {
+    const defaultPath = desktopLinks.find(link => link.label === activeLinkLabel)?.path;
+    const defaultIndex = defaultPath ? navLinks.findIndex(link => link.path === defaultPath) : -1;
+    if (defaultIndex >= 0) return defaultIndex;
+    let selected = -1, specificity = -1;
+    navLinks.forEach((link, index) => {
+      const [path, query = ''] = String(link.path || '').split('?');
+      const targetPath = boutiquePath(path).replace(/^\/store\/[^/]+/, '') || '/';
+      const params = [...new URLSearchParams(query)];
+      if (targetPath === logicalRoutePath && params.every(([key, value]) => routeParams.getAll(key).includes(value)) && params.length > specificity) {
+        selected = index; specificity = params.length;
+      }
+    });
+    return selected;
+  }, [activeLinkLabel, logicalRoutePath, navLinks, routeParams]);
   const searchValue = useMemo(() => new URLSearchParams(route.split('?')[1] || '').get('search') || '', [route]);
   const [searchTerm, setSearchTerm] = useState(searchValue);
-  const cartCount = Number.isFinite(Number(cartCountProp)) ? Number(cartCountProp) : Number(rentalShopping ? rentalBag.itemCount : cart?.itemCount || 0);
+  const cartCount = Number.isFinite(Number(cartCountProp)) ? Number(cartCountProp) : Number(cart?.itemCount || 0) + Number(rentalBag.itemCount || 0);
+  const bagDestination = shoppingBagDestination(route, cart?.itemCount, rentalBag.itemCount);
   const wishlistCount = Number.isFinite(Number(wishlistCountProp)) ? Number(wishlistCountProp) : Number(wishlist?.items?.length || 0);
   const go = path => (onNavigate || navigate || (() => {}))(storefrontPath(path, parseStoreSlug(route)));
   const isAdmin = typeof isAdminProp === 'boolean' ? isAdminProp : user?.role === 'admin';
@@ -133,13 +150,13 @@ export default function Navbar({
 
           <nav className="sc-navbar__links" aria-label="Primary" style={{ justifyContent: headerConfig.menuAlignment === 'right' ? 'flex-end' : headerConfig.menuAlignment }}>
             <RentalStorefrontLink className="sc-navbar__link" navigate={go} />
-            {navLinks.map((link) => {
-              const targetPath = String(link.path || '').split('?')[0];
-              const isActive = activeLinkLabel === link.label || (targetPath !== '/' && routePath === targetPath) || (targetPath === '/' && routePath === '/');
+            {navLinks.map((link, index) => {
+              const isActive = activeLinkIndex === index;
               return (
                 <button
                   key={link.label}
                   type="button"
+                  aria-current={isActive ? 'page' : undefined}
                   className={`sc-navbar__link${
                     link.hideBelow === 1400 ? ' sc-navbar__link--hide-1400' : ''
                   }${link.hideBelow === 1280 ? ' sc-navbar__link--hide-1280' : ''}${
@@ -214,7 +231,7 @@ export default function Navbar({
               <button
                 type="button"
                 className="sc-navbar__action"
-                onClick={() => (onCartClick ? onCartClick() : go(rentalShopping ? '/rental-cart' : '/cart'))}
+                onClick={() => (onCartClick ? onCartClick() : go(bagDestination))}
                 aria-label="Cart"
               >
                 <span className="sc-navbar__action-icon">

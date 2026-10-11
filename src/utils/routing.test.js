@@ -1,4 +1,9 @@
-import { BEFORE_ROUTE_CHANGE_EVENT, boutiquePath, parseProductKey, productHref, pushAppRoute, storefrontPath } from './routing';
+import { BEFORE_ROUTE_CHANGE_EVENT, boutiquePath, parseProductKey, productHref, pushAppRoute, rentalProductHref, storefrontPath } from './routing';
+
+test('rental actions keep the boutique and the exact offer whose price was displayed', () => {
+  const product = { _id: '6a33b378573544bac1ccd9b1', slug: 'bridal-outfit', rentalPreview: { listingId: '6a33b378573544bac1ccd9b2' } };
+  expect(rentalProductHref(product, 'jassi')).toBe('/store/jassi/products/bridal-outfit?id=6a33b378573544bac1ccd9b1&mode=rent&listing=6a33b378573544bac1ccd9b2');
+});
 
 test('designer navigation guard cancels a route change without changing the URL', () => {
   window.history.replaceState(null, '', '/admin/customization');

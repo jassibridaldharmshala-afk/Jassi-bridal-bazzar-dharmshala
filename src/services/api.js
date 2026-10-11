@@ -79,6 +79,10 @@ async function request(path, options = {}) {
     try {
       const result = await promise.unwrap();
       if (idempotencyKey) finishUploadRetryKey(idempotencyKey);
+      if (method !== 'GET' && /\/rentals\//.test(path) && !/\/(?:quote|calendar)(?:[/?]|$)/.test(path) && typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('samira:rental-availability-changed'));
+        try { localStorage.setItem('samira:rental-availability-changed', String(Date.now())); } catch { /* polling also refreshes availability */ }
+      }
       return result;
     } catch (error) {
       if (error.data?.code === 'UPLOAD_RETRY_CONFLICT') forgetUploadRetryKey(idempotencyKey);

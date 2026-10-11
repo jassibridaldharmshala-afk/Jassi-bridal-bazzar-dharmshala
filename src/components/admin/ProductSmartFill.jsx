@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown, Loader2, Sparkles, Undo2 } from 'lucide-react';
 import api from '../../services/api';
@@ -16,7 +18,7 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useAdminFeedback('', 'info', 'Smart Fill');
   const [preview, setPreview] = useState(null);
   const [selected, setSelected] = useState([]);
   const [replace, setReplace] = useState(false);
@@ -89,7 +91,7 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
         {undo && !busy && <button type="button" className="admin-btn-ghost" disabled={disabled} onClick={() => { onApply(undo, true); setUndo(null); setNotice('Smart Fill changes undone. Any later manual edits have been kept.'); }}><Undo2 size={15} />Undo last fill</button>}
       </div>
       {error && <p role="alert" className="product-smart-fill__warning">{error}</p>}
-      {notice && <p role="status" className="product-smart-fill__notice">{notice}</p>}
+      <AdminFeedback message={notice} type="info" title="Smart Fill" onDismiss={() => setNotice('')} />
       {preview && <div className="product-smart-fill__review">
         <div className="product-smart-fill__review-heading"><strong>Review suggestions</strong><p>{rentalSetup ? "Select only the title or rental terms you agree with. Nothing is saved or activated here." : "Check the source evidence and explicitly select any sale price, MRP or owner-stated rental terms before applying."}</p><span>{preview.mode === 'ai' ? 'Photos & context' : 'From your notes'}</span></div>
         {!rentalSetup && preview.similarProducts?.length > 0 && <section><strong>Similar products to review</strong><p>Choose whether this is a separate design or edit an existing product. Nothing is merged automatically.</p>{preview.similarProducts.map(product => <p key={product._id}><a href={`${apiPrefix}/products?edit=${encodeURIComponent(product._id)}`} target="_blank" rel="noopener noreferrer">{product.name} · {product.sku}</a> — {product.reason}</p>)}</section>}{preview.warnings.map(warning => <p key={warning} role="status" className="product-smart-fill__warning">{warning}</p>)}

@@ -3,7 +3,7 @@
   "invoiceNumber": "SC-SAMPLE01",
   "invoiceDate": "2026-09-01T04:30:00Z",
   "orderDate": "2026-08-31T16:41:23Z",
-  "storeDetails": { "storeName": "Jassi General Store", "contactPhone": "+91 90000 00000", "contactEmail": "orders@example.com", "address": "Sample Store, Market Road, Kangra, Himachal Pradesh - 176001" },
+  "storeDetails": { "storeName": "Jassi Bridal Bazar Dharmshala", "contactPhone": "+91 90000 00000", "contactEmail": "orders@example.com", "address": "Sample Store, Market Road, Kangra, Himachal Pradesh - 176001" },
   "customer": { "name": "Sample Customer", "email": "customer@example.com" },
   "shippingAddress": { "fullName": "Sample Customer", "houseNo": "12", "area": "Garden Enclave", "landmark": "Near the community centre", "city": "Kangra", "state": "Himachal Pradesh", "pincode": "176001", "mobile": "9000000000" },
   "billingAddress": { "fullName": "Sample Customer", "houseNo": "12", "area": "Garden Enclave", "landmark": "Near the community centre", "city": "Kangra", "state": "Himachal Pradesh", "pincode": "176001", "mobile": "9000000000" },

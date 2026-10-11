@@ -50,7 +50,7 @@ function loadLogo(source = logo) {
 }
 export async function createReceiptPdf(receipt) {
   if (!receipt?.orderId || !Array.isArray(receipt.items) || !receipt.items.length || receipt.finalAmount == null || !Number.isFinite(Number(receipt.finalAmount))) throw new Error('Invoice details are incomplete. Refresh the order and try again.');
-  const logoSource = normalizeImageUrl(receipt.storeDetails?.logoUrl) || (receiptView(receipt).storeName === 'Jassi General Store' ? logo : '');
+  const logoSource = normalizeImageUrl(receipt.storeDetails?.logoUrl) || (receiptView(receipt).storeName === 'Jassi Bridal Bazar Dharmshala' ? logo : '');
   const [pdfMake, logoData] = await Promise.all([loadPdfRuntime(), loadLogo(logoSource)]);
   return pdfMake.createPdf(buildReceiptDefinition(receipt, logoData));
 }

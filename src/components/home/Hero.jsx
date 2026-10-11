@@ -67,7 +67,7 @@ export default function Hero({ navigate, banner, banners = [] }) {
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-center">
               <div>
-                <p className="text-[12px] font-black uppercase tracking-[0.28em] text-wine">Jassi General Store</p>
+                <p className="text-[12px] font-black uppercase tracking-[0.28em] text-wine">Jassi Bridal Bazar Dharmshala</p>
                 <p className="mt-2 text-[18px] font-semibold text-charcoal">Premium festive showcase</p>
               </div>
             </div>

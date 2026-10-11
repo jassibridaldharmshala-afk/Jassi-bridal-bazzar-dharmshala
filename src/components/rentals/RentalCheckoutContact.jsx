@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, MessageSquare, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, MessageSquare, ShieldCheck, UserRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { normalizeIndianPhone } from '../../utils/phoneFormatter';
 import { clearRentalSession, readRentalSession, saveRentalSession } from '../../utils/rentalPlan';
@@ -85,13 +85,14 @@ export default function RentalCheckoutContact({ form, details, addresses, onChan
   };
   const phoneControl = <label>Mobile number<div className="rental-mobile-number"><span>+91</span><input aria-label="Mobile number" type="tel" inputMode="tel" autoComplete="tel-national" maxLength={14} value={phone} readOnly={verified || !!challenge} onChange={event => editPhone(event.target.value)} />{(verified || challenge) && <button type="button" className="rental-shopping-link" disabled={busy} onClick={() => { generation.current++; setChanging(true); clearChallenge(); setError(''); onVerificationChange(); }}>Change</button>}</div></label>;
   return <form id="rental-checkout-contact-form" onSubmit={submit} noValidate className="rental-contact-form">
+    <div className="rental-checkout-section-heading rental-contact-heading"><h2><span className="rental-checkout-section-number">1</span><UserRound size={17} aria-hidden="true" />Booking contact</h2>{verified && <span className="rental-verified-contact" aria-label="Verified account number"><BadgeCheck size={14} aria-hidden="true" />Verified</span>}</div>
     <RentalContactFields form={form} details={details} addresses={addresses} onChange={onChange} onDetails={onDetails} phoneControl={phoneControl} />
-    {verified ? <p className="rental-verified-contact"><BadgeCheck size={17} />Verified account number</p> : <>
+    {!verified && <>
       {changing && user && <p className="rental-shopping-hint">Verify this number to use its account for your booking. <button type="button" className="rental-shopping-link" onClick={() => { setChanging(false); setPhone(normalizeIndianPhone(user.phone)); clearRentalSession('phone-entry', storeSlug); clearChallenge(); setError(''); }}>Use my current account</button></p>}
       <label className="rental-shopping-check rental-account-consent"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} /> <span>I agree to the <a href={storefrontPath('/terms', storeSlug)}>account terms</a> and <a href={storefrontPath('/privacy-policy', storeSlug)}>privacy policy</a>.</span></label>
       {challenge && <div className="rental-otp-panel"><p className="rental-otp-sent" role="status"><MessageSquare size={16} />OTP sent to +91 {challenge.phone.slice(0, 2)}••••{challenge.phone.slice(-4)}</p><label htmlFor="rental-otp-1">Enter {length}-digit OTP</label><div className="rental-otp-inputs">{digits.map((digit, index) => <input key={index} ref={element => { inputs.current[index] = element; }} id={`rental-otp-${index + 1}`} aria-label={`OTP digit ${index + 1}`} autoComplete={index === 0 ? 'one-time-code' : 'off'} inputMode="numeric" type="text" value={digit} maxLength={length} onChange={event => enterDigit(index, event.target.value)} onPaste={event => { const value = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, length); if (value) { event.preventDefault(); setOtp(value.split('')); inputs.current[value.length - 1]?.focus(); } }} onKeyDown={event => { if (event.key === 'Backspace' && !digit && index) inputs.current[index - 1]?.focus(); }} />)}</div>{expired && <p className="rental-slot-error" role="alert">This OTP has expired. Request a new code.</p>}<button type="button" className="rental-shopping-link" disabled={busy || cooldown > 0} onClick={event => submit(event, true)}>{cooldown ? `Resend OTP in ${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(2, '0')}` : 'Resend OTP'}</button></div>}
     </>}
     {error && <p role="alert" className="rental-slot-error">{error}</p>}
-    <p className="rental-contact-security"><ShieldCheck size={17} />Your verified number is used for booking updates.</p>
+    <p className="rental-contact-security"><ShieldCheck size={15} aria-hidden="true" />{verified ? 'Booking updates will be sent to your verified mobile number.' : 'Verify your mobile number to receive booking updates.'}</p>
   </form>;
 }

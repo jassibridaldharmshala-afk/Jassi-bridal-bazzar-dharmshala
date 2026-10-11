@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   AlertTriangle, ArrowRight, BarChart3, Bot, Check, CheckCircle2, ChevronDown, CircleDollarSign,
   ExternalLink, Gift, IndianRupee, LockKeyhole, MessageCircle, PackageCheck, RefreshCw,
-  RotateCcw, Send, ShoppingBag, Sparkles, TrendingDown, TrendingUp,
+  RotateCcw, Send, ShoppingBag, TrendingDown, TrendingUp,
 } from 'lucide-react';
+import '../../components/admin/AdminCompact.css';
 import api from '../../services/api';
 import PageState from '../../components/ui/PageState';
 import { useAuth } from '../../context/AuthContext';
@@ -88,27 +89,17 @@ export default function BusinessCenter() {
   ].filter(Boolean);
 
   return (
-    <section className="mx-auto max-w-[1460px] space-y-5 pb-8 text-slate-900">
-      <header className="overflow-hidden rounded-[28px] border border-[#6f1734] bg-[#711a37] text-white shadow-[0_18px_55px_rgba(80,22,42,.18)]">
-        <div className="grid gap-5 p-5 sm:p-7 xl:grid-cols-[1fr_auto] xl:items-end">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#f5cad7]"><Sparkles size={14} /> Live operations workspace <span className="h-1 w-1 rounded-full bg-white/40" /> {overview.store.name}</div>
-            <h1 className="mt-2 font-display text-3xl font-black sm:text-4xl">Know what needs attention today</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">Real store data, clear next actions and measured outcomes in one place.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-xl border border-white/20 bg-black/10 p-1" aria-label="Business report period">
-              {PERIODS.map(([value, label]) => <button key={value} type="button" onClick={() => setRange(value)} className={`h-9 rounded-lg px-3 text-xs font-black transition ${range === value ? 'bg-white text-[#711a37] shadow-sm' : 'text-white/75 hover:text-white'}`}>{label}</button>)}
-            </div>
-            <button type="button" disabled={refreshing} onClick={() => load({ quiet: true })} className="grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 disabled:opacity-50" aria-label="Refresh business data"><RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} /></button>
-          </div>
-        </div>
-        <div className="border-t border-white/10 bg-black/10 px-5 py-3 text-[11px] font-bold text-white/65 sm:px-7">{health.period.label} · refreshed {formatDate(health.generatedAt)} · {overview.platform.name} {String(overview.platform.status || '').toLowerCase()}</div>
+    <section className="business-compact admin-compact mx-auto max-w-[1460px] space-y-5 pb-8 text-slate-900">
+      <h1 className="sr-only">Business Center</h1>
+      <header className="business-compact-heading">
+        <div className="business-compact-period" aria-label="Business report period">{PERIODS.map(([value,label]) => <button key={value} type="button" aria-pressed={range === value} onClick={() => setRange(value)}>{label}</button>)}</div>
+        <button type="button" disabled={refreshing} onClick={() => load({ quiet: true })} className="admin-btn-ghost inline-flex items-center gap-2" aria-label="Refresh business data"><RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} /> Refresh</button>
+        <p className="business-compact-context">{overview.store.name} · {health.period.label} · refreshed {formatDate(health.generatedAt)} · {overview.platform.name} {String(overview.platform.status || '').toLowerCase()}</p>
       </header>
 
       {overview.platform.renewalMessage && <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><AlertTriangle className="mt-0.5 shrink-0" size={18} /><p>{overview.platform.renewalMessage}</p></div>}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="admin-compact-stats">
         <Kpi icon={CircleDollarSign} label="Order value" value={`Rs. ${money(performance.current.bookedRevenue)}`} change={performance.change.bookedRevenue} note="Excludes cancelled and returned orders" />
         <Kpi icon={IndianRupee} label="Paid revenue" value={`Rs. ${money(performance.current.paidRevenue)}`} change={performance.change.paidRevenue} note="Payments marked paid" />
         <Kpi icon={PackageCheck} label="Orders" value={number(performance.current.orders)} change={performance.change.orders} note={`${performance.current.delivered || 0} delivered · ${performance.current.cancelled || 0} cancelled`} />

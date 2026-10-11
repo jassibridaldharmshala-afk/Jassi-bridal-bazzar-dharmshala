@@ -13,6 +13,7 @@ import './components/rentals/RentalShopping.css';
 import './components/admin/ProductSmartFill.css';
 import './components/admin/ImageBackgroundEditor.css';
 import './components/admin/AdminActivityIndicator.css';
+import './components/admin/AdminCompact.css';
 import './styles/websiteCustomization.css';
 import './styles/applicationTheme.css';
 import './styles/formControls.css';

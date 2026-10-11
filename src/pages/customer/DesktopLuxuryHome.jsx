@@ -14,7 +14,6 @@ import {
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { getPrimaryImageUrl, normalizeImageEntries, normalizeImageUrl, normalizeProducts } from '../../services/normalize';
-import ShoppingShortcuts from '../../components/storefront/ShoppingShortcuts';
 import { clearRecentProducts } from '../../utils/recentProducts';
 import api from '../../services/api';
 import { isUnavailable, wishlistStock } from '../../utils/wishlist';
@@ -164,7 +163,6 @@ export default function DesktopLuxuryHome({
       </section></ThemedDesktopSection>
 
       <ThemedDesktopSection config={websiteConfig} id="categories"><CategorySection categories={categories} products={productsWithImages} navigate={navigate} section={getHomepageSection(websiteConfig, 'categories')} /></ThemedDesktopSection>
-      {discovery && <div className="themed-home-section" style={{ '--home-section-order': getHomepageSection(websiteConfig, 'categories').order + 1 }}><ShoppingShortcuts data={discovery} navigate={navigate} /></div>}
 
       <ThemedDesktopSection config={websiteConfig} id="promotional"><section className={styles.luxuryContainer}>
         <EditorialGrid products={editorialProducts} navigate={navigate} section={getHomepageSection(websiteConfig, 'promotional')} />

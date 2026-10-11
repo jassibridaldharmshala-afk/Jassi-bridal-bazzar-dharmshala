@@ -1,3 +1,5 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from './AdminFeedback';
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Check, Save, Tag, X } from 'lucide-react';
 import api from '../../services/api';
@@ -34,7 +36,7 @@ const emptyCoupon = {
 export default function CouponForm({ coupon, products = [], categories = [], customers = [], loadProductOptions, loadCategoryOptions, loadCustomerOptions, onSaved, onCancel, apiBase = '/admin', timezone = 'Asia/Kolkata' }) {
   const editing = Boolean(coupon?._id);
   const [form, setForm] = useState(emptyCoupon);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useAdminFeedback(null, 'success', 'Coupons');
   const [saving, setSaving] = useState(false);
   const [codeAvailability, setCodeAvailability] = useState(null);
 
@@ -42,7 +44,7 @@ export default function CouponForm({ coupon, products = [], categories = [], cus
     setForm(coupon ? couponToForm(coupon, timezone) : { ...emptyCoupon });
     setMessage(null);
     setCodeAvailability(null);
-  }, [coupon, timezone]);
+  }, [coupon, timezone, setMessage]);
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
   const toggleListValue = (field, value) => setForm((current) => ({
@@ -180,7 +182,7 @@ export default function CouponForm({ coupon, products = [], categories = [], cus
 
       {warnings.length ? <div className="mx-5 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"><strong className="text-xs text-amber-900">Review before publishing</strong>{warnings.map((warning) => <p key={warning} className="mt-1 text-xs text-amber-800">{warning}</p>)}</div> : null}
 
-      {message ? <p role="status" className={`mx-5 mb-4 rounded-xl px-4 py-3 text-sm font-bold ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose/10 text-rose'}`}>{message.text}</p> : null}
+      <AdminFeedback message={message} type="success" title="Coupons" onDismiss={() => setMessage(null)} />
       <div className="flex flex-wrap justify-end gap-3 border-t border-theme-border bg-ivory px-5 py-4">
         {editing ? <button type="button" onClick={onCancel} disabled={saving} className="admin-btn-ghost"><X className="h-4 w-4" /> Cancel edit</button> : null}
         <button disabled={saving} className="admin-btn disabled:opacity-60"><Save className="h-4 w-4" /> {saving ? 'Saving...' : editing ? 'Update Coupon' : 'Create Coupon'}</button>

@@ -1,8 +1,9 @@
+import useAdminFeedback from '../../hooks/useAdminFeedback';
+import AdminFeedback from '../../components/admin/AdminFeedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, ExternalLink, Image, Link2, PackagePlus, RefreshCw, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ExternalLink, Link2, PackagePlus, RefreshCw, Sparkles, X } from 'lucide-react';
 import { IconBrandFacebook as Facebook, IconBrandInstagram as Instagram } from '@tabler/icons-react';
 import api from '../../services/api';
-import PageHeader from '../../components/admin/PageHeader';
 import ImportSizeFields from '../../components/admin/ImportSizeFields';
 import { fetchCategories, productAttributeDefinitions } from '../../utils/catalogOptions';
 import { normalizeImageUrl } from '../../services/normalize';
@@ -24,7 +25,7 @@ export default function SocialProductImport({ route = '/admin/social-import', na
   const [structure, setStructure] = useState(null); const [structureError, setStructureError] = useState('');
   const [history, setHistory] = useState(null); const [historyError, setHistoryError] = useState('');
   const [page, setPage] = useState(1); const [historyRevision, setHistoryRevision] = useState(0);
-  const [pollRevision, setPollRevision] = useState(0); const [notice, setNotice] = useState('');
+  const [pollRevision, setPollRevision] = useState(0); const [notice, setNotice] = useAdminFeedback('', 'info', 'Social Product Import');
   const submitting = useRef(false); const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { setSelectedId(routeId); }, [routeId]);
@@ -93,11 +94,11 @@ export default function SocialProductImport({ route = '/admin/social-import', na
     setJob((value) => response.data || ({ ...value, draftId: response.draftId, publishedProductId: response.productId })); setHistoryRevision((value) => value + 1);
   }, []);
   return <section className="social-import">
-    <PageHeader title="Import from social link" note="Paste a link. Review the filled details. Publish your product here.">
+    <div className="social-import__toolbar">
+      <details className="social-import__guide"><summary>Import guide</summary><div><p>Paste a post link → review photos and details → publish or save for later.</p><p>AI reads stated details and prices when connected. Enter your actual stock and confirm everything before publishing.</p></div></details>
       <a href="/admin/product-drafts" className="admin-btn-ghost">Product drafts <ArrowRight size={16} /></a>
-    </PageHeader>
+    </div>
     <div className="admin-card social-import__start">
-      <div className="social-import__intro"><span className="social-import__brand"><Instagram size={24} /><Facebook size={24} /></span><div><h2>From reel to product, with less typing.</h2><p>We select clear photos and fill details from the post. With AI connected, we also read video text and listen for product details and prices. Confirm what is missing, then publish.</p></div></div>
       <form onSubmit={importPost} className="social-import__url-form">
         <label htmlFor="social-product-url">Instagram or Facebook post link</label>
         <div><span className="social-import__url"><Link2 size={20} aria-hidden="true" /><input id="social-product-url" type="url" inputMode="url" autoComplete="off" maxLength={2048} required value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://www.instagram.com/p/…" aria-describedby="social-url-help" /></span>
@@ -107,9 +108,9 @@ export default function SocialProductImport({ route = '/admin/social-import', na
       {capabilities?.photoAnalysis === false && <p>Caption autofill and photo selection are ready. Connect Smart Reel Assistant to read spoken details and text inside videos.</p>}
       {capabilities?.enabled === false && <p className="social-import__alert" role="alert">{capabilities.message}</p>}
       {error && <p className="social-import__alert" role="alert">{error}</p>}
-      {notice && <p className="social-import__note" role="status">{notice}</p>}
+      <AdminFeedback message={notice} type="info" title="Social Product Import" onDismiss={() => setNotice('')} />
     </div>
-    <div className="social-import__workspace"><div className="social-import__main">
+    <div className={'social-import__workspace' + (!selectedId ? ' is-empty' : '')}><div className="social-import__main" hidden={!selectedId}>
       {jobError && <div className="social-import__alert" role="alert">{jobError}<button className="admin-btn-ghost" onClick={() => setPollRevision((value) => value + 1)}>Reload import</button></div>}
       {selectedId && !job && !jobError && <div className="admin-card social-import__state" role="status">Loading import details…</div>}
       {job && <>
@@ -122,7 +123,6 @@ export default function SocialProductImport({ route = '/admin/social-import', na
         </div>
         {job.status === 'ready' && <ReviewImport key={job._id} job={job} categories={categories} structure={structure} structureError={structureError} onCreated={draftCreated} />}
       </>}
-      {!selectedId && <div className="admin-card social-import__welcome"><Image size={34} strokeWidth={1.3} /><h2>Less typing. More time for your store.</h2><div className="social-import__steps"><p><span>1</span>Paste a post link</p><p><span>2</span>Confirm missing details</p><p><span>3</span>Publish your product</p></div><p>Stated prices are filled automatically. Your actual stock stays yours to enter. Every detail remains editable.</p></div>}
     </div>
     <aside className="admin-card social-import__history" aria-label="Import history"><header><h2>Your imports</h2><button className="admin-btn-ghost" aria-label="Refresh import history" onClick={() => setHistoryRevision((value) => value + 1)}><RefreshCw size={16} /></button></header>
       {historyError ? <p role="alert">{historyError}</p> : !history ? <p role="status">Loading history…</p> : !history.items.length ? <p>Your imported links will appear here.</p> : history.items.map((item) => <button type="button" key={item._id} className={'social-import__history-item' + (selectedId === item._id ? ' is-selected' : '')} onClick={() => open(item, true)} aria-label={'Open ' + item.platform + ' import from ' + date(item.createdAt)}>
@@ -197,7 +197,7 @@ function ReviewImport({ job, categories, structure, structureError, onCreated })
       {job.warnings?.length > 0 && <details className="social-import__notes"><summary>Review notes ({job.warnings.length})</summary><ul>{job.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul></details>}
       {job.caption && <details className="social-import__notes"><summary>Original post caption</summary><p className="social-import__caption">{job.caption}</p></details>}
       {error && <p className="social-import__alert" role="alert">{error}</p>}
-      <div className="social-import__save"><p>Publish directly from here, or save your progress for later. Everything stays editable.</p><button className="admin-btn" type="submit" disabled={saving}><PackagePlus size={17} />{saving ? 'Saving…' : 'Publish product'}</button><button className="admin-btn-ghost" type="button" disabled={saving} onClick={(event) => save(event, false)}>Save for later</button></div>
+      <div className="social-import__save"><button className="admin-btn" type="submit" disabled={saving}><PackagePlus size={17} />{saving ? 'Saving…' : 'Publish product'}</button><button className="admin-btn-ghost" type="button" disabled={saving} onClick={(event) => save(event, false)}>Save for later</button></div>
     </div>
     {viewer !== null && <PhotoPreview images={job.images} index={viewer} setIndex={setViewer} onClose={() => setViewer(null)} />}
   </form>;
