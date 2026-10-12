@@ -16,7 +16,7 @@
   .sc-navbar__shell {
     overflow: hidden;
     border-radius: 0;
-    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 14px 35px color-mix(in srgb, rgb(var(--site-shadow-rgb)) 8%, transparent);
     background: var(--navbar-bg, #fffaf2);
     border: 1px solid color-mix(in srgb, var(--site-border) 92%, transparent);
     border-left: 0;
@@ -99,17 +99,17 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: rgba(255, 255, 255, 0.86);
+    color: color-mix(in srgb, var(--site-on-primary) 86%, transparent);
     transition: color 180ms ease, transform 180ms ease;
   }
 
   .sc-navbar__top-link:hover {
-    color: #fff;
+    color: var(--site-on-primary);
     transform: translateY(-1px);
   }
 
   .sc-navbar__top-divider {
-    color: rgba(255, 255, 255, 0.38);
+    color: color-mix(in srgb, var(--site-on-primary) 38%, transparent);
   }
 
   .sc-navbar__main {
@@ -131,7 +131,7 @@
     gap: 0;
     min-width: 0;
     padding-right: 4px;
-    border-right: 1px solid rgba(137, 15, 54, 0.14);
+    border-right: 1px solid color-mix(in srgb, var(--site-primary-border) 14%, transparent);
   }
 
   .sc-navbar__brand-link {
@@ -169,7 +169,7 @@
     padding: 10px 0;
     border: 0;
     background: transparent;
-    color: #1a1718;
+    color: var(--site-text);
     font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.01em;
@@ -254,21 +254,21 @@
     padding: 0 46px 0 18px;
     border-radius: 999px;
     border: 1px solid var(--site-border, #ead8cb);
-    background: #fff7f1;
-    color: #1a1718;
+    background: var(--site-accent-soft);
+    color: var(--site-text);
     font-size: 15px;
     outline: none;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, rgb(var(--site-shadow-rgb)) 70%, transparent);
     transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
   }
 
   .sc-navbar__search-input::placeholder {
-    color: #9d8f87;
+    color: var(--site-muted);
   }
 
   .sc-navbar__search-input:focus {
     border-color: var(--site-primary, #8b0e35);
-    background: #fffdf9;
+    background: var(--site-accent-soft);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--site-primary) 8%, transparent);
   }
 
@@ -316,7 +316,7 @@
     padding: 6px 4px;
     border: 0;
     background: transparent;
-    color: #171717;
+    color: var(--site-text);
     transition: transform 180ms ease, color 180ms ease;
   }
 
@@ -354,12 +354,12 @@
     height: 18px;
     padding: 0 5px;
     border-radius: 999px;
-    background: #d7193f;
-    color: #fff;
+    background: var(--site-primary);
+    color: var(--site-on-primary);
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
-    box-shadow: 0 8px 14px rgba(215, 25, 63, 0.22);
+    box-shadow: 0 8px 14px color-mix(in srgb, rgb(var(--site-shadow-rgb)) 22%, transparent);
   }
 }
 

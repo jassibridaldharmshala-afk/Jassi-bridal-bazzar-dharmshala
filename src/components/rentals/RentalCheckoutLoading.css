@@ -1,0 +1,53 @@
+.rental-checkout-loading { --rental-loading-accent:var(--site-primary, #761c35); background:var(--site-background, #faf8f5); color:var(--site-text, #202124); font-family:var(--font-auth-app, 'Figtree', sans-serif); padding-bottom:24px; }
+.rental-checkout-loading__header { display:flex; align-items:center; gap:10px; min-height:54px; padding:4px 12px; background:var(--site-surface, #fff); border-bottom:1px solid var(--site-border, #eae7e3); }
+.rental-checkout-loading__header button { display:grid; place-items:center; width:40px; min-height:44px; flex-shrink:0; color:var(--rental-loading-accent); }
+.rental-checkout-loading .rental-checkout-loading__header h1 { display:flex; align-items:center; justify-content:center; gap:8px; flex:1; padding-right:40px; margin:0; font-family:var(--site-heading-font); font-size:14px; font-weight:var(--site-heading-weight); }
+.rental-checkout-loading__shell { max-width:1180px; margin:auto; padding:0 12px; }
+.rental-checkout-loading__steps { display:flex; justify-content:center; max-width:480px; gap:24px; padding:14px 0 10px; margin:0 auto; list-style:none; }
+.rental-checkout-loading__steps li { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--site-muted, #768091); }
+.rental-checkout-loading__steps li + li { position:relative; }
+.rental-checkout-loading__steps li + li:before { content:''; position:absolute; left:-19px; width:14px; height:1px; background:var(--site-border, #ded8d5); }
+.rental-checkout-loading__steps span { display:grid; place-items:center; width:25px; height:25px; border-radius:50%; border:1px solid var(--site-border, #ded8d5); background:var(--site-surface, #fff); }
+.rental-checkout-loading__steps [aria-current] { color:var(--rental-loading-accent); font-weight:600; }
+.rental-checkout-loading__steps [aria-current] span { background:var(--rental-loading-accent); border-color:var(--rental-loading-accent); color:var(--site-on-primary); }
+.rental-checkout-loading__status { display:flex; align-items:center; gap:10px; margin:12px 2px 16px; }
+.rental-checkout-loading__status > svg { flex-shrink:0; color:var(--rental-loading-accent); }
+.rental-checkout-loading .rental-checkout-loading__status h2 { margin:0; font-family:var(--site-heading-font); font-size:16px; line-height:1.4; font-weight:var(--site-heading-weight); }
+.rental-checkout-loading__status p { margin:3px 0 0; font-size:12px; line-height:1.5; color:var(--site-muted, #768091); }
+.rental-checkout-loading__status[role=alert] { flex-wrap:wrap; padding:16px; background:var(--site-surface, #fff); border:1px solid var(--site-border, #eae7e3); border-radius:9px; }
+.rental-checkout-loading__status[role=alert] > div { flex:1; min-width:180px; }
+.rental-checkout-loading__status > button { min-height:44px; padding:8px 14px; border-radius:6px; background:var(--rental-loading-accent); color:var(--site-on-primary); font-size:13px; font-weight:600; }
+.rental-checkout-loading__layout, .rental-checkout-loading__main { display:grid; gap:10px; min-width:0; }
+.rental-checkout-loading__layout { align-items:start; }
+.rental-checkout-loading__card { padding:12px; background:var(--site-surface, #fff); border:1px solid var(--site-border, #eae7e3); border-radius:9px; }
+.rental-checkout-loading__block { background:var(--site-border, #eae7e3); border-radius:4px; animation:rental-checkout-pulse 1.6s ease-in-out infinite; }
+.rental-checkout-loading__item { display:flex; gap:12px; }
+.rental-checkout-loading__image { width:64px; height:84px; flex-shrink:0; border-radius:6px; }
+.rental-checkout-loading__item > div:last-child { flex:1; min-width:0; padding:2px 0; }
+.rental-checkout-loading__title { width:65%; max-width:220px; height:16px; margin-bottom:14px; }
+.rental-checkout-loading__item .rental-checkout-loading__title { margin-bottom:10px; }
+.rental-checkout-loading__line { width:46%; max-width:160px; height:10px; }
+.rental-checkout-loading__item .rental-checkout-loading__line { margin:9px 0; }
+.rental-checkout-loading__price { width:28%; max-width:100px; height:14px; }
+.rental-checkout-loading__field { height:44px; width:100%; margin-top:10px; background:var(--site-background, #f4f2ef); border:1px solid var(--site-border, #eae7e3); border-radius:6px; }
+.rental-checkout-loading__field-pair { display:grid; grid-template-columns:minmax(0, 1.45fr) minmax(0, 1fr); gap:8px; margin-top:8px; }
+.rental-checkout-loading__row { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:18px 0; }
+.rental-checkout-loading__total { border-top:1px solid var(--site-border, #eae7e3); padding-top:18px; margin-bottom:18px; }
+.rental-checkout-loading__action { height:44px; opacity:.5; }
+.rental-checkout-loading button:focus-visible { outline:2px solid var(--rental-loading-accent); outline-offset:3px; }
+.rental-checkout-loading__spinner { animation:rental-checkout-spin .9s linear infinite; }
+@keyframes rental-checkout-pulse { 50% { opacity:.45; } }
+@keyframes rental-checkout-spin { to { transform:rotate(360deg); } }
+@media (min-width:1024px) {
+  .rental-checkout-loading { padding:20px 24px 24px; }
+  .rental-checkout-loading__header { max-width:1180px; margin:auto; padding:0; background:transparent; border:0; }
+  .rental-checkout-loading .rental-checkout-loading__header h1 { justify-content:flex-start; padding:0; font-size:24px; }
+  .rental-checkout-loading__shell { padding:0; }
+  .rental-checkout-loading__steps { justify-content:flex-end; max-width:none; padding:8px 0; }
+  .rental-checkout-loading__layout { grid-template-columns:minmax(0, 1fr) 350px; gap:20px; }
+  .rental-checkout-loading__main { gap:16px; }
+  .rental-checkout-loading__card { padding:22px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .rental-checkout-loading__block, .rental-checkout-loading__spinner { animation:none; }
+}

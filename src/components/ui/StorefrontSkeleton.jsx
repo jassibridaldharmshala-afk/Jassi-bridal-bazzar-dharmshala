@@ -9,7 +9,7 @@ export default function StorefrontSkeleton({ label = 'Loading the collection', h
         </div>}
         <div className="h-5 w-40 rounded skeleton-block" />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[0, 1, 2, 3].map(item => <div key={item} className="space-y-3 rounded-xl bg-white p-2">
+          {[0, 1, 2, 3].map(item => <div key={item} className="space-y-3 rounded-xl bg-[color:var(--site-surface)] p-2">
             <div className="aspect-[3/4] rounded-lg skeleton-block" />
             <div className="h-3 w-3/4 rounded skeleton-block" />
             <div className="h-3 w-1/3 rounded skeleton-block" />

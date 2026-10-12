@@ -1,5 +1,6 @@
 import RentalCustomerBooking from '../../components/rentals/RentalCustomerBooking';
-import { ArrowLeft } from 'lucide-react';
+import RentalBookingConfirmation from '../../components/rentals/RentalBookingConfirmation';
+import { ArrowLeft, CircleAlert, Package } from 'lucide-react';
 import MyOrders from './MyOrders';
 import { useAuth } from '../../context/AuthContext';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -14,7 +15,7 @@ function RentalBookingPage({ route = '/rentals', navigate: navigateRoute, succes
   const navigate = path => navigateRoute(storefrontPath(path, storeSlug));
   const brand = useBrandIdentity(); const bookingId = new URLSearchParams(route.split('?')[1] || '').get('id');
   const actor = bookingId || '';
-  const [booking, setBooking] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false), [message, setMessage] = useState('');
+  const [booking, setBooking] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [refreshing, setRefreshing] = useState(false);
   const [request, setRequest] = useState({ type: 'RETURN_COLLECTION', note: '', pickupAt: '', returnDueAt: '' });
   const [methods, setMethods] = useState([]), [method, setMethod] = useState('');
   const [methodError, setMethodError] = useState(''), [methodsLoading, setMethodsLoading] = useState(false), [contact, setContact] = useState({});
@@ -34,13 +35,14 @@ function RentalBookingPage({ route = '/rentals', navigate: navigateRoute, succes
     const scope = generation.current;
     if (refreshLock.current === scope) return;
     refreshLock.current = scope;
+    setRefreshing(true);
     try {
       const value = await api.get(rentalUrl(`/rentals/bookings/${bookingId}`, storeSlug), { silent: true, forceRefetch: true });
       if (scope !== generation.current) return;
       setBooking(value);
       setCheckedAt(Date.now()); setError('');
     } catch (e) { if (scope === generation.current) setError(e.details || e.message); }
-    finally { if (refreshLock.current === scope) refreshLock.current = null; }
+    finally { if (refreshLock.current === scope) { refreshLock.current = null; if (scope === generation.current) setRefreshing(false); } }
   }, [bookingId, storeSlug]);
   useEffect(() => {
     generation.current += 1; setBooking(null); setCheckedAt(null);
@@ -62,6 +64,14 @@ function RentalBookingPage({ route = '/rentals', navigate: navigateRoute, succes
     catch (e) { if (scope === generation.current) setError(e.details || e.message); }
     finally { lock.current = false; setBusy(false); }
   };
+  if (success) return <main className="sc-confirmation rental-confirmation">
+    {!booking ? <div className="sc-confirmation__state" role={error ? 'alert' : 'status'}>
+      {error ? <CircleAlert size={36} /> : <Package size={36} />}<h1>{error ? 'We couldn’t open this booking' : 'Finding your booking…'}</h1>
+      <p>{error || 'Please wait while we check your booking details.'}</p>
+      {error && <div className="sc-confirmation__actions"><button type="button" className="sc-confirmation__button" disabled={refreshing} onClick={load}>{refreshing ? 'Retrying…' : 'Try again'}</button><button type="button" className="sc-confirmation__button sc-confirmation__button--outline" onClick={() => navigate('/orders?type=rental')}>My orders</button></div>}
+    </div> : <RentalBookingConfirmation key={booking._id} booking={booking} clockNow={clockNow} busy={busy} methods={methods} method={method} setMethod={setMethod} methodError={methodError} methodsLoading={methodsLoading} loadMethods={loadMethods} pay={pay} contact={contact} navigate={navigate} refresh={load} refreshing={refreshing} error={error} message={message} />}
+    <div className="rental-checkout-utilities" data-rental-checkout-utilities />
+  </main>;
   return <main className="rental-shopping-page rental-my-bookings"><header className="rental-shopping-header"><button type="button" aria-label="Back to rental orders" onClick={() => navigate('/orders?type=rental')}><ArrowLeft size={22} /></button><h1>Rental booking</h1><button type="button" className="rental-shopping-link" disabled={busy} onClick={() => { load(); loadMethods(); }}>Refresh</button></header>
     {error && <p role="alert" className="rental-shopping-notice">{error}</p>}{message && <p role="status" className="rental-shopping-notice">{message}</p>}
     {!booking ? <p role="status">{error ? 'Booking could not be loaded. Use Refresh to retry.' : 'Loading booking…'}</p> : <RentalCustomerBooking key={booking._id} booking={booking} checkedAt={checkedAt} clockNow={clockNow} busy={busy} methods={methods} method={method} setMethod={setMethod} methodError={methodError} methodsLoading={methodsLoading} loadMethods={loadMethods} pay={pay} request={request} setRequest={setRequest} sendRequest={sendRequest} contact={contact} storeSlug={storeSlug} navigate={navigate} onChange={setBooking} success={success} />}

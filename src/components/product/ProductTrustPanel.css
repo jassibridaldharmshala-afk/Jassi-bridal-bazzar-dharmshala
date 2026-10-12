@@ -23,8 +23,8 @@
     padding: 10px;
     border: 1px solid var(--site-border, #ead8cb);
     border-radius: 6px;
-    background: #fff;
-    box-shadow: 0 6px 14px rgba(70, 35, 20, 0.04);
+    background: var(--site-surface);
+    box-shadow: 0 6px 14px color-mix(in srgb, rgb(var(--site-shadow-rgb)) 4%, transparent);
   }
 
   .sc-trust__item--last {
@@ -48,13 +48,13 @@
     display: block;
     font-size: 10px;
     font-weight: 800;
-    color: #111;
+    color: var(--site-text);
     white-space: nowrap;
   }
 
   .sc-trust__item p {
     margin: 2px 0 0;
     font-size: 9px;
-    color: #666;
+    color: var(--site-muted);
   }
 }

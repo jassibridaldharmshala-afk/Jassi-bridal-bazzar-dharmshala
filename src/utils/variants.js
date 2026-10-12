@@ -68,6 +68,8 @@ export function buildVariantMatrix(sizes = [], colors = [], existing = []) {
         stock: current?.stock ?? 0,
         price: current?.price || '',
         originalPrice: current?.originalPrice || '',
+        ...(current?.images ? { images: current.images } : {}),
+        ...(current?.bridalStyle ? { bridalStyle: current.bridalStyle } : {}),
         isActive: current?.isActive !== false,
       });
     }

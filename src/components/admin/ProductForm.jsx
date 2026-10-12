@@ -10,6 +10,7 @@ import ProductRentalPricing, { pricingFromOffer, rentalPricingError } from './Pr
 import ProductPreviewModal from './ProductPreviewModal';
 import BarcodeScanner from './BarcodeScanner';
 import CompleteLookPicker from './CompleteLookPicker';
+import BridalStyleFields from './BridalStyleFields';
 import { applySmartPatch } from '../../utils/productSmartFill';
 import { normalizeImageEntries, normalizeImageUrl, normalizeVideoEntries } from '../../services/normalize';
 import {
@@ -74,6 +75,10 @@ const emptyProduct = {
   fabric: '',
   occasion: '',
   completeLookProductIds: [],
+  completeLookBlockedIds: [],
+  bridalStyle: {},
+  lookDetails: {},
+  bridalStyleAnalysis: undefined,
   description: '',
   attributeValues: {},
   images: [],
@@ -675,19 +680,20 @@ export default function ProductForm({
       </div>
       <ProductChecklist checklist={checklist} readyCount={readyCount} previewImage={previewImage} quality={quality} compact={compact} />
 
-      {recoveryDraft && <div role="alert" className={`admin-form-hint ${recoveryDraft.stale ? 'border-amber-300 bg-amber-50' : ''}`}>
+      {recoveryDraft && <div role="alert" className={`admin-form-hint ${recoveryDraft.stale ? 'border-[color:var(--site-warning-border)] bg-[color:var(--site-warning-soft)]' : ''}`}>
         <div><h3>Unsaved browser draft found</h3><p>{recoveryDraft.stale ? 'The saved product changed after this browser draft was created. Review carefully before applying it.' : `Restore edits${recoveryDraft.savedAt ? ` saved ${new Date(recoveryDraft.savedAt).toLocaleString('en-IN')}` : ''}, or discard them and keep the latest server version.`}</p></div>
         <div className="mt-3 flex flex-wrap gap-2"><button type="button" className="admin-btn" onClick={() => { setForm((current) => ({ ...current, ...mergeDraftIntoProduct(recoveryDraft.form) })); setRecoveryDraft(null); }}>Restore browser edits</button><button type="button" className="admin-btn-ghost" onClick={() => { clearDraft(productId, apiPrefix); setRecoveryDraft(null); }}>Discard browser draft</button></div>
       </div>}
 
-      {cloudDraft && <div role="alert" className="admin-form-hint border-blue-200 bg-blue-50"><div><h3>Draft available from your account</h3><p>Continue the version saved {new Date(cloudDraft.updatedAt || Date.now()).toLocaleString('en-IN')} on this or another device.</p></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" className="admin-btn" onClick={() => { setForm(formFromServerDraft(cloudDraft)); setCloudDraft(null); setMessage('Cloud draft restored.'); }}>Restore cloud draft</button><button type="button" className="admin-btn-ghost" onClick={async () => { if (autosaveIdRef.current) await api.delete(`${apiPrefix}/product-drafts/${autosaveIdRef.current}`).catch(() => {}); autosaveIdRef.current = ''; setCloudDraft(null); setAutosaveStatus('Cloud draft discarded'); }}>Discard cloud draft</button></div></div>}
+      {cloudDraft && <div role="alert" className="admin-form-hint border-[color:var(--site-info-border)] bg-[color:var(--site-info-soft)]"><div><h3>Draft available from your account</h3><p>Continue the version saved {new Date(cloudDraft.updatedAt || Date.now()).toLocaleString('en-IN')} on this or another device.</p></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" className="admin-btn" onClick={() => { setForm(formFromServerDraft(cloudDraft)); setCloudDraft(null); setMessage('Cloud draft restored.'); }}>Restore cloud draft</button><button type="button" className="admin-btn-ghost" onClick={async () => { if (autosaveIdRef.current) await api.delete(`${apiPrefix}/product-drafts/${autosaveIdRef.current}`).catch(() => {}); autosaveIdRef.current = ''; setCloudDraft(null); setAutosaveStatus('Cloud draft discarded'); }}>Discard cloud draft</button></div></div>}
 
       {autosaveStatus && mode === 'Add' && <p className="product-form-sync" role="status">{autosaveStatus}</p>}
 
-      {Object.keys(errors).length > 0 && <div role="status" aria-live="polite" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900"><strong>Review {Object.keys(errors).length} highlighted field{Object.keys(errors).length === 1 ? '' : 's'} before saving.</strong><ul className="mt-2 space-y-1">{Object.entries(errors).slice(0, 6).map(([field, error]) => <li key={field}><button type="button" className="text-left font-semibold underline decoration-rose-300 underline-offset-2" onClick={() => focusFormError(formRef.current, { [field]: error })}>{error}</button></li>)}</ul></div>}
+      {Object.keys(errors).length > 0 && <div role="status" aria-live="polite" className="rounded-2xl border border-[color:var(--site-primary-border)] bg-[color:var(--site-tint)] p-4 text-sm text-[color:var(--site-primary)]"><strong>Review {Object.keys(errors).length} highlighted field{Object.keys(errors).length === 1 ? '' : 's'} before saving.</strong><ul className="mt-2 space-y-1">{Object.entries(errors).slice(0, 6).map(([field, error]) => <li key={field}><button type="button" className="text-left font-semibold underline decoration-[color:var(--site-primary)] underline-offset-2" onClick={() => focusFormError(formRef.current, { [field]: error })}>{error}</button></li>)}</ul></div>}
 
       {structureError && <div role="alert" className="admin-form-hint"><p>{structureError}</p><button type="button" onClick={reloadStructure}>Retry product configuration</button></div>}
-      <ProductSmartFill key={`${apiPrefix}-${productId || 'new'}-${smartFillReset}`} form={form} categories={categories} structure={structure} apiPrefix={apiPrefix}
+      <ProductSmartFill key={`${apiPrefix}-${productId || 'new'}-${smartFillReset}-${draftReady ? 'ready' : 'loading'}`} form={form} categories={categories} structure={structure} apiPrefix={apiPrefix}
+        onAnalysis={analysis => setForm(current => ({ ...current, bridalStyleAnalysis: analysis }))}
         disabled={saving || mediaActivity.images || mediaActivity.videos || !draftReady || !!loadError || !structure}
         onApply={(patch, undo) => { setForm(current => applySmartPatch(current, patch, undo)); setErrors({}); }} />
       {structure?.attributes?.length > 0 && <Section id="product-specifications" title={`${structure.name || 'Product'} specifications`} note="These fields, validation and customer-facing sections come from the active industry and category definition.">
@@ -795,12 +801,12 @@ export default function ProductForm({
           <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-theme-border" data-error-field="variants" tabIndex="-1">
             <VariantBulkTools form={form} setForm={setForm} />
             <div className="overflow-x-auto"><table className="w-full min-w-[1120px] text-left text-sm">
-              <thead className="bg-ivory text-xs uppercase tracking-[0.12em] text-slate-500">
+              <thead className="bg-ivory text-xs uppercase tracking-[0.12em] text-[color:var(--site-muted)]">
                 <tr><th className="p-3">Size</th><th className="p-3">Colour</th><th className="p-3">Variant SKU</th><th className="p-3">Stock</th><th className="p-3">Selling price</th><th className="p-3">MRP</th><th className="p-3">Photo</th><th className="p-3">Available</th></tr>
               </thead>
               <tbody>
                 {(form.variants || []).map((variant, index) => (
-                  <tr key={`${variant.size}-${variant.color}-${index}`} className="border-t border-[#f3ebe3]">
+                  <tr key={`${variant.size}-${variant.color}-${index}`} className="border-t border-[color:var(--site-accent-border)]">
                     <td className="p-3 font-bold">{variant.size}</td>
                     <td className="p-3">{variant.color || 'Default'}</td>
                     <td className="p-3"><input aria-label={`${variant.size || 'Default'} ${variant.color || 'default'} variant SKU`} value={variant.sku || ''} onChange={(event) => updateVariant(index, 'sku', event.target.value)} className="admin-field__control h-10 min-h-10 min-w-36 px-3" placeholder="Optional" /></td>
@@ -815,7 +821,7 @@ export default function ProductForm({
                 ))}
               </tbody>
             </table></div>
-            <p className="px-3 py-2 text-xs font-semibold text-slate-500">Total units: {form.stock || 0}. Leave a combination at 0 to make it unavailable. Blank variant prices use the main product price and MRP.</p>
+            <p className="px-3 py-2 text-xs font-semibold text-[color:var(--site-muted)]">Total units: {form.stock || 0}. Leave a combination at 0 to make it unavailable. Blank variant prices use the main product price and MRP.</p>
           </div>
         ) : null}
       </Section>
@@ -840,7 +846,7 @@ export default function ProductForm({
             disabled={saving}
             onBusyChange={(busy) => setMediaActivity((current) => ({ ...current, images: busy }))}
           />
-          <p className="mt-2 text-xs font-semibold text-slate-500">{form.images.length}/20 images saved. Mark one image as Main for product listing.</p>
+          <p className="mt-2 text-xs font-semibold text-[color:var(--site-muted)]">{form.images.length}/20 images saved. Mark one image as Main for product listing.</p>
           {errors.images && <p className="admin-field__error mt-2">{errors.images}</p>}
         </div>
         {viewMode === 'advanced' && <div className="lg:col-span-2">
@@ -860,7 +866,7 @@ export default function ProductForm({
             disabled={saving}
             onBusyChange={(busy) => setMediaActivity((current) => ({ ...current, videos: busy }))}
           />
-          <p className="mt-2 text-xs font-semibold text-slate-500">{form.videos.length}/2 videos uploaded.</p>
+          <p className="mt-2 text-xs font-semibold text-[color:var(--site-muted)]">{form.videos.length}/2 videos uploaded.</p>
         </div>}
         <label className="admin-field">
           <span>Customer sizing</span>
@@ -869,7 +875,7 @@ export default function ProductForm({
             <option value="sized">Customer must select a size</option>
             <option value="free-size">No size selection / free size</option>
           </select>
-          <small className="text-xs font-semibold text-slate-500">
+          <small className="text-xs font-semibold text-[color:var(--site-muted)]">
             Sizes are optional. Leave them blank for Free Size / adjustable items; enter labels only when customers should choose a size.
           </small>
         </label>
@@ -879,7 +885,7 @@ export default function ProductForm({
             value={form.sizeChartProfile || 'auto'}
             onChange={(event) => update('sizeChartProfile', event.target.value)}
             disabled={effectiveSizingMode !== 'sized'}
-            className="admin-field__control disabled:bg-slate-100 disabled:text-slate-400"
+            className="admin-field__control disabled:bg-[color:var(--site-surface-alt)] disabled:text-[color:var(--site-faint)]"
           >
             <option value="auto">Automatic ({SIZE_CHART_PROFILES[inferredSizeProfile]?.label || 'category based'})</option>
             {Object.entries(SIZE_CHART_PROFILES).map(([value, profile]) => <option key={value} value={value}>{profile.label}</option>)}
@@ -897,31 +903,31 @@ export default function ProductForm({
         {viewMode === 'advanced' && <Input label="Care Instructions" value={form.careInstructions} onChange={(value) => update('careInstructions', value)} placeholder="Dry clean preferred" />}
 
         {effectiveSizingMode === 'sized' ? (
-          <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-theme-border bg-white">
-            <div className="flex flex-col gap-3 border-b border-[#f0e5dc] bg-[#fffaf6] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="lg:col-span-2 overflow-hidden rounded-2xl border border-theme-border bg-[color:var(--site-surface)]">
+            <div className="flex flex-col gap-3 border-b border-[color:var(--site-accent-border)] bg-[color:var(--site-accent-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-sm font-black text-charcoal">Garment size chart</h3>
-                <p className="mt-1 text-xs font-semibold text-slate-500">Enter the actual finished-garment measurements from your supplier for every available size. Size labels such as S or M do not determine these measurements.</p>
+                <p className="mt-1 text-xs font-semibold text-[color:var(--site-muted)]">Enter the actual finished-garment measurements from your supplier for every available size. Size labels such as S or M do not determine these measurements.</p>
               </div>
-              <div className="inline-flex w-fit rounded-full border border-theme-border bg-white p-1" aria-label="Size chart unit">
+              <div className="inline-flex w-fit rounded-full border border-theme-border bg-[color:var(--site-surface)] p-1" aria-label="Size chart unit">
                 {['in', 'cm'].map((unit) => (
-                  <button key={unit} type="button" onClick={() => updateSizeChartUnit(unit)} className={`h-8 rounded-full px-4 text-xs font-black uppercase ${form.sizeChart?.unit === unit ? 'bg-wine text-white' : 'text-slate-500'}`}>{unit}</button>
+                  <button key={unit} type="button" onClick={() => updateSizeChartUnit(unit)} className={`h-8 rounded-full px-4 text-xs font-black uppercase ${form.sizeChart?.unit === unit ? 'bg-wine text-[color:var(--site-on-fill)]' : 'text-[color:var(--site-muted)]'}`}>{unit}</button>
                 ))}
               </div>
             </div>
             {selectableSizes.length ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-max text-left text-xs">
-                  <thead className="bg-[#fbf7f3] text-[10px] uppercase tracking-[0.08em] text-slate-500">
+                  <thead className="bg-[color:var(--site-accent-soft)] text-[10px] uppercase tracking-[0.08em] text-[color:var(--site-muted)]">
                     <tr>
-                      <th className="sticky left-0 z-10 min-w-20 bg-[#fbf7f3] p-3">Size</th>
+                      <th className="sticky left-0 z-10 min-w-20 bg-[color:var(--site-accent-soft)] p-3">Size</th>
                       {sizeChartColumns.map((column) => <th key={column.key} className="min-w-32 p-3">{column.label}<span className="ml-1 normal-case">({form.sizeChart?.unit || 'in'})</span></th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {sizeChartRows.map((row) => (
-                      <tr key={row.size} className="border-t border-[#f3ebe3]">
-                        <th className="sticky left-0 z-10 bg-white p-3 text-sm font-black text-charcoal">{row.size}</th>
+                      <tr key={row.size} className="border-t border-[color:var(--site-accent-border)]">
+                        <th className="sticky left-0 z-10 bg-[color:var(--site-surface)] p-3 text-sm font-black text-charcoal">{row.size}</th>
                         {sizeChartColumns.map((column) => (
                           <td key={column.key} className="p-2">
                             <input
@@ -933,7 +939,7 @@ export default function ProductForm({
                               aria-label={`${row.size} ${column.label}`}
                               data-garment-measurement="true"
                               aria-invalid={!!errors.sizeChart && (!Number.isFinite(Number(row[column.key])) || Number(row[column.key]) <= 0)}
-                              className="h-10 w-28 rounded-lg border border-[#e5d8cf] px-3 font-bold outline-none focus:border-wine focus:ring-2 focus:ring-wine/10"
+                              className="h-10 w-28 rounded-lg border border-[color:var(--site-accent-border)] px-3 font-bold outline-none focus:border-wine focus:ring-2 focus:ring-wine/10"
                               placeholder="0.0"
                             />
                           </td>
@@ -944,9 +950,9 @@ export default function ProductForm({
                 </table>
               </div>
             ) : (
-              <p className="p-4 text-xs font-semibold text-amber-700">Add the selectable sizes above to generate measurement rows.</p>
+              <p className="p-4 text-xs font-semibold text-[color:var(--site-warning)]">Add the selectable sizes above to generate measurement rows.</p>
             )}
-            <div className="border-t border-[#f0e5dc] p-4">
+            <div className="border-t border-[color:var(--site-accent-border)] p-4">
               <label className="admin-field">
                 <span>Fit and measurement note</span>
                 <textarea value={form.sizeFitNotes || ''} onChange={(event) => update('sizeFitNotes', event.target.value)} className="admin-field__control min-h-20" placeholder="Example: Garment measurements. Choose one size larger for a relaxed fit." />
@@ -957,7 +963,7 @@ export default function ProductForm({
         ) : null}
       </Section>
 
-      <Section id="complete-look" title="Complete the look" collapsible={compact} note="Optional complementary products on the product-detail page; no automatic bundles or cart changes."><CompleteLookPicker apiPrefix={apiPrefix} productId={productId} value={form.completeLookProductIds || []} onChange={value => update('completeLookProductIds', value)} disabled={saving} /></Section>
+      <Section id="complete-look" title="Complete your bridal look" collapsible={compact} note="Optional accessories, matched using reviewed appearance and your pinned choices."><BridalStyleFields value={form.bridalStyle} details={form.lookDetails} onChange={value => update('bridalStyle', value)} onDetails={value => update('lookDetails', value)} disabled={saving} /><div className="grid gap-3 lg:col-span-2">{(form.variants || []).filter(variant => variant.isActive !== false).map((variant) => { const index = form.variants.indexOf(variant); return <details className="admin-form-card" key={variant._id || index}><summary>Matching appearance · {[variant.size, variant.color].filter(Boolean).join(" / ") || "Default variant"}</summary><BridalStyleFields appearanceOnly value={variant.bridalStyle || {}} onChange={value => updateVariant(index, "bridalStyle", value)} disabled={saving} /></details>; })}</div><CompleteLookPicker apiPrefix={apiPrefix} productId={productId} value={form.completeLookProductIds || []} onChange={value => update('completeLookProductIds', value)} blocked={form.completeLookBlockedIds || []} onBlock={value => update('completeLookBlockedIds', value)} disabled={saving} /></Section>
       {viewMode === 'advanced' && <Section id="product-fulfilment" step="04" title="Shipping, Supplier and Schedule" note="Operational details used for courier planning, restocking and controlled publishing.">
         <Input field="packageDimensions" label="Package length (cm)" type="number" min="0" step="0.1" value={form.packageDimensions?.lengthCm || 0} onChange={(value) => { updateNested(setForm, 'packageDimensions', 'lengthCm', value); clearErrors(setErrors, 'packageDimensions'); }} error={errors.packageDimensions} />
         <Input label="Package width (cm)" type="number" min="0" step="0.1" value={form.packageDimensions?.widthCm || 0} onChange={(value) => { updateNested(setForm, 'packageDimensions', 'widthCm', value); clearErrors(setErrors, 'packageDimensions'); }} />
@@ -1016,7 +1022,7 @@ export default function ProductForm({
         {automaticSizing(structure) && <Input label="Size range" value={assistant.sizeRange} onChange={(value) => updateAssistant('sizeRange', value)} placeholder="S, M, L, XL" />}
         <Input label="Price segment" value={assistant.priceSegment} onChange={(value) => updateAssistant('priceSegment', value)} placeholder="Budget, Premium, Luxury" />
         <Input label="Target customer / usage" value={assistant.targetCustomer} onChange={(value) => updateAssistant('targetCustomer', value)} placeholder="Wedding guest, festive wear" />
-        <div className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="lg:col-span-2 flex flex-col gap-3 rounded-2xl border border-[color:var(--site-border)] bg-[color:var(--site-surface)] p-4">
           <label className="flex items-start gap-3 text-sm font-bold text-charcoal">
             <input
               type="radio"
@@ -1027,7 +1033,7 @@ export default function ProductForm({
             />
             <span>
               <span className="block">Fill Empty Fields Only</span>
-              <span className="block text-xs font-semibold text-slate-500">Default. Existing manual values stay untouched.</span>
+              <span className="block text-xs font-semibold text-[color:var(--site-muted)]">Default. Existing manual values stay untouched.</span>
             </span>
           </label>
           <label className="flex items-start gap-3 text-sm font-bold text-charcoal">
@@ -1040,7 +1046,7 @@ export default function ProductForm({
             />
             <span>
               <span className="block">Replace Existing Values</span>
-              <span className="block text-xs font-semibold text-slate-500">Will ask for confirmation before overwriting manual data.</span>
+              <span className="block text-xs font-semibold text-[color:var(--site-muted)]">Will ask for confirmation before overwriting manual data.</span>
             </span>
           </label>
         </div>
@@ -1066,7 +1072,7 @@ export default function ProductForm({
             ['metaDescription', 'Meta description'],
             ['flags', 'Flags'],
           ].map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-charcoal">
+            <label key={key} className="flex items-center gap-2 rounded-xl border border-[color:var(--site-border)] bg-[color:var(--site-surface)] px-3 py-2 text-sm font-bold text-charcoal">
               <input
                 type="checkbox"
                 checked={assistantSelection[key]}
@@ -1143,7 +1149,7 @@ export default function ProductForm({
       {copyOpen && <ProductCopyModal apiPrefix={apiPrefix} onClose={() => setCopyOpen(false)} onChoose={copyExistingProduct} />}
       {previewOpen && <ProductPreviewModal product={{ ...form, sizes: splitList(form.sizes), colors: splitList(form.colors) }} onClose={() => setPreviewOpen(false)} />}
 
-      {(mediaActivity.images || mediaActivity.videos) && <p role="status" className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">Media upload in progress. Saving will be available when it finishes.</p>}
+      {(mediaActivity.images || mediaActivity.videos) && <p role="status" className="rounded-2xl border border-[color:var(--site-info-border)] bg-[color:var(--site-info-soft)] px-4 py-3 text-sm font-semibold text-[color:var(--site-info)]">Media upload in progress. Saving will be available when it finishes.</p>}
       <AdminFeedback message={message} type="success" title="Products" onDismiss={() => setMessage('')} />
       <div className="admin-form-actions">
         {onCancel ? (
@@ -1188,22 +1194,22 @@ function AssistantPreviewModal({ suggestions, selection, setSelection, mode, onC
   ];
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/55 p-3 sm:p-4">
-      <div className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 px-4 py-4">
+    <div className="fixed inset-0 z-[90] bg-[color:color-mix(in_srgb,var(--site-media-black)_55%,transparent)] p-3 sm:p-4">
+      <div className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-[28px] bg-[color:var(--site-surface)] shadow-[0_24px_80px_rgb(var(--site-shadow-rgb)/0.3)]">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[color:var(--site-border)] px-4 py-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-wine/60">Smart Product Assistant</p>
             <h2 className="text-lg font-black text-charcoal">Preview generated suggestions</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">Mode: {mode === 'replace' ? 'Replace existing values' : 'Fill empty fields only'}</p>
+            <p className="mt-1 text-sm font-semibold text-[color:var(--site-muted)]">Mode: {mode === 'replace' ? 'Replace existing values' : 'Fill empty fields only'}</p>
           </div>
-          <button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full border border-slate-200">
+          <button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--site-border)]">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <div className="grid gap-3 lg:grid-cols-2">
             {fields.map(([key, label, value]) => (
-              <label key={key} className="rounded-2xl border border-slate-200 bg-ivory p-3">
+              <label key={key} className="rounded-2xl border border-[color:var(--site-border)] bg-ivory p-3">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-black text-charcoal">{label}</span>
                   <input
@@ -1213,13 +1219,13 @@ function AssistantPreviewModal({ suggestions, selection, setSelection, mode, onC
                     className="accent-rose"
                   />
                 </div>
-                <pre className="mt-2 whitespace-pre-wrap break-words text-[12px] leading-5 text-slate-600">{String(value || 'No suggestion')}</pre>
+                <pre className="mt-2 whitespace-pre-wrap break-words text-[12px] leading-5 text-[color:var(--site-muted)]">{String(value || 'No suggestion')}</pre>
               </label>
             ))}
           </div>
         </div>
-        <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:justify-end">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 px-5 text-sm font-black text-slate-700">
+        <div className="flex flex-col gap-3 border-t border-[color:var(--site-border)] px-4 py-4 sm:flex-row sm:justify-end">
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center justify-center rounded-xl border border-[color:var(--site-border)] px-5 text-sm font-black text-[color:var(--site-muted)]">
             Cancel
           </button>
           <button
@@ -1230,7 +1236,7 @@ function AssistantPreviewModal({ suggestions, selection, setSelection, mode, onC
               }
               onApply();
             }}
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-wine px-5 text-sm font-black text-white"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-wine px-5 text-sm font-black text-[color:var(--site-on-fill)]"
           >
             Apply Selected
           </button>
@@ -1372,10 +1378,10 @@ function Input({ field, label, value, onChange, placeholder, type = 'text', requ
         onChange={(event) => onChange(event.target.value)}
         data-error-field={field}
         aria-invalid={Boolean(error)}
-        className={`admin-field__control disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500${error ? ' is-error' : ''}`}
+        className={`admin-field__control disabled:cursor-not-allowed disabled:bg-[color:var(--site-surface-alt)] disabled:text-[color:var(--site-muted)]${error ? ' is-error' : ''}`}
         placeholder={placeholder}
       />
-      {helpText && <small className="text-slate-500">{helpText}</small>}
+      {helpText && <small className="text-[color:var(--site-muted)]">{helpText}</small>}
       {error && <span className="admin-field__error">{error}</span>}
     </label>
   );
@@ -1407,7 +1413,7 @@ function DynamicAttributeField({ attribute, value, onChange }) {
       return (
         <fieldset className="admin-field" data-required-attribute={attribute.required && !String(value ?? '').trim() ? attribute.key : undefined} tabIndex={attribute.required ? -1 : undefined}>
           <legend>{label}</legend>
-          <div className="flex flex-wrap gap-2 rounded-xl border border-theme-border bg-white p-3">
+          <div className="flex flex-wrap gap-2 rounded-xl border border-theme-border bg-[color:var(--site-surface)] p-3">
             {attribute.options.map((option) => (
               <label key={option} className={`admin-flag ${selected.has(option) ? 'is-on' : ''}`}>
                 <input type="checkbox" checked={selected.has(option)} onChange={() => {
@@ -1460,9 +1466,9 @@ function DynamicVariantEditor({ variantConfiguration, attributes, form, setForm,
   };
 
   return (
-    <div className="lg:col-span-2 rounded-2xl border border-theme-border bg-[#fffaf6] p-4 sm:p-5">
+    <div className="lg:col-span-2 rounded-2xl border border-theme-border bg-[color:var(--site-accent-soft)] p-4 sm:p-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div><h3 className="font-bold text-charcoal">Variant inventory</h3><p className="mt-1 text-xs text-slate-500">Create only the combinations you sell. Every row can have its own SKU, price and stock.</p></div>
+        <div><h3 className="font-bold text-charcoal">Variant inventory</h3><p className="mt-1 text-xs text-[color:var(--site-muted)]">Create only the combinations you sell. Every row can have its own SKU, price and stock.</p></div>
         <button type="button" onClick={generate} className="admin-btn-secondary h-10">Generate combinations</button>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1481,7 +1487,7 @@ function DynamicVariantEditor({ variantConfiguration, attributes, form, setForm,
       {form.trackVariants && form.variants?.length ? (
         <><div className="mt-4"><VariantBulkTools form={form} setForm={setForm} /></div><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {form.variants.map((variant, index) => (
-            <article key={dynamicVariantKey(variant.optionValues)} className="rounded-xl border border-theme-border bg-white p-3">
+            <article key={dynamicVariantKey(variant.optionValues)} className="rounded-xl border border-theme-border bg-[color:var(--site-surface)] p-3">
               <strong className="block truncate text-sm text-charcoal" title={formatVariantOptions(variant.optionValues)}>{formatVariantOptions(variant.optionValues)}</strong>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <CompactVariantInput label="SKU" value={variant.sku} onChange={(value) => onUpdateVariant(index, 'sku', value)} />
@@ -1489,18 +1495,18 @@ function DynamicVariantEditor({ variantConfiguration, attributes, form, setForm,
                 <CompactVariantInput label="Selling price" type="number" min={0.01} step={0.01} value={variant.price} onChange={(value) => onUpdateVariant(index, 'price', value)} />
                 <CompactVariantInput label="MRP" type="number" min={0.01} step={0.01} value={variant.originalPrice} onChange={(value) => onUpdateVariant(index, 'originalPrice', value)} />
               </div>
-              <label className="mt-3 grid gap-1 text-[11px] font-semibold text-slate-500"><span>Variant photo</span><select value={variant.images?.[0]?.url || ''} onChange={(event) => onUpdateVariant(index, 'images', event.target.value ? [{ ...form.images.find(image => image.url === event.target.value), url: event.target.value, primary: true }] : [])} className="h-9 rounded-lg border border-theme-border px-2"><option value="">Main product photo</option>{form.images.map((image, imageIndex) => <option key={`${image.url}-${imageIndex}`} value={image.url}>Photo {imageIndex + 1}</option>)}</select></label>
-              <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-600"><input type="checkbox" checked={variant.isActive !== false} onChange={(event) => onUpdateVariant(index, 'isActive', event.target.checked)} /> Available for sale</label>
+              <label className="mt-3 grid gap-1 text-[11px] font-semibold text-[color:var(--site-muted)]"><span>Variant photo</span><select value={variant.images?.[0]?.url || ''} onChange={(event) => onUpdateVariant(index, 'images', event.target.value ? [{ ...form.images.find(image => image.url === event.target.value), url: event.target.value, primary: true }] : [])} className="h-9 rounded-lg border border-theme-border px-2"><option value="">Main product photo</option>{form.images.map((image, imageIndex) => <option key={`${image.url}-${imageIndex}`} value={image.url}>Photo {imageIndex + 1}</option>)}</select></label>
+              <label className="mt-3 flex items-center gap-2 text-xs font-semibold text-[color:var(--site-muted)]"><input type="checkbox" checked={variant.isActive !== false} onChange={(event) => onUpdateVariant(index, 'isActive', event.target.checked)} /> Available for sale</label>
             </article>
           ))}
         </div></>
-      ) : <p className="mt-4 text-xs font-semibold text-slate-500">Add option values and generate combinations. Nothing is created automatically.</p>}
+      ) : <p className="mt-4 text-xs font-semibold text-[color:var(--site-muted)]">Add option values and generate combinations. Nothing is created automatically.</p>}
     </div>
   );
 }
 
 function CompactVariantInput({ label, value, onChange, type = 'text', min, step }) {
-  return <label className="grid gap-1 text-[11px] font-semibold text-slate-500"><span>{label}</span><input type={type} min={min} step={step} value={value ?? ''} onChange={(event) => onChange(event.target.value)} className="h-9 min-w-0 rounded-lg border border-theme-border px-2 text-xs text-charcoal" /></label>;
+  return <label className="grid gap-1 text-[11px] font-semibold text-[color:var(--site-muted)]"><span>{label}</span><input type={type} min={min} step={step} value={value ?? ''} onChange={(event) => onChange(event.target.value)} className="h-9 min-w-0 rounded-lg border border-theme-border px-2 text-xs text-charcoal" /></label>;
 }
 
 function VariantBulkTools({ form, setForm }) {

@@ -3,7 +3,7 @@ import { cn } from '../../lib/utils';
 
 export function Card({ className = '', ...props }) {
   const { as: Component = 'div', ...rest } = props;
-  return <Component className={cn('rounded-2xl border border-slate-200 bg-white shadow-sm', className)} {...rest} />;
+  return <Component className={cn('rounded-2xl border border-[color:var(--site-border)] bg-[color:var(--site-surface)] shadow-sm', className)} {...rest} />;
 }
 
 export function CardHeader({ className = '', ...props }) {
@@ -17,7 +17,7 @@ export function CardTitle({ className = '', ...props }) {
 }
 
 export function CardDescription({ className = '', ...props }) {
-  return <p className={cn('body-text text-slate-500', className)} {...props} />;
+  return <p className={cn('body-text text-[color:var(--site-muted)]', className)} {...props} />;
 }
 
 export function CardContent({ className = '', ...props }) {

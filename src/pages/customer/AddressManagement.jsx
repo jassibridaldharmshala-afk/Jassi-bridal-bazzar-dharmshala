@@ -253,7 +253,7 @@ export function AddressForm({ form, setForm, onSubmit, message, editing, onCance
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="grid h-10 w-10 place-items-center rounded-full text-wine hover:bg-white"
+          className="grid h-10 w-10 place-items-center rounded-full text-wine hover:bg-[color:var(--site-surface)]"
           aria-label="Back"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -287,7 +287,7 @@ export function AddressForm({ form, setForm, onSubmit, message, editing, onCance
             />
           </LabeledField>
           {form.mobile && !isValidIndianMobile(form.mobile) ? (
-            <p className="text-[11px] font-medium text-[#c81e4a]">{PHONE_VALIDATION_MESSAGE}</p>
+            <p className="text-[11px] font-medium text-[color:var(--site-primary)]">{PHONE_VALIDATION_MESSAGE}</p>
           ) : null}
           <LabeledField icon={Phone} label="Alternate mobile (optional)">
             <TextInput value={form.alternateMobile || ''} onChange={(event) => update('alternateMobile', digitsOnly(event.target.value, 10))}
@@ -326,7 +326,7 @@ export function AddressForm({ form, setForm, onSubmit, message, editing, onCance
               required
             />
           </LabeledField>
-          <p className="text-[11px] leading-5 text-slate-500">Enter your exact delivery pincode to fill state and district. You can also select them manually.</p>
+          <p className="text-[11px] leading-5 text-[color:var(--site-muted)]">Enter your exact delivery pincode to fill state and district. You can also select them manually.</p>
           <LabeledField icon={Home} label="House / flat / block">
             <TextInput value={form.houseNo || ''} onChange={(event) => update('houseNo', event.target.value)} placeholder="House no., tower or block" disabled={saving} required />
           </LabeledField>
@@ -355,21 +355,21 @@ export function AddressForm({ form, setForm, onSubmit, message, editing, onCance
                   onClick={() => update('addressType', option.value)}
                   disabled={saving}
                   className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
-                    active ? 'border-wine bg-white shadow-[0_0_0_1px_#6d1f34]' : 'border-theme-border bg-white'
+                    active ? 'border-wine bg-[color:var(--site-surface)] shadow-[0_0_0_1px_var(--site-primary)]' : 'border-theme-border bg-[color:var(--site-surface)]'
                   }`}
                 >
                   <span className={`grid h-9 w-9 place-items-center rounded-full ${active ? 'bg-wine text-ivory' : 'bg-ivory text-gold'}`}>
                     <Icon className="h-4 w-4" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[13px] font-bold text-[#3f2a22]">{option.label}</span>
-                    <span className="block text-[11px] text-slate-500">{option.desc}</span>
+                    <span className="block text-[13px] font-bold text-[color:var(--site-text)]">{option.label}</span>
+                    <span className="block text-[11px] text-[color:var(--site-muted)]">{option.desc}</span>
                   </span>
                 </button>
               );
             })}
           </div>
-          <label className="flex items-center gap-2 rounded-xl border border-theme-border bg-white px-3 py-3 text-[12px] text-slate-600">
+          <label className="flex items-center gap-2 rounded-xl border border-theme-border bg-[color:var(--site-surface)] px-3 py-3 text-[12px] text-[color:var(--site-muted)]">
             <input type="checkbox" checked={form.isDefault} onChange={(event) => update('isDefault', event.target.checked)} className="accent-wine" disabled={saving} />
             Make this my default address
           </label>
@@ -378,10 +378,10 @@ export function AddressForm({ form, setForm, onSubmit, message, editing, onCance
         {message && <p role="alert" className="error-text font-semibold text-wine">{message}</p>}
 
         <div className="grid grid-cols-2 gap-3 border-t border-theme-border pt-5">
-          <Button type="button" variant="secondary" onClick={onCancel} disabled={saving} className="h-11 rounded-xl border border-theme-border bg-white text-[#3f2a22]">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={saving} className="h-11 rounded-xl border border-theme-border bg-[color:var(--site-surface)] text-[color:var(--site-text)]">
             Cancel
           </Button>
-          <Button type="submit" disabled={saving} className="h-11 rounded-xl bg-wine text-ivory hover:bg-[#5a192b]">
+          <Button type="submit" disabled={saving} className="h-11 rounded-xl bg-wine text-ivory hover:bg-[color:var(--site-primary)]">
             {saving ? 'Saving...' : editing ? 'Update Address' : 'Save Address'}
           </Button>
         </div>
@@ -397,7 +397,7 @@ function LabeledField({ icon: Icon, label, children }) {
         <Icon className="h-3.5 w-3.5 text-gold" />
         {label}
       </span>
-      <div className="sc-field-shell min-w-0 max-w-full rounded-xl border border-theme-border bg-white px-3 py-1">
+      <div className="sc-field-shell min-w-0 max-w-full rounded-xl border border-theme-border bg-[color:var(--site-surface)] px-3 py-1">
         {children}
       </div>
     </label>

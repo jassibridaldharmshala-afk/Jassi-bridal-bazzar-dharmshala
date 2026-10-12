@@ -4,7 +4,7 @@ module.exports = {
     extend: {
       colors: {
         wine: 'rgb(var(--site-primary-rgb, 109 31 52) / <alpha-value>)',
-        rose: '#FF5F86',
+        rose: 'rgb(var(--site-primary-rgb, 109 31 52) / <alpha-value>)',
         blush: 'rgb(var(--site-secondary-rgb, 255 240 244) / <alpha-value>)',
         ivory: 'rgb(var(--site-background-rgb, 255 250 242) / <alpha-value>)',
         gold: 'rgb(var(--site-accent-rgb, 184 145 74) / <alpha-value>)',
@@ -20,11 +20,12 @@ module.exports = {
         }
       },
       boxShadow: {
-        soft: '0 18px 50px rgba(15, 23, 42, 0.08)'
+        soft: '0 18px 50px rgb(var(--site-shadow-rgb, 23 22 26) / 0.08)'
       },
       fontFamily: {
         display: ['var(--site-heading-font, Georgia, serif)'],
-        sans: ['var(--site-body-font, Arial, sans-serif)']
+        sans: ['var(--site-body-font, Arial, sans-serif)'],
+        serif: ['var(--site-heading-font, Georgia, serif)']
       }
     }
   },

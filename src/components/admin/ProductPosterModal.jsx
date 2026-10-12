@@ -50,32 +50,32 @@ export default function ProductPosterModal({ open, product, settings, onClose })
   };
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/55 p-3 sm:p-4">
-      <div className="mx-auto flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+    <div className="fixed inset-0 z-[90] bg-[color:color-mix(in_srgb,var(--site-media-black)_55%,transparent)] p-3 sm:p-4">
+      <div className="mx-auto flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-[color:var(--site-surface)] shadow-[0_24px_80px_rgb(var(--site-shadow-rgb)/0.3)]">
+        <div className="flex items-center justify-between border-b border-[color:var(--site-border)] px-4 py-3">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-wine/60">Product Poster</p>
             <h2 className="text-lg font-black text-charcoal">Generate shareable poster</h2>
           </div>
-          <button type="button" aria-label="Close poster" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full border border-slate-200">
+          <button type="button" aria-label="Close poster" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--site-border)]">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[1fr_320px]">
-          <div className="min-h-0 overflow-auto rounded-[24px] border border-slate-200 bg-[#fbf7f3] p-4">
-            {posterUrl ? <img src={posterUrl} alt="Poster preview" className="mx-auto w-full max-w-[420px] rounded-[24px] shadow-lg" /> : <div className="grid h-full min-h-[420px] place-items-center text-sm font-bold text-slate-500">{generationFailed ? <button type="button" className="admin-btn-ghost" onClick={() => setRetry((value) => value + 1)}>Retry poster</button> : 'Generating poster...'}</div>}
+          <div className="min-h-0 overflow-auto rounded-[24px] border border-[color:var(--site-border)] bg-[color:var(--site-accent-soft)] p-4">
+            {posterUrl ? <img src={posterUrl} alt="Poster preview" className="mx-auto w-full max-w-[420px] rounded-[24px] shadow-lg" /> : <div className="grid h-full min-h-[420px] place-items-center text-sm font-bold text-[color:var(--site-muted)]">{generationFailed ? <button type="button" className="admin-btn-ghost" onClick={() => setRetry((value) => value + 1)}>Retry poster</button> : 'Generating poster...'}</div>}
           </div>
-          <div className="space-y-3 rounded-[24px] border border-slate-200 p-4">
+          <div className="space-y-3 rounded-[24px] border border-[color:var(--site-border)] p-4">
             <p className="text-sm font-bold text-charcoal">{product.name}</p>
-            <p className="text-sm text-slate-500">WhatsApp: {settings?.whatsappNumber || '-'}</p>
-            <p className="text-sm text-slate-500">Website: {window.location.origin}</p>
+            <p className="text-sm text-[color:var(--site-muted)]">WhatsApp: {settings?.whatsappNumber || '-'}</p>
+            <p className="text-sm text-[color:var(--site-muted)]">Website: {window.location.origin}</p>
             <input aria-label="Product link" readOnly value={shareLink} className="admin-field__control" />
             <AdminFeedback message={message} type="info" title="Product Poster Modal" onDismiss={() => setMessage('')} />
-            <button type="button" onClick={download} disabled={!posterUrl} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-wine px-4 text-sm font-black text-white disabled:opacity-60">
+            <button type="button" onClick={download} disabled={!posterUrl} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-wine px-4 text-sm font-black text-[color:var(--site-on-fill)] disabled:opacity-60">
               <Download className="h-4 w-4" />
               Download PNG
             </button>
-            <button type="button" onClick={copyLink} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-700">
+            <button type="button" onClick={copyLink} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--site-border)] px-4 text-sm font-black text-[color:var(--site-muted)]">
               <Copy className="h-4 w-4" />
               Copy product link
             </button>

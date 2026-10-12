@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { normalizeImageUrl } from '../../services/normalize';
+import { responsiveImage } from '../../utils/responsiveImages';
 import { getApiBaseUrl } from '../../store/apiBaseUrl';
 import { readStoreSlug } from '../../utils/attribution';
 import { getTrafficContext, recordTrafficEvent, trafficAllowed, TRAFFIC_CHANGE_EVENT } from '../../utils/trafficTracker';
@@ -113,27 +113,27 @@ export default function StorefrontBannerSlot({ banners = [], position, navigate,
       <button
         type="button"
         onClick={() => openBanner(banner, navigate)}
-        className={`group relative block w-full overflow-hidden rounded-2xl bg-[#f8eee9] text-left shadow-[0_12px_30px_rgba(76,24,42,0.10)] md:rounded-[26px] ${compact ? 'min-h-[112px] md:min-h-[150px]' : 'min-h-[150px] md:min-h-[230px]'}`}
+        className={`group relative block w-full overflow-hidden rounded-2xl bg-[color:var(--site-accent-soft)] text-left shadow-[0_12px_30px_rgb(var(--site-shadow-rgb)/0.10)] md:rounded-[26px] ${compact ? 'min-h-[112px] md:min-h-[150px]' : 'min-h-[150px] md:min-h-[230px]'}`}
         aria-label={`${banner.title || position}, slide ${activeIndex + 1} of ${slides.length}`}
       >
         <picture className="absolute inset-0 block h-full w-full">
-          {banner.mobileImage ? <source media="(max-width: 639px)" srcSet={normalizeImageUrl(banner.mobileImage)} /> : null}
-          {banner.tabletImage ? <source media="(max-width: 1023px)" srcSet={normalizeImageUrl(banner.tabletImage)} /> : null}
-          <img src={normalizeImageUrl(banner.image)} alt={banner.altText || banner.title || ''} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" style={{ objectPosition: focal }} />
+          {banner.mobileImage ? <source media="(max-width: 639px)" srcSet={responsiveImage(banner.mobileImageMedia || banner.mobileImage, 'hero').srcSet || responsiveImage(banner.mobileImage, 'hero').src} sizes="100vw" /> : null}
+          {banner.tabletImage ? <source media="(max-width: 1023px)" srcSet={responsiveImage(banner.tabletImageMedia || banner.tabletImage, 'hero').srcSet || responsiveImage(banner.tabletImage, 'hero').src} sizes="100vw" /> : null}
+          <img {...responsiveImage(banner.imageMedia || banner.image, 'hero')} alt={banner.altText || banner.title || ''} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" style={{ objectPosition: focal }} />
         </picture>
-        <span className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
-        <span className={`relative flex max-w-xl flex-col items-start justify-center text-white ${compact ? 'min-h-[112px] p-5 md:min-h-[150px] md:p-8' : 'min-h-[150px] p-5 md:min-h-[230px] md:p-10'}`}>
-          <small className="text-[10px] font-black uppercase tracking-[0.22em] text-white/80">{position}</small>
+        <span className="absolute inset-0 bg-gradient-to-r from-[color:color-mix(in_srgb,var(--site-media-black)_60%,transparent)] via-[color:color-mix(in_srgb,var(--site-media-black)_20%,transparent)] to-transparent" />
+        <span className={`relative flex max-w-xl flex-col items-start justify-center text-[color:var(--site-on-fill)] ${compact ? 'min-h-[112px] p-5 md:min-h-[150px] md:p-8' : 'min-h-[150px] p-5 md:min-h-[230px] md:p-10'}`}>
+          <small className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:color-mix(in_srgb,var(--site-on-fill)_80%,transparent)]">{position}</small>
           <strong className="mt-2 font-serif text-xl leading-tight md:text-4xl">{banner.title}</strong>
-          {banner.subtitle ? <span className="mt-2 line-clamp-2 text-xs font-semibold text-white/90 md:text-base">{banner.subtitle}</span> : null}
-          {banner.buttonText ? <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-black text-wine shadow-sm">{banner.buttonText}<ArrowRight className="h-3.5 w-3.5" /></span> : null}
+          {banner.subtitle ? <span className="mt-2 line-clamp-2 text-xs font-semibold text-[color:color-mix(in_srgb,var(--site-on-fill)_90%,transparent)] md:text-base">{banner.subtitle}</span> : null}
+          {banner.buttonText ? <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-[color:var(--site-surface)] px-4 py-2 text-xs font-black text-wine shadow-sm">{banner.buttonText}<ArrowRight className="h-3.5 w-3.5" /></span> : null}
         </span>
       </button>
       {slides.length > 1 && <>
-        <button type="button" onClick={() => move(-1)} aria-label={`Previous ${position} offer`} className="absolute left-5 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-white/90 text-wine shadow-md transition hover:bg-white md:left-9 md:h-11 md:w-11"><ChevronLeft className="h-4 w-4 md:h-5 md:w-5" /></button>
-        <button type="button" onClick={() => move(1)} aria-label={`Next ${position} offer`} className="absolute right-5 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-white/90 text-wine shadow-md transition hover:bg-white md:right-9 md:h-11 md:w-11"><ChevronRight className="h-4 w-4 md:h-5 md:w-5" /></button>
-        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/25 px-2.5 py-1.5 md:bottom-8" aria-label={`Choose ${position} offer`}>
-          {slides.map((slide, index) => <button key={slide._id || slide.id || index} type="button" onClick={() => setSlideIndex(index)} aria-label={`Show ${position} offer ${index + 1}`} aria-current={index === activeIndex ? 'true' : undefined} className={`h-1.5 rounded-full transition-all ${index === activeIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/60 hover:bg-white/85'}`} />)}
+        <button type="button" onClick={() => move(-1)} aria-label={`Previous ${position} offer`} className="absolute left-5 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-[color:color-mix(in_srgb,var(--site-border)_60%,transparent)] bg-[color:color-mix(in_srgb,var(--site-surface)_90%,transparent)] text-wine shadow-md transition hover:bg-[color:var(--site-surface)] md:left-9 md:h-11 md:w-11"><ChevronLeft className="h-4 w-4 md:h-5 md:w-5" /></button>
+        <button type="button" onClick={() => move(1)} aria-label={`Next ${position} offer`} className="absolute right-5 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-[color:color-mix(in_srgb,var(--site-border)_60%,transparent)] bg-[color:color-mix(in_srgb,var(--site-surface)_90%,transparent)] text-wine shadow-md transition hover:bg-[color:var(--site-surface)] md:right-9 md:h-11 md:w-11"><ChevronRight className="h-4 w-4 md:h-5 md:w-5" /></button>
+        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-[color:color-mix(in_srgb,var(--site-media-black)_25%,transparent)] px-2.5 py-1.5 md:bottom-8" aria-label={`Choose ${position} offer`}>
+          {slides.map((slide, index) => <button key={slide._id || slide.id || index} type="button" onClick={() => setSlideIndex(index)} aria-label={`Show ${position} offer ${index + 1}`} aria-current={index === activeIndex ? 'true' : undefined} className={`h-1.5 rounded-full transition-all ${index === activeIndex ? 'w-6 bg-[color:var(--site-surface)]' : 'w-1.5 bg-[color:color-mix(in_srgb,var(--site-surface)_60%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--site-surface)_85%,transparent)]'}`} />)}
         </div>
       </>}
     </section>

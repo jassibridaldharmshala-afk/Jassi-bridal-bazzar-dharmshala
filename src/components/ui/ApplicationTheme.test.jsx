@@ -33,6 +33,47 @@ test('light and dark brand colours have readable foregrounds and Mantine palette
   expect(brandShades('#123456')).toHaveLength(10); expect(brandShades('#123456')[6]).toBe('#123456');
 });
 
+test('surface, semantic states, fonts and action style update together without remounting', () => {
+  const light = mergeWebsiteConfig({ colors: { primary: '#123456', surface: '#ffffff', text: '#17212b' } });
+  useWebsiteCustomization.mockReturnValue({ config: light });
+  const view = render(<ApplicationTheme>{createPortal(<div data-testid="rental-dialog">Booking</div>, document.body)}</ApplicationTheme>);
+  const root = document.documentElement;
+  expect(root.style.getPropertyValue('--site-success')).toBe('#167244');
+  expect(root.style.getPropertyValue('--site-success-soft')).toContain('#ffffff');
+  const dark = mergeWebsiteConfig({ colors: { primary: '#e2bf79', surface: '#182533', background: '#101820', text: '#ecf5ee' },
+    typography: { headingFont: 'Georgia', bodyFont: 'Arial', buttonFont: 'Arial' },
+    buttons: { style: 'outline', background: '#e2bf79', borderRadius: 18 } });
+  useWebsiteCustomization.mockReturnValue({ config: dark });
+  view.rerender(<ApplicationTheme>{createPortal(<div data-testid="rental-dialog">Booking</div>, document.body)}</ApplicationTheme>);
+  expect(root.style.getPropertyValue('--site-surface')).toBe('#182533');
+  expect(root.style.getPropertyValue('--site-success')).toBe('#6dd8a2');
+  expect(root.style.getPropertyValue('--site-success-soft')).toContain('#182533');
+  expect(root.style.getPropertyValue('--site-border')).toContain('#182533');
+  expect(root.style.getPropertyValue('--site-shadow-rgb')).toBe('0 0 0');
+  expect(root.style.getPropertyValue('--site-heading-font')).toContain('Georgia');
+  expect(root.style.getPropertyValue('--site-body-font')).toBe('Arial, sans-serif');
+  expect(root.style.getPropertyValue('--site-action-bg')).toBe('transparent');
+  expect(root.style.getPropertyValue('--site-action-text')).toBe('#e2bf79');
+  expect(root.style.getPropertyValue('--site-button-radius')).toBe('18px');
+  view.unmount();
+  expect(root.style.getPropertyValue('--site-surface')).toBe('');
+  expect(root.hasAttribute('data-app-theme')).toBe(false);
+});
+
+test.each(['#ffffff', '#182533'])('status text remains readable on themed surface %s', surface => {
+  const tokens = buildWebsiteCssVariables(mergeWebsiteConfig({ colors: { surface } }));
+  const channels = hex => [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16));
+  const luminance = rgb => rgb.map(channel => channel / 255).map(channel => channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4)
+    .reduce((sum, channel, index) => sum + channel * [.2126, .7152, .0722][index], 0);
+  const contrast = (first, second) => (Math.max(first, second) + .05) / (Math.min(first, second) + .05);
+  for (const status of ['success', 'danger', 'warning', 'info', 'violet']) {
+    const text = channels(tokens[`--site-${status}`]);
+    const soft = channels(surface).map((channel, index) => channel * .91 + text[index] * .09);
+    expect(contrast(luminance(text), luminance(soft))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(luminance(text), luminance(channels(tokens[`--site-on-${status}`])))).toBeGreaterThanOrEqual(4.5);
+  }
+});
+
 test.each(['solid', 'outline', 'soft'])('shared %s button tokens are available to mobile, admin and portals', style => {
   const config = mergeWebsiteConfig({ colors: { primary: '#123456', secondary: '#ddeeff' },
     buttons: { background: '#654321', textColor: '#ffffff', style, borderRadius: 20, hoverEffect: 'glow' } });

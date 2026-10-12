@@ -65,7 +65,7 @@ function getPlaceOrderLabel(paymentMethod, placing) {
 function OnlinePaymentNote({ paymentMethod }) {
   if (paymentMethod === 'UPI') {
     return (
-      <p className="body-text mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+      <p className="body-text mt-4 rounded-2xl border border-[color:var(--site-success-border)] bg-[color:var(--site-success-soft)] p-4 text-[color:var(--site-success)]">
         Click <strong>Pay Now</strong>, then choose a supported UPI app securely in Razorpay.
       </p>
     );
@@ -73,13 +73,13 @@ function OnlinePaymentNote({ paymentMethod }) {
 
   if (paymentMethod !== 'COD') {
     return (
-      <p className="body-text mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+      <p className="body-text mt-4 rounded-2xl border border-[color:var(--site-success-border)] bg-[color:var(--site-success-soft)] p-4 text-[color:var(--site-success)]">
         Click <strong>Pay Now</strong> to open the secure Razorpay payment window.
       </p>
     );
   }
 
-  return <p className="body-text mt-4 rounded-2xl bg-[#fbf8f4] p-4 text-slate-600">Please keep exact amount ready at delivery.</p>;
+  return <p className="body-text mt-4 rounded-2xl bg-[color:var(--site-accent-soft)] p-4 text-[color:var(--site-muted)]">Please keep exact amount ready at delivery.</p>;
 }
 
 const emptyAddress = {
@@ -1023,7 +1023,7 @@ function DesktopCheckout({
 function ShippingAvailability({ shipping }) {
   if (!shipping?.serviceable || shipping.provider === 'manual') return null;
   const provider = ({ bluedart: 'Blue Dart', shiprocket: 'Shiprocket', delhivery: 'Delhivery', xpressbees: 'Xpressbees' })[shipping.provider] || 'Courier';
-  return <div role="status" className="my-3 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-900"><strong>{provider} delivery available</strong><p>PIN {shipping.destinationPincode} · Delivery {Number(shipping.deliveryCharge) === 0 ? 'FREE' : `₹${Number(shipping.deliveryCharge).toLocaleString('en-IN')}`}{shipping.serviceName && ` · ${shipping.serviceName}`}</p></div>;
+  return <div role="status" className="my-3 rounded-xl border border-[color:var(--site-success-border)] bg-[color:var(--site-success-soft)] p-3 text-sm text-[color:var(--site-success)]"><strong>{provider} delivery available</strong><p>PIN {shipping.destinationPincode} · Delivery {Number(shipping.deliveryCharge) === 0 ? 'FREE' : `₹${Number(shipping.deliveryCharge).toLocaleString('en-IN')}`}{shipping.serviceName && ` · ${shipping.serviceName}`}</p></div>;
 }
 
 function CheckoutSteps() {

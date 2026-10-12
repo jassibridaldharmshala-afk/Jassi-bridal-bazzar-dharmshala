@@ -3,7 +3,7 @@ import ProductGrid from '../product/ProductGrid';
 
 export default function FeaturedProducts({ title = 'Featured Products', subtitle = 'Handpicked by Jassi stylists', products, navigate }) {
   return (
-    <section className="container-page bg-white py-5 md:bg-transparent md:py-8">
+    <section className="container-page bg-[color:var(--site-surface)] py-5 md:bg-transparent md:py-8">
       <div className="mb-4 flex items-end justify-between gap-3 md:mb-5">
         <div className="min-w-0">
           <p className="small-text font-bold uppercase tracking-[0.14em] text-wine md:text-xs md:tracking-[0.2em]">{subtitle}</p>

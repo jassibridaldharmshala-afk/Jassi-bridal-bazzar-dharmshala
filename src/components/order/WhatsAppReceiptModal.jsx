@@ -17,15 +17,15 @@ export default function WhatsAppReceiptModal({ open, receipt, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[90] grid place-items-center bg-black/45 p-4">
-      <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
-        <h2 className="text-xl font-black">Share order summary on WhatsApp</h2>
-        <input value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-4 h-12 w-full rounded-xl border border-slate-200 px-4 text-sm font-semibold" placeholder="10-digit WhatsApp number" />
+    <div className="fixed inset-0 z-[90] grid place-items-center bg-[color:color-mix(in_srgb,var(--site-media-black)_45%,transparent)] p-4">
+      <div className="w-full max-w-xl rounded-2xl bg-[color:var(--site-surface)] p-5 shadow-2xl">
+        <h2 className="text-xl font-black">Share {receipt.type === 'RENTAL' ? 'booking' : 'order'} summary on WhatsApp</h2>
+        <input value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-4 h-12 w-full rounded-xl border border-[color:var(--site-border)] px-4 text-sm font-semibold" placeholder="10-digit WhatsApp number" />
         {error && <p className="mt-2 text-sm font-bold text-rose">{error}</p>}
-        <textarea readOnly value={message} className="mt-4 h-44 w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-600" />
+        <textarea readOnly value={message} className="mt-4 h-44 w-full rounded-xl border border-[color:var(--site-border)] p-3 text-xs font-semibold text-[color:var(--site-muted)]" />
         <div className="mt-4 flex justify-end gap-3">
-          <button onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-black">Cancel</button>
-          <button onClick={send} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white">Open WhatsApp</button>
+          <button onClick={onClose} className="rounded-xl border border-[color:var(--site-border)] px-4 py-2 text-sm font-black">Cancel</button>
+          <button onClick={send} className="rounded-xl bg-[color:var(--site-success)] px-4 py-2 text-sm font-black text-[color:var(--site-on-fill)]">Open WhatsApp</button>
         </div>
       </div>
     </div>

@@ -142,7 +142,7 @@
     margin: 0;
     font-family: var(--site-body-font, 'Inter', sans-serif);
     font-size: 18px;
-    font-weight: 650;
+    font-weight: var(--site-heading-weight);
     line-height: 1.3;
     color: var(--site-text, #282c3f);
     overflow-wrap: anywhere;
@@ -151,7 +151,7 @@
   .sc-plp__subtitle {
     margin: 0;
     font-size: 12px;
-    color: #747580;
+    color: var(--site-muted);
   }
 
   .sc-plp__sort {
@@ -164,15 +164,15 @@
   .sc-plp__sort label {
     font-size: 13px;
     font-weight: 600;
-    color: #7f7268;
+    color: var(--site-muted);
   }
 
   .sc-plp__sort select {
     height: 44px;
     min-width: 180px;
-    border: 1px solid #e5e5e8;
+    border: 1px solid var(--site-border);
     border-radius: 4px;
-    background: #fff;
+    background: var(--site-surface);
     padding: 0 14px;
     font-size: 12px;
     color: var(--site-text, #17161a);
@@ -181,7 +181,7 @@
   .sc-plp__divider {
     height: 1px;
     margin: 10px 0 12px;
-    background: #ececef;
+    background: var(--site-surface-alt);
   }
 
   .sc-plp__content {
@@ -196,15 +196,15 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
   }
-  .sc-plp .sc-filter { width: 100%; border: 0; border-right: 1px solid #ececef; border-radius: 0; box-shadow: none; padding-right: 16px; }
-  .sc-plp .sc-filter__header { padding: 0 0 8px; min-height: 36px; border-bottom-color: #ececef; }
-  .sc-plp .sc-filter__title { font-size: 11px; letter-spacing: .07em; font-weight: 650; }
-  .sc-plp .sc-filter__section { padding: 0; border-bottom-color: #ececef; }
+  .sc-plp .sc-filter { width: 100%; border: 0; border-right: 1px solid var(--site-border); border-radius: 0; box-shadow: none; padding-right: 16px; }
+  .sc-plp .sc-filter__header { padding: 0 0 8px; min-height: 36px; border-bottom-color: var(--site-border); }
+  .sc-plp .sc-filter__title { font-size: 11px; letter-spacing: .07em; font-weight: var(--site-heading-weight); }
+  .sc-plp .sc-filter__section { padding: 0; border-bottom-color: var(--site-border); }
   .sc-plp .sc-filter__summary { min-height: 40px; font-size: 10px; letter-spacing: .07em; font-weight: 650; }
   .sc-plp .sc-filter__panel { padding-bottom: 10px; }
   .sc-plp .sc-filter__applied { padding-inline: 8px; }
   .sc-plp__more { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 8px 0; }
-  .sc-plp__more p { margin: 0; color: #747580; font-size: 12px; }
+  .sc-plp__more p { margin: 0; color: var(--site-muted); font-size: 12px; }
 }
 
 @media (min-width: 1280px) {

@@ -2,7 +2,8 @@ import { useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Heart, ShoppingBag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { getPrimaryImageUrl, normalizeImageUrl } from '../../services/normalize';
+import { getPrimaryImageUrl } from '../../services/normalize';
+import { responsiveImage } from '../../utils/responsiveImages';
 import './RelatedProductCarousel.css';
 import { isUnavailable, wishlistStock } from '../../utils/wishlist';
 import { getSelectableSizes } from '../../utils/productSizing';
@@ -53,7 +54,7 @@ export default function RelatedProductCarousel({ products = [], navigate, purcha
             <article key={productId} className="sc-related__card" aria-label={product.name}>
               <div className="sc-related__image">
                 <button type="button" className="sc-related__image-open" onClick={() => navigate(detailsHref)}>
-                  {image ? <img src={normalizeImageUrl(image)} alt={product.name} /> : <div className="sc-related__fallback" />}
+                  {image ? <img {...responsiveImage(product.images?.find(item => item.primary) || product.images?.[0] || image, 'card')} loading="lazy" decoding="async" alt={product.name} /> : <div className="sc-related__fallback" />}
                   {product.isNewArrival ? <span className="sc-related__badge">NEW</span> : null}
                 </button>
                 <button

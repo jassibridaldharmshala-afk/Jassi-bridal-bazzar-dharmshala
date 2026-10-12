@@ -185,11 +185,11 @@ export default function Categories() {
         {bridalSetup && <details className="catalog-setup-disclosure">
           <summary><span>Category setup<small>{bridalSetup.missing?.length ? `${bridalSetup.missing.length} to add` : 'Bridal categories'}{(bridalSetup.archived?.length || bridalSetup.conflicts?.length || bridalSetup.structureUpdated) ? ' · Review needed' : ''}</small></span><ChevronDown size={16} aria-hidden="true" /></summary>
           <div className="admin-card catalog-setup-disclosure__content space-y-3">
-            <p className="text-sm text-slate-600">New bridal categories start hidden. Add products, then make them visible.</p>
+            <p className="text-sm text-[color:var(--site-muted)]">New bridal categories start hidden. Add products, then make them visible.</p>
             <p className="text-sm"><strong>{bridalSetup.missing?.length || 0}</strong> categories to add · <strong>{bridalSetup.existing?.length || 0}</strong> already present</p>
-            {!!bridalSetup.missing?.length && <p className="text-sm text-slate-700">To add: {bridalSetup.missing.join(', ')}</p>}
-            {!!bridalSetup.archived?.length && <p className="text-sm text-amber-800">Archived categories need manual review: {bridalSetup.archived.join(', ')}</p>}
-            {!!bridalSetup.conflicts?.length && <p className="text-sm text-amber-800">Naming conflicts need manual review: {bridalSetup.conflicts.join(', ')}</p>}
+            {!!bridalSetup.missing?.length && <p className="text-sm text-[color:var(--site-muted)]">To add: {bridalSetup.missing.join(', ')}</p>}
+            {!!bridalSetup.archived?.length && <p className="text-sm text-[color:var(--site-warning)]">Archived categories need manual review: {bridalSetup.archived.join(', ')}</p>}
+            {!!bridalSetup.conflicts?.length && <p className="text-sm text-[color:var(--site-warning)]">Naming conflicts need manual review: {bridalSetup.conflicts.join(', ')}</p>}
             <div className="flex flex-wrap gap-3">
               {(bridalSetup.missing?.length > 0 || bridalSetup.structureUpdated) && <button type="button" className="admin-btn" disabled={setupBusy} onClick={applyBridalSetup}>{setupBusy ? 'Setting up…' : 'Add bridal categories'}</button>}
               <a className="admin-btn-ghost" href="/admin/products/add">Add product</a>
@@ -255,5 +255,5 @@ function CategoryActionDialog({ action, categories, busy, onChange, onClose, onR
 }
 
 function DestinationSelect({ action, destinations, onChange, optional = false }) {
-  return <label className="grid gap-2 text-sm font-black">Move linked products, drafts and coupons {optional ? 'first (optional)' : ''}<select value={action.targetCategoryId} onChange={(event) => onChange({ ...action, targetCategoryId: event.target.value })} className="h-12 rounded-xl border border-slate-200 bg-white px-4"><option value="">Choose destination category</option>{destinations.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</select></label>;
+  return <label className="grid gap-2 text-sm font-black">Move linked products, drafts and coupons {optional ? 'first (optional)' : ''}<select value={action.targetCategoryId} onChange={(event) => onChange({ ...action, targetCategoryId: event.target.value })} className="h-12 rounded-xl border border-[color:var(--site-border)] bg-[color:var(--site-surface)] px-4"><option value="">Choose destination category</option>{destinations.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</select></label>;
 }

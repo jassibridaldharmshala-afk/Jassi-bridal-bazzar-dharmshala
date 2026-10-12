@@ -7,11 +7,12 @@ import { rentalMoney } from '../../utils/rentals';
 import RentalAvailabilityCalendar from './RentalAvailabilityCalendar';
 import { RentalFittingInfo } from './RentalFittingFields';
 import RentalContact from './RentalContact';
-export default function RentalOffer({ productId, commerceMode, navigate, compact = false, onBuy }) {
+export default function RentalOffer({ productId, commerceMode, navigate, compact = false, onBuy, rental }) {
   const { storeSlug } = useStorefront(); const bag = useRentalBag();
   const [expanded, setExpanded] = useState(false), [notice, setNotice] = useState('');
   const requestedListing = new URLSearchParams(window.location.search).get('listing') || '';
-  const { data, error, listing, setListingId, retry } = useProductRentalOffers(productId, { storeSlug, requestedListing });
+  const ownRental = useProductRentalOffers(productId, { storeSlug, requestedListing, enabled: !rental });
+  const { data, error, listing, setListingId, retry } = rental || ownRental;
   const buyAction = onBuy && <button type="button" className="rental-shopping-secondary" onClick={onBuy}>Buy this item</button>;
   useEffect(() => {
     setExpanded(false); setNotice('');

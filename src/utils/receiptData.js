@@ -40,7 +40,7 @@ export function receiptView(receipt = {}) {
   const items = (Array.isArray(receipt.items) ? receipt.items : []).map((item, index) => ({
     number: index + 1, name: clean(item.name || item.productName) || 'Product', sku: clean(item.sku),
     variant: [item.size && `Size: ${item.size}`, item.color && `Colour: ${item.color}`].filter(Boolean).join(' | '),
-    quantity: amount(item.quantity), price: amount(item.price), total: amount(amount(item.price) * amount(item.quantity)),
+    quantity: amount(item.quantity), price: amount(item.price), total: amount(item.lineAmount ?? (amount(item.price) * amount(item.quantity))), description: clean(item.description),
   }));
   const subtotal = amount(items.reduce((sum, item) => sum + item.total, 0));
   const productDiscount = amount(receipt.productDiscount);
@@ -67,7 +67,7 @@ export function receiptView(receipt = {}) {
   const orderId = String(receipt.orderId || '');
   const number = clean(receipt.invoiceNumber) || (orderId ? `SC-${orderId.slice(-8).toUpperCase()}` : 'Not available');
   const tax = amount(receipt.taxAmount);
-  return {
+  const view = {
     storeName, sellerName: clean(store.legalBusinessName) || storeName, logoUrl: clean(store.logoUrl), invoiceNote: clean(store.invoiceNote),
     sellerAddress: invoiceAddress(store.billingAddress || store.address),
     sellerContact: [store.contactPhone || store.whatsappNumber, store.contactEmail].map(clean).filter(Boolean),
@@ -83,4 +83,5 @@ export function receiptView(receipt = {}) {
     policy: clean(receipt.policies?.returnPolicy) || 'For returns, exchanges or order support, please contact the store with your order number.',
     filename: `${storeName.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'Store'}-Invoice-${number.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 80)}.pdf`,
   };
+  return { ...view, ...(receipt.type === 'RENTAL' ? receipt.rentalDetails : {}) };
 }

@@ -16,7 +16,7 @@ export default function ProductFilters({ categories = [], params = new URLSearch
   };
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl bg-white p-4 shadow-sm lg:w-64 xl:w-72 xl:p-5">
+    <aside className="w-full shrink-0 rounded-2xl bg-[color:var(--site-surface)] p-4 shadow-sm lg:w-64 xl:w-72 xl:p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-black uppercase tracking-[0.2em] text-charcoal">Filters</h2>
         <button type="button" onClick={clearFilters} className="text-xs font-black text-rose">Clear</button>
@@ -40,7 +40,7 @@ export default function ProductFilters({ categories = [], params = new URLSearch
             onChange={setFilter}
           />
         ))}
-        <label className="flex items-center gap-3 text-sm font-semibold text-slate-600">
+        <label className="flex items-center gap-3 text-sm font-semibold text-[color:var(--site-muted)]">
           <input
             type="checkbox"
             checked={params.get('stock') === 'in'}
@@ -58,12 +58,12 @@ function FilterGroup({ title, param, active, items, onChange, multiple = false }
   const selectedValues = new Set(splitFilterValues(active));
   return (
     <div>
-      <h3 className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-slate-500">{title}</h3>
+      <h3 className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--site-muted)]">{title}</h3>
       <div className="grid gap-2">
         {items.map((item) => {
           const value = String(Array.isArray(item) ? item[0] : item);
           return (
-            <label key={value} className="flex items-center gap-3 text-sm font-semibold text-slate-600">
+            <label key={value} className="flex items-center gap-3 text-sm font-semibold text-[color:var(--site-muted)]">
               <input
                 type="checkbox"
                 checked={multiple ? selectedValues.has(value) : active === value}

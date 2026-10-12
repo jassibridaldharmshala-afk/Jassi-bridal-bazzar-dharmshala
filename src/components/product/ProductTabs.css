@@ -3,8 +3,8 @@
     overflow: hidden;
     border: 1px solid var(--site-border, #ead8cb);
     border-radius: 14px;
-    background: #fff;
-    box-shadow: 0 10px 30px rgba(70, 35, 20, 0.055);
+    background: var(--site-surface);
+    box-shadow: 0 10px 30px color-mix(in srgb, rgb(var(--site-shadow-rgb)) 5.5%, transparent);
   }
 
   .sc-tabs__header {
@@ -13,8 +13,8 @@
     justify-content: space-between;
     gap: 20px;
     padding: 22px 24px 18px;
-    border-bottom: 1px solid #efe2d8;
-    background: linear-gradient(100deg, #fffaf6 0%, #fff 68%);
+    border-bottom: 1px solid var(--site-accent-border);
+    background: linear-gradient(100deg, var(--site-accent-soft) 0%, var(--site-surface) 68%);
   }
 
   .sc-tabs__eyebrow {
@@ -28,15 +28,15 @@
 
   .sc-tabs__header h2 {
     margin: 0;
-    color: #191512;
-    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--site-text);
+    font-family: var(--site-heading-font);
     font-size: 23px;
-    font-weight: 700;
+    font-weight: var(--site-heading-weight);
   }
 
   .sc-tabs__code {
     flex: 0 0 auto;
-    color: #8c7d73;
+    color: var(--site-muted);
     font-size: 11px;
     font-weight: 650;
   }
@@ -65,9 +65,9 @@
     align-items: center;
     gap: 8px;
     margin: 0 0 12px;
-    color: #211b18;
+    color: var(--site-text);
     font-size: 13px;
-    font-weight: 800;
+    font-weight: var(--site-heading-weight);
   }
 
   .sc-tabs__section-title svg {
@@ -80,18 +80,18 @@
   .sc-tabs__description > p {
     max-width: 920px;
     margin: 0;
-    color: #5d514a;
+    color: var(--site-text);
     font-size: 13px;
     line-height: 1.85;
     white-space: pre-line;
   }
 
   .sc-tabs__description--pending > p {
-    border: 1px solid #f0dfc3;
+    border: 1px solid var(--site-warning-border);
     border-radius: 8px;
-    background: #fffbf1;
+    background: var(--site-warning-soft);
     padding: 12px 14px;
-    color: #7b6031;
+    color: var(--site-warning);
     font-size: 11px;
   }
 
@@ -100,9 +100,9 @@
     grid-row: 1 / span 2;
     align-self: start;
     padding: 18px;
-    border: 1px solid #efdfd3;
+    border: 1px solid var(--site-accent-border);
     border-radius: 12px;
-    background: #fffaf6;
+    background: var(--site-accent-soft);
   }
 
   .sc-tabs__highlights ul {
@@ -117,7 +117,7 @@
     display: flex;
     align-items: flex-start;
     gap: 9px;
-    color: #594d46;
+    color: var(--site-text);
     font-size: 12px;
     line-height: 1.55;
   }
@@ -127,40 +127,40 @@
     width: 15px;
     height: 15px;
     margin-top: 2px;
-    color: #21835f;
+    color: var(--site-success);
   }
 
   .sc-tabs__specifications {
     grid-column: 1;
     padding-top: 22px;
-    border-top: 1px solid #f0e4dc;
+    border-top: 1px solid var(--site-accent-border);
   }
 
   .sc-tabs__details {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin: 0;
-    border-top: 1px solid #eee4dd;
-    border-left: 1px solid #eee4dd;
+    border-top: 1px solid var(--site-accent-border);
+    border-left: 1px solid var(--site-accent-border);
   }
 
   .sc-tabs__details > div {
     min-height: 66px;
     padding: 12px 14px;
-    border-right: 1px solid #eee4dd;
-    border-bottom: 1px solid #eee4dd;
-    background: #fff;
+    border-right: 1px solid var(--site-accent-border);
+    border-bottom: 1px solid var(--site-accent-border);
+    background: var(--site-surface);
   }
 
   .sc-tabs__details dt {
-    color: #8f8178;
+    color: var(--site-muted);
     font-size: 10px;
     font-weight: 650;
   }
 
   .sc-tabs__details dd {
     margin: 5px 0 0;
-    color: #2a2420;
+    color: var(--site-text);
     font-size: 12px;
     font-weight: 700;
     line-height: 1.45;
@@ -173,27 +173,27 @@
     gap: 14px;
     margin-top: 24px;
     padding-top: 24px;
-    border-top: 1px solid #f0e4dc;
+    border-top: 1px solid var(--site-accent-border);
   }
 
   .sc-tabs__service-card {
     min-height: 132px;
     padding: 16px;
-    border: 1px solid #eee0d6;
+    border: 1px solid var(--site-accent-border);
     border-radius: 10px;
     background: var(--site-background, #fffdfb);
   }
 
   .sc-tabs__service-card p {
     margin: 7px 0 0;
-    color: #655950;
+    color: var(--site-muted);
     font-size: 11px;
     line-height: 1.65;
     white-space: pre-line;
   }
 
   .sc-tabs__service-card p strong {
-    color: #302925;
+    color: var(--site-text);
   }
 
   .sc-tabs__service-card button {
@@ -211,7 +211,7 @@
     grid-column: 1 / -1;
     margin-top: 22px;
     padding-top: 22px;
-    border-top: 1px solid #f0e4dc;
+    border-top: 1px solid var(--site-accent-border);
   }
 
   .sc-tabs__tags > div {
@@ -223,9 +223,9 @@
   .sc-tabs__tags span {
     border: 1px solid var(--site-border, #ead8cb);
     border-radius: 999px;
-    background: #fffaf6;
+    background: var(--site-accent-soft);
     padding: 7px 11px;
-    color: #62554d;
+    color: var(--site-text);
     font-size: 10px;
     font-weight: 650;
   }

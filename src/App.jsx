@@ -21,6 +21,7 @@ import MobileOverlayLoader from './components/ui/MobileOverlayLoader';
 import AdminActivityIndicator, { AdminLoadingPlaceholder } from './components/admin/AdminActivityIndicator';
 import { isAdminWorkspace } from './utils/adminActivity';
 import StorefrontSkeleton from './components/ui/StorefrontSkeleton';
+import RentalCheckoutLoading from './components/rentals/RentalCheckoutLoading';
 import TrafficTracking from './components/analytics/TrafficTracking';
 import MobileAppCompanion from './components/pwa/MobileAppCompanion';
 import { useAuth } from './context/AuthContext';
@@ -28,6 +29,7 @@ import { getMobileLoaderSnapshot, subscribeMobileLoader } from './utils/mobileLo
 import { createStoragePlan } from './utils/userStorage';
 import { parseStoreSlug } from './utils/attribution';
 import { storefrontPath, boutiquePath, consumeLegacyHash, pushAppRoute, readAppRoute, ROUTE_CHANGE_EVENT } from './utils/routing';
+import { rentalDetailHref } from './utils/rentalShopping';
 
 const AdminRoute = lazy(() => import('./components/layout/AdminRoute'));
 const SellerRoute = lazy(() => import('./components/layout/SellerRoute'));
@@ -304,7 +306,9 @@ function AppShell({ route, navigate }) {
     || /^\/store\/[^/]+\/product$/.test(logicalPath)
     || /\/products\/[^/]+$/.test(logicalPath)
     || /\/product\/[^/]+$/.test(logicalPath);
-  const hideMobileHeader = focusedMobileRoutes.includes(routeGuardPath) || isProductPage;
+  const rentalEntryParams = new URLSearchParams(route.split('?')[1] || '');
+  const isRentalBookingEntry = routeGuardPath === '/rental-book' && !!(rentalEntryParams.get('product') || rentalEntryParams.get('listing'));
+  const hideMobileHeader = focusedMobileRoutes.includes(routeGuardPath) || isProductPage || isRentalBookingEntry;
   const loginFallback = (
     <Suspense fallback={<RouteFallback />}>
       <Login route={`/login?redirect=${encodeURIComponent(route)}`} />
@@ -330,7 +334,7 @@ function AppShell({ route, navigate }) {
     return customerRoutes[routePath] || Home;
   }, [isAdmin, isHostStore, isSeller, logicalPath, routePath]);
   const page = (
-    <LazyBoundary resetKey={route}><Suspense fallback={<RouteFallback />}>
+    <LazyBoundary resetKey={route}><Suspense fallback={<RouteFallback route={route} navigate={customerNavigate} />}>
       <Page navigate={isAdmin || isSeller ? navigate : customerNavigate} route={route} />
     </Suspense></LazyBoundary>
   );
@@ -417,7 +421,7 @@ function AppShell({ route, navigate }) {
                 {mainContent}
               </main>
               {showShell && <Footer navigate={navigate} />}
-              {showShell && !hideMobileBottomNavRoutes.includes(routePath) && <MobileBottomNav route={route} active={routePath} navigate={navigate} />}
+              {showShell && !isRentalBookingEntry && !hideMobileBottomNavRoutes.includes(routePath) && <MobileBottomNav route={route} active={routePath} navigate={navigate} />}
               {showShell && showLoginPrompt && (
                 <LazyBoundary resetKey={route}><Suspense fallback={null}>
                 <LoginPrompt
@@ -446,8 +450,10 @@ function AppShell({ route, navigate }) {
   );
 }
 
-function RouteFallback() {
+function RouteFallback({ route = '', navigate }) {
   if (isAdminWorkspace()) return <AdminLoadingPlaceholder label="Opening workspace" />;
+  const path = boutiquePath(route.split('?')[0]), params = new URLSearchParams(route.split('?')[1] || '');
+  if (path === '/rental-checkout' || (path === '/rental-book' && (params.get('product') || params.get('listing')))) return <RentalCheckoutLoading onBack={navigate ? () => navigate(path === '/rental-book' && params.get('product') ? rentalDetailHref({ _id: params.get('product') }, '', params.get('listing') || '') : '/rental-cart') : undefined} />;
   // Chunk downloads never cover the header, search, back button or cart.
   return <StorefrontSkeleton label="Loading page" />;
 }

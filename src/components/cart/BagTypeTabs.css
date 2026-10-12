@@ -1,12 +1,12 @@
 .sc-bag__heading-row { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; }
 .sc-bag__heading-row > .sc-bag__top { flex: 1; min-width: 0; margin-bottom: 0; }
-.sc-bag-types { display: flex; flex-shrink: 0; gap: 4px; padding: 4px; border: 1px solid var(--bag-border, #e5ddd8); border-radius: 10px; background: #f5f1ef; }
+.sc-bag-types { display: flex; flex-shrink: 0; gap: 4px; padding: 4px; border: 1px solid var(--bag-border, #e5ddd8); border-radius: 10px; background: var(--site-tint); }
 .sc-bag-types a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 0 14px; border-radius: 7px; color: var(--bag-muted, #776b66); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-.sc-bag-types a[aria-current="page"] { color: var(--bag-primary, #6d1f34); background: white; box-shadow: 0 1px 4px #2e12200d; }
+.sc-bag-types a[aria-current="page"] { color: var(--bag-primary, #6d1f34); background: var(--site-surface); box-shadow: 0 1px 4px color-mix(in srgb, rgb(var(--site-shadow-rgb)) 5.1%, transparent); }
 .sc-bag-types a:focus-visible { outline: 2px solid var(--bag-primary, #6d1f34); outline-offset: 2px; }
 .sc-bag-types__mobile-label { display: none; }
-.sc-bag-types__count { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 20px; background: #e9e2df; font-size: 11px; }
-.sc-bag-types a[aria-current="page"] .sc-bag-types__count { background: #f4e7ec; }
+.sc-bag-types__count { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 20px; background: var(--site-surface-alt); font-size: 11px; }
+.sc-bag-types a[aria-current="page"] .sc-bag-types__count { background: var(--site-tint); }
 @media (max-width: 1023px) {
   .sc-bag__heading-row { display: block; margin: 0; padding: 0 16px; border-bottom: 1px solid var(--shopping-border, #eee8ec); background: var(--site-surface, #fff); }
   .sc-bag-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }

@@ -6,11 +6,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-wine text-white shadow-sm hover:bg-wine/92',
-        accent: 'bg-rose text-white shadow-sm hover:bg-rose/92',
-        secondary: 'border-slate-200 bg-white text-charcoal hover:border-slate-300 hover:bg-slate-50',
-        ghost: 'bg-transparent text-slate-700 hover:bg-slate-100',
-        outline: 'border-slate-200 bg-white text-charcoal hover:bg-blush hover:border-rose/30',
+        primary: 'bg-wine text-[color:var(--site-on-fill)] shadow-sm hover:bg-wine/92',
+        accent: 'bg-rose text-[color:var(--site-on-fill)] shadow-sm hover:bg-rose/92',
+        secondary: 'border-[color:var(--site-border)] bg-[color:var(--site-surface)] text-charcoal hover:border-[color:var(--site-border)] hover:bg-[color:var(--site-background)]',
+        ghost: 'bg-transparent text-[color:var(--site-muted)] hover:bg-[color:var(--site-surface-alt)]',
+        outline: 'border-[color:var(--site-border)] bg-[color:var(--site-surface)] text-charcoal hover:bg-blush hover:border-rose/30',
       },
       size: {
         sm: 'h-9 px-3 text-[13px]',
@@ -30,6 +30,7 @@ export default function Button({ as: Component = 'button', variant = 'primary', 
   return (
     <Component
       type={Component === 'button' ? type || 'button' : type}
+      data-theme-action={['primary', 'accent'].includes(variant) && size !== 'icon' ? 'primary' : undefined}
       className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />

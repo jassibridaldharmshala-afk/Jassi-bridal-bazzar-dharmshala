@@ -63,6 +63,8 @@ export default function ProductDetailPage({
   variantProducts = [],
   managedVariants = [],
   selectedVariant,
+  rental,
+  completeLook,
   selectedMedia,
   storeWhatsappNumber,
   onOpenSizeGuide,
@@ -128,7 +130,7 @@ export default function ProductDetailPage({
             <ProductInfoPanel
               product={product}
               onRent={['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode) ? () => onPurchaseMode?.('rent') : undefined}
-              rentalContent={['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode) && <RentalOffer compact productId={product._id || product.id} commerceMode={product.commerceMode} navigate={navigate} onBuy={purchaseEnabled && product.commerceMode === 'SALE_AND_RENTAL' ? () => onPurchaseMode?.('buy') : undefined} />}
+              rentalContent={['RENTAL_ONLY', 'SALE_AND_RENTAL'].includes(product.commerceMode) && <RentalOffer compact rental={rental} productId={product._id || product.id} commerceMode={product.commerceMode} navigate={navigate} onBuy={purchaseEnabled && product.commerceMode === 'SALE_AND_RENTAL' ? () => onPurchaseMode?.('buy') : undefined} />}
               rentalOnly={purchaseMode === 'rent' || !purchaseEnabled || product.commerceMode === 'RENTAL_ONLY'}
               size={size}
               setSize={setSize}
@@ -201,6 +203,7 @@ export default function ProductDetailPage({
           />
         </div>
 
+        {completeLook}
         <RelatedProductCarousel products={relatedProducts} navigate={navigate} purchaseMode={purchaseMode === 'rent' || !purchaseEnabled || product.commerceMode === 'RENTAL_ONLY' ? 'rent' : 'buy'} />
       </div>
     </section>
@@ -250,7 +253,7 @@ function DesktopReviews({
   return (
     <section className="sc-pdp__reviews-card" id="desktop-ratings-and-reviews">
       <div className="sc-pdp__section-head">
-        <div><h2>Ratings &amp; Reviews</h2><p className="mt-1 text-sm text-slate-500">Reviews from customers who purchased this product</p></div>
+        <div><h2>Ratings &amp; Reviews</h2><p className="mt-1 text-sm text-[color:var(--site-muted)]">Reviews from customers who purchased this product</p></div>
         <button type="button" className="sc-pdp__review-btn" disabled={loading} onClick={onWriteReview}>{loading ? 'Checking...' : myReview ? 'Edit Your Review' : 'Write a Review'}</button>
       </div>
       <div className="sc-pdp__reviews-top">
@@ -260,7 +263,7 @@ function DesktopReviews({
             {[1, 2, 3, 4, 5].map((value) => <Star key={value} className={`sc-pdp__star${value <= Math.round(Number(rating)) ? ' is-filled' : ''}`} aria-hidden="true" />)}
           </div>
           <p>{reviewCount} rating{reviewCount === 1 ? '' : 's'}</p>
-          {reviewCount > 0 ? <p className="mt-2 text-xs font-bold text-emerald-700">{Number(summary?.recommendationPercentage || 0)}% rated 4★ or above</p> : null}
+          {reviewCount > 0 ? <p className="mt-2 text-xs font-bold text-[color:var(--site-success)]">{Number(summary?.recommendationPercentage || 0)}% rated 4★ or above</p> : null}
         </div>
         <div className="sc-pdp__rating-bars">
           {[5, 4, 3, 2, 1].map((star) => {
@@ -270,20 +273,20 @@ function DesktopReviews({
               <button key={star} type="button" onClick={() => { setRatingFilter((current) => current === star ? 0 : star); setShowAll(false); }} className={`sc-pdp__rating-row w-full text-left${ratingFilter === star ? ' is-active' : ''}`} aria-label={`Show ${star} star reviews`} aria-pressed={ratingFilter === star}>
                 <span>{star}★</span>
                 <span className="sc-pdp__rating-track"><span className="sc-pdp__rating-fill block" style={{ width: `${width}%` }} /></span>
-                <span className="w-8 text-right text-xs text-slate-400">{count}</span>
+                <span className="w-8 text-right text-xs text-[color:var(--site-faint)]">{count}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {feedback ? <p role="status" className="mt-4 rounded-xl bg-[#fff3f6] px-4 py-3 text-sm font-semibold text-[#c51b4d]">{feedback}</p> : null}
+      {feedback ? <p role="status" className="mt-4 rounded-xl bg-[color:var(--site-tint)] px-4 py-3 text-sm font-semibold text-[color:var(--site-primary)]">{feedback}</p> : null}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--site-border)] pt-5">
         <div className="flex flex-wrap gap-2">
-          {[0, 5, 4, 3, 2, 1].map((value) => <button key={value} type="button" onClick={() => { setRatingFilter(value); setShowAll(false); }} className={`rounded-full border px-3 py-2 text-xs font-bold ${ratingFilter === value ? 'border-[#ff3e6c] bg-blush text-[#ff3e6c]' : 'border-slate-200 text-slate-500'}`}>{value ? `${value} ★ (${distribution?.[value] || 0})` : `All (${reviewCount})`}</button>)}
+          {[0, 5, 4, 3, 2, 1].map((value) => <button key={value} type="button" onClick={() => { setRatingFilter(value); setShowAll(false); }} className={`rounded-full border px-3 py-2 text-xs font-bold ${ratingFilter === value ? 'border-[color:var(--site-primary-border)] bg-blush text-[color:var(--site-primary)]' : 'border-[color:var(--site-border)] text-[color:var(--site-muted)]'}`}>{value ? `${value} ★ (${distribution?.[value] || 0})` : `All (${reviewCount})`}</button>)}
         </div>
-        <select value={sort} onChange={(event) => setSort(event.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600" aria-label="Sort reviews"><option value="newest">Most recent</option><option value="helpful">Most helpful</option><option value="highest">Highest rated</option><option value="lowest">Lowest rated</option></select>
+        <select value={sort} onChange={(event) => setSort(event.target.value)} className="h-10 rounded-xl border border-[color:var(--site-border)] bg-[color:var(--site-surface)] px-3 text-xs font-bold text-[color:var(--site-muted)]" aria-label="Sort reviews"><option value="newest">Most recent</option><option value="helpful">Most helpful</option><option value="highest">Highest rated</option><option value="lowest">Lowest rated</option></select>
       </div>
 
       {visibleReviews.length ? (
@@ -298,9 +301,9 @@ function DesktopReviews({
       ) : (
         <p className="sc-pdp__review-empty">{ratingFilter ? `No ${ratingFilter}-star reviews yet.` : 'No customer reviews yet. Delivered customers can be the first to review this product.'}</p>
       )}
-      {filteredReviews.length > 6 && !showAll ? <button type="button" onClick={() => setShowAll(true)} className="mt-4 h-11 rounded-xl border border-slate-200 px-5 text-sm font-bold text-charcoal">View loaded reviews</button> : null}
-      {showAll && reviewHasMore ? <button type="button" disabled={reviewsLoadingMore} onClick={onLoadMoreReviews} className="mt-4 h-11 rounded-xl border border-slate-200 px-5 text-sm font-bold text-charcoal disabled:opacity-50">{reviewsLoadingMore ? 'Loading reviews...' : 'Load more reviews'}</button> : null}
-      {showAll && filteredReviews.length > 6 ? <button type="button" onClick={() => setShowAll(false)} className="ml-2 mt-4 h-11 px-4 text-sm font-bold text-slate-500">Show fewer</button> : null}
+      {filteredReviews.length > 6 && !showAll ? <button type="button" onClick={() => setShowAll(true)} className="mt-4 h-11 rounded-xl border border-[color:var(--site-border)] px-5 text-sm font-bold text-charcoal">View loaded reviews</button> : null}
+      {showAll && reviewHasMore ? <button type="button" disabled={reviewsLoadingMore} onClick={onLoadMoreReviews} className="mt-4 h-11 rounded-xl border border-[color:var(--site-border)] px-5 text-sm font-bold text-charcoal disabled:opacity-50">{reviewsLoadingMore ? 'Loading reviews...' : 'Load more reviews'}</button> : null}
+      {showAll && filteredReviews.length > 6 ? <button type="button" onClick={() => setShowAll(false)} className="ml-2 mt-4 h-11 px-4 text-sm font-bold text-[color:var(--site-muted)]">Show fewer</button> : null}
     </section>
   );
 }

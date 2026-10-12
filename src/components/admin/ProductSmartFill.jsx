@@ -1,6 +1,6 @@
 import useAdminFeedback from '../../hooks/useAdminFeedback';
 import AdminFeedback from './AdminFeedback';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown, Loader2, Sparkles, Undo2 } from 'lucide-react';
 import api from '../../services/api';
 import { normalizeImageUrl } from '../../services/normalize';
@@ -10,7 +10,7 @@ import { automaticSizing } from '../../utils/productSizing';
 
 const financial = key => ['sellingPrice', 'price', 'originalPrice'].includes(key) || key.startsWith('rentalPricing.');
 
-export default function ProductSmartFill({ form, categories, structure, onApply, apiPrefix = '/admin', priceField = 'price', seo = true, disabled = false, rentalSetup = false }) {
+export default function ProductSmartFill({ form, categories, structure, onApply, onAnalysis, apiPrefix = '/admin', priceField = 'price', seo = true, disabled = false, rentalSetup = false }) {
   const uid = useId();
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState('');
@@ -29,6 +29,15 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
   const chosen = (selection ?? photos.slice(0, maxPhotos)).filter(url => photos.includes(url)).slice(0, maxPhotos);
   const inputs = JSON.stringify({ notes, photos: chosen });
   const stale = preview && preview.inputs !== inputs;
+  const photoKey = JSON.stringify(photos.slice(0, 6));
+  const previousPhotos = useRef(photoKey), autoPending = useRef(false);
+  const latest = useRef({ form, onAnalysis, disabled }); latest.current = { form, onAnalysis, disabled };
+
+  useEffect(() => {
+    if (!onAnalysis || rentalSetup || previousPhotos.current === photoKey) return;
+    previousPhotos.current = photoKey; autoPending.current = Boolean(photos.length);
+    if (photos.length) setOpen(true);
+  }, [onAnalysis, photoKey, photos.length, rentalSetup]);
 
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
@@ -40,7 +49,7 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
     return () => { alive = false; };
   }, [open, apiPrefix]);
 
-  const analyze = async () => {
+  const analyze = useCallback(async () => {
     if (request.current || disabled) return;
     const controller = new AbortController(); request.current = controller;
     setBusy(true); setError(''); setNotice(''); setPreview(null); setReplace(false);
@@ -48,6 +57,8 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
     try {
       const result = await api.post(`${apiPrefix}/products/smart-fill`, smartRequest(baseline, notes, chosen), { silent: true, signal: controller.signal });
       if (controller.signal.aborted) return;
+      const analyzedKey = JSON.stringify(smartPhotos(baseline).slice(0, 6));
+      if (analyzedKey === JSON.stringify(smartPhotos(latest.current.form).slice(0, 6))) latest.current.onAnalysis?.({ photoKey: analyzedKey, status: result.analysisStatus, suggestion: result.suggestion?.bridalStyle || {} });
       const rows = suggestionRows(result, baseline, { categories, structure, priceField, seo }).filter(row => !rentalSetup || row.key === 'name' || row.key.startsWith('rentalPricing.'));
       setPreview({ rows, similarProducts: result.similarProducts || [], warnings: result.warnings || [], mode: result.mode, inputs });
       setSelected(rows.filter(row => row.empty && !financial(row.key)).map(row => row.key));
@@ -57,7 +68,18 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
     } finally {
       if (request.current === controller) { request.current = null; setBusy(false); }
     }
-  };
+  }, [apiPrefix, categories, chosen, disabled, form, inputs, notes, priceField, rentalSetup, seo, setNotice, structure]);
+  useEffect(() => {
+    if (!autoPending.current || disabled || busy || !status) return undefined;
+    if (latest.current.form.bridalStyleAnalysis?.photoKey === photoKey) { autoPending.current = false; return undefined; }
+    const timer = window.setTimeout(() => {
+      if (!autoPending.current || latest.current.disabled || request.current) return;
+      autoPending.current = false;
+      if (status.enabled) analyze();
+      else setNotice('Photo AI is not configured. Add matching appearance manually or use supplier notes.');
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [analyze, busy, disabled, photoKey, setNotice, status]);
   const togglePhoto = (url) => {
     setSelection(chosen.includes(url) ? chosen.filter(item => item !== url) : chosen.length < maxPhotos ? [...chosen, url] : chosen);
   };
@@ -75,6 +97,7 @@ export default function ProductSmartFill({ form, categories, structure, onApply,
       <ChevronDown size={18} className={open ? 'is-open' : ''} />
     </button>
     {open && <div id={uid} className="product-smart-fill__body">
+      {form.bridalStyleAnalysis?.suggestion && form.bridalStyleAnalysis.photoKey === photoKey && <button type="button" className="admin-btn-ghost" disabled={busy || disabled} onClick={() => { const rows = suggestionRows({ suggestion: { bridalStyle: form.bridalStyleAnalysis.suggestion } }, snapshotForm(form), { categories, structure, seo: false }); setPreview({ rows, similarProducts: [], warnings: [], mode: 'ai', inputs }); setSelected(rows.filter(row => row.empty).map(row => row.key)); }}>Review saved appearance suggestions</button>}
       <p>{rentalSetup ? "Your catalogue photos are already selected. Add rental terms in your notes and review the suggestions." : "Use clear views of one product. Review suggested details before adding them to your form."}</p>
       {!!photos.length && <div>
         <p className="product-smart-fill__label">Product photos <span>{chosen.length}/{maxPhotos} selected</span></p>

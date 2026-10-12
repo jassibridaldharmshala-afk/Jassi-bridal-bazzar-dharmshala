@@ -37,6 +37,32 @@ async function dates(review = true) {
   await screen.findByLabelText('Full name'); if (review) await contactReview();
 }
 
+test('checkout keeps the booking placeholders until rental details and pickup options have loaded', async () => {
+  let resolveConfig;
+  api.get.mockImplementation(path => path.includes('/configuration') ? new Promise(resolve => { resolveConfig = resolve; }) : Promise.resolve(path.includes('/payment-methods') ? [] : path.includes('/catalogue') ? { rows: [offer] } : []));
+  render(<RentalShoppingCheckout navigate={jest.fn()} />);
+  expect(screen.getByRole('status')).toHaveTextContent('Preparing your booking');
+  expect(screen.queryByLabelText('Use day / occasion date')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
+  resolveConfig(config);
+  await screen.findByLabelText('Use day / occasion date');
+  expect(screen.queryByText('Preparing your booking')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Rental price summary')).toHaveTextContent('₹3,500.00');
+});
+
+test('checkout configuration failure ends loading and offers an explicit retry', async () => {
+  const successfulGet = api.get.getMockImplementation();
+  api.get.mockImplementation(path => path.includes('/configuration') ? Promise.reject(new Error('Rental checkout could not be reached.')) : successfulGet(path));
+  render(<RentalShoppingCheckout navigate={jest.fn()} />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Rental checkout could not be reached.');
+  expect(screen.queryByText('Preparing your booking')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
+  api.get.mockImplementation(successfulGet);
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+  await screen.findByLabelText('Use day / occasion date');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
 test('generated login name and email stay blank until the customer enters the identity saved with the rental', async () => {
   mockUser = { ...mockUser, name: 'Jassi User 0001', email: 'phone+9000000001@samira.local' };
   render(<RentalShoppingCheckout navigate={jest.fn()} />);

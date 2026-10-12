@@ -51,10 +51,10 @@ export function draftUploadMessage(progress = {}) {
   const photo = progress.photoIndex ? `Photo ${progress.photoIndex}: ` : '';
   const labels = {
     preparing: 'Checking photos and preparing a safe upload…',
-    uploading: 'Sending original photos to the store…',
+    uploading: 'Uploading compressed photos…',
     queued: 'Photos received. Waiting for processing…',
     optimizing: `${photo}preserving detail and removing private metadata…`,
-    'storing-original': `${photo}saving the original photo…`,
+    'storing-original': `${photo}saving the optimized photo…`,
     'creating-displays': `${photo}creating display copies…`,
     'storing-displays': `${photo}saving display copies…`,
     'saving-drafts': 'Photos saved. Creating product drafts…',

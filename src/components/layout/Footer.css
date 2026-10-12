@@ -7,7 +7,7 @@
     display: block;
     color: var(--footer-text, #fff);
     background: var(--footer-bg, #4b071b);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid color-mix(in srgb, var(--site-border) 12%, transparent);
   }
 
   .sc-footer__top {
@@ -25,7 +25,7 @@
   .sc-footer__connect {
     min-width: 0;
     padding: 0 30px;
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
+    border-left: 1px solid color-mix(in srgb, var(--site-border) 18%, transparent);
   }
 
   .sc-footer__brand {
@@ -52,16 +52,16 @@
   .sc-footer__connect p {
     margin: 18px 0 0;
     max-width: 260px;
-    color: rgba(255, 255, 255, 0.8);
+    color: color-mix(in srgb, var(--site-on-primary) 80%, transparent);
     font-size: 14px;
     line-height: 1.8;
   }
 
   .sc-footer h2 {
     margin: 0 0 18px;
-    color: #fff;
+    color: var(--site-on-primary);
     font-size: 12px;
-    font-weight: 800;
+    font-weight: var(--site-heading-weight);
     letter-spacing: 0.18em;
     text-transform: uppercase;
   }
@@ -81,7 +81,7 @@
     border: 0;
     padding: 0;
     background: transparent;
-    color: rgba(255, 255, 255, 0.82);
+    color: color-mix(in srgb, var(--site-on-primary) 82%, transparent);
     font-size: 14px;
     line-height: 1.2;
     text-align: left;
@@ -89,22 +89,22 @@
 
   .sc-footer__link-icon {
     flex: 0 0 auto;
-    color: rgba(255, 255, 255, 0.54);
+    color: color-mix(in srgb, var(--site-on-primary) 54%, transparent);
     transition: color 180ms ease, transform 180ms ease;
   }
 
   .sc-footer__column button:hover,
   .sc-footer__legal button:hover {
-    color: #fff;
+    color: var(--site-on-primary);
   }
 
   .sc-footer__column button:hover .sc-footer__link-icon {
-    color: #ffb3c9;
+    color: var(--site-primary);
     transform: translateX(1px);
   }
 
   .sc-footer__column .sc-footer__sale {
-    color: #ff6f99;
+    color: var(--site-primary);
   }
 
   .sc-footer__social {
@@ -119,10 +119,10 @@
     justify-content: center;
     width: 38px;
     height: 38px;
-    border: 1px solid rgba(255, 255, 255, 0.24);
+    border: 1px solid color-mix(in srgb, var(--site-border) 24%, transparent);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    background: color-mix(in srgb, var(--site-surface) 6%, transparent);
+    color: var(--site-on-primary);
   }
 
   .sc-footer__stores {
@@ -137,10 +137,10 @@
     gap: 10px;
     width: 170px;
     min-height: 54px;
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    border: 1px solid color-mix(in srgb, var(--site-border) 45%, transparent);
     border-radius: 6px;
-    background: #111;
-    color: #fff;
+    background: var(--site-primary-dark);
+    color: var(--site-on-primary);
     padding: 7px 13px;
     text-align: left;
   }
@@ -153,7 +153,7 @@
 
   .sc-footer__store small {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.72);
+    color: color-mix(in srgb, var(--site-on-primary) 72%, transparent);
   }
 
   .sc-footer__perks {
@@ -169,8 +169,8 @@
     gap: 8px;
     min-height: 64px;
     padding: 0 10px;
-    border-right: 1px solid rgba(255, 255, 255, 0.16);
-    color: rgba(255, 255, 255, 0.78);
+    border-right: 1px solid color-mix(in srgb, var(--site-border) 16%, transparent);
+    color: color-mix(in srgb, var(--site-on-primary) 78%, transparent);
     text-align: center;
     font-size: 12px;
     line-height: 1.25;
@@ -185,7 +185,7 @@
     grid-template-columns: minmax(0, 1fr) 52px;
     height: 54px;
     margin-top: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.34);
+    border: 1px solid color-mix(in srgb, var(--site-border) 34%, transparent);
     border-radius: 7px;
     overflow: hidden;
   }
@@ -194,14 +194,14 @@
     min-width: 0;
     border: 0;
     background: transparent;
-    color: #fff;
+    color: var(--site-on-primary);
     padding: 0 16px;
     outline: 0;
     font-size: 13px;
   }
 
   .sc-footer__email input::placeholder {
-    color: rgba(255, 255, 255, 0.58);
+    color: color-mix(in srgb, var(--site-on-primary) 58%, transparent);
   }
 
   .sc-footer__email button {
@@ -210,12 +210,12 @@
     justify-content: center;
     border: 0;
     background: var(--site-primary, #8a0f36);
-    color: #fff;
+    color: var(--site-on-primary);
   }
 
   .sc-footer__form-status {
     margin: 9px 0 0;
-    color: rgba(255, 255, 255, 0.76);
+    color: color-mix(in srgb, var(--site-on-primary) 76%, transparent);
     font-size: 12px;
     line-height: 1.3;
   }
@@ -226,13 +226,13 @@
     align-items: center;
     gap: 18px;
     margin-top: 30px;
-    color: rgba(255, 255, 255, 0.82);
+    color: color-mix(in srgb, var(--site-on-primary) 82%, transparent);
     font-size: 12px;
   }
 
   .sc-footer__or span {
     height: 1px;
-    background: rgba(255, 255, 255, 0.24);
+    background: color-mix(in srgb, var(--site-surface) 24%, transparent);
   }
 
   .sc-footer__connect .sc-footer__social-title {
@@ -248,8 +248,8 @@
   .sc-footer__service-strip {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    border-top: 1px solid color-mix(in srgb, var(--site-border) 14%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--site-border) 14%, transparent);
   }
 
   .sc-footer__service {
@@ -259,8 +259,8 @@
     gap: 18px;
     min-height: 92px;
     padding: 0 24px;
-    border-right: 1px solid rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.72);
+    border-right: 1px solid color-mix(in srgb, var(--site-border) 14%, transparent);
+    color: color-mix(in srgb, var(--site-on-primary) 72%, transparent);
   }
 
   .sc-footer__service:last-child {
@@ -273,7 +273,7 @@
   }
 
   .sc-footer__service strong {
-    color: #fff;
+    color: var(--site-on-primary);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -281,7 +281,7 @@
   }
 
   .sc-footer__service small {
-    color: rgba(255, 255, 255, 0.72);
+    color: color-mix(in srgb, var(--site-on-primary) 72%, transparent);
     font-size: 12px;
   }
 
@@ -304,7 +304,7 @@
 
   .sc-footer__payments strong {
     margin-right: 10px;
-    color: rgba(255, 255, 255, 0.78);
+    color: color-mix(in srgb, var(--site-on-primary) 78%, transparent);
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.14em;
@@ -320,17 +320,17 @@
     height: 26px;
     padding: 0 10px;
     border-radius: 4px;
-    background: #fff;
-    color: #1b2140;
+    background: var(--site-surface);
+    color: var(--site-text);
     font-size: 12px;
     font-weight: 800;
     line-height: 1;
     overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgba(20, 20, 35, 0.08);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, rgb(var(--site-shadow-rgb)) 8%, transparent);
   }
 
   .sc-footer__pay-icon--visa {
-    color: #173b8f;
+    color: var(--site-info);
     font-size: 14px;
     font-style: italic;
     letter-spacing: -0.02em;
@@ -348,17 +348,17 @@
   }
 
   .sc-footer__pay-icon--mastercard i:first-child {
-    background: #eb001b;
+    background: var(--site-primary);
     margin-right: -5px;
   }
 
   .sc-footer__pay-icon--mastercard i:last-child {
-    background: #f79e1b;
+    background: var(--site-accent);
     mix-blend-mode: multiply;
   }
 
   .sc-footer__pay-icon--rupay {
-    color: #163f8c;
+    color: var(--site-info);
     font-size: 13px;
   }
 
@@ -367,12 +367,12 @@
     width: 11px;
     height: 14px;
     margin-left: 5px;
-    background: linear-gradient(135deg, #f58220 0 48%, #138a43 49% 100%);
+    background: linear-gradient(135deg, var(--site-accent) 0 48%, var(--site-success) 49% 100%);
     clip-path: polygon(35% 0, 100% 50%, 35% 100%, 0 100%, 62% 50%, 0 0);
   }
 
   .sc-footer__pay-icon--upi {
-    color: #202124;
+    color: var(--site-text);
     font-size: 13px;
     letter-spacing: 0.02em;
   }
@@ -382,28 +382,28 @@
     width: 10px;
     height: 16px;
     margin-left: 5px;
-    background: linear-gradient(135deg, #f58220 0 50%, #168b45 50% 100%);
+    background: linear-gradient(135deg, var(--site-accent) 0 50%, var(--site-success) 50% 100%);
     clip-path: polygon(0 0, 100% 50%, 0 100%, 36% 50%);
   }
 
   .sc-footer__pay-icon--paytm {
-    color: #00baf2;
+    color: var(--site-info);
     font-size: 13px;
     letter-spacing: -0.03em;
   }
 
   .sc-footer__pay-icon--paytm span::first-letter {
-    color: #002970;
+    color: var(--site-info);
   }
 
   .sc-footer__pay-icon--gpay {
     gap: 4px;
-    color: #3c4043;
+    color: var(--site-text);
     font-size: 12px;
   }
 
   .sc-footer__pay-icon--gpay b {
-    color: #4285f4;
+    color: var(--site-info);
     font-size: 15px;
   }
 
@@ -413,8 +413,8 @@
 
   .sc-footer__pay-icon--phonepe {
     min-width: 42px;
-    background: #5f259f;
-    color: #fff;
+    background: var(--site-violet);
+    color: var(--site-on-violet);
   }
 
   .sc-footer__pay-icon--phonepe b {
@@ -429,13 +429,13 @@
   }
 
   .sc-footer__pay-icon--paypal {
-    color: #003087;
+    color: var(--site-info);
     font-size: 13px;
     letter-spacing: -0.04em;
   }
 
   .sc-footer__pay-icon--paypal span::first-letter {
-    color: #009cde;
+    color: var(--site-info);
   }
 
   .sc-footer__legal {
@@ -447,7 +447,7 @@
 
   .sc-footer__legal button {
     padding: 0 28px;
-    border-right: 1px solid rgba(255, 255, 255, 0.22);
+    border-right: 1px solid color-mix(in srgb, var(--site-border) 22%, transparent);
     font-size: 13px;
   }
 
@@ -463,8 +463,8 @@
     width: min(100% - 88px, 1600px);
     margin: 0 auto;
     min-height: 74px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.64);
+    border-top: 1px solid color-mix(in srgb, var(--site-border) 10%, transparent);
+    color: color-mix(in srgb, var(--site-on-primary) 64%, transparent);
     font-size: 13px;
   }
 
@@ -473,7 +473,7 @@
   }
 
   .sc-footer__bottom span {
-    color: #ff6f99;
+    color: var(--site-primary);
   }
 }
 

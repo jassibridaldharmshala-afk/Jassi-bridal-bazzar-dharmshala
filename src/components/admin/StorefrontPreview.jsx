@@ -79,28 +79,28 @@ function StorefrontPreview({ config, device, valid = true }) {
 
   const scale = fit ? Math.min(1, availableWidth / widths[device]) : 1;
   return <div>
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b p-3 text-xs text-slate-600">
-      <label>Preview page <select aria-label="Preview page" value={path} onChange={(event) => setPath(event.target.value)} className="ml-2 rounded-lg border bg-white p-2">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b p-3 text-xs text-[color:var(--site-muted)]">
+      <label>Preview page <select aria-label="Preview page" value={path} onChange={(event) => setPath(event.target.value)} className="ml-2 rounded-lg border bg-[color:var(--site-surface)] p-2">
         {PREVIEW_PAGES.map((page) => <option key={page.path} value={page.path}>{page.label}</option>)}
       </select></label>
       <span>{widths[device]} px · Read-only · Real catalog</span>
       <div className="flex flex-wrap gap-2">
-        <button type="button" aria-pressed={automatic} onClick={() => setAutomatic(!automatic)} className="rounded-lg border bg-white px-3 py-2">{automatic ? 'Pause live preview' : 'Resume live preview'}</button>
-        {!automatic && <button type="button" disabled={!ready || !valid || previewError} onClick={send} className="rounded-lg border bg-white px-3 py-2 disabled:opacity-50">Update preview</button>}
-        <button type="button" aria-pressed={fit} onClick={() => setFit(!fit)} className="rounded-lg border bg-white px-3 py-2">{fit ? `Fit (${Math.round(scale * 100)}%)` : '100% size'}</button>
+        <button type="button" aria-pressed={automatic} onClick={() => setAutomatic(!automatic)} className="rounded-lg border bg-[color:var(--site-surface)] px-3 py-2">{automatic ? 'Pause live preview' : 'Resume live preview'}</button>
+        {!automatic && <button type="button" disabled={!ready || !valid || previewError} onClick={send} className="rounded-lg border bg-[color:var(--site-surface)] px-3 py-2 disabled:opacity-50">Update preview</button>}
+        <button type="button" aria-pressed={fit} onClick={() => setFit(!fit)} className="rounded-lg border bg-[color:var(--site-surface)] px-3 py-2">{fit ? `Fit (${Math.round(scale * 100)}%)` : '100% size'}</button>
       </div>
     </div>
-    {!valid && <p role="status" className="p-3 text-xs text-amber-800">Showing the last valid preview. Complete the invalid fields to resume updates; your edits are kept.</p>}
-    {!automatic && <p className="p-3 text-xs text-slate-500">Live preview paused. Edit freely, then update when ready. Saving still includes all your edits.</p>}
+    {!valid && <p role="status" className="p-3 text-xs text-[color:var(--site-warning)]">Showing the last valid preview. Complete the invalid fields to resume updates; your edits are kept.</p>}
+    {!automatic && <p className="p-3 text-xs text-[color:var(--site-muted)]">Live preview paused. Edit freely, then update when ready. Saving still includes all your edits.</p>}
     {(!ready || previewError) && <p role="status" className="p-3 text-xs">{previewError ? 'Preview could not render. Your draft is safe.' : timedOut ? 'Preview did not load. Your draft is safe.' : 'Loading storefront preview…'} {(timedOut || previewError) && <button type="button" className="underline" onClick={() => setAttempt((value) => value + 1)}>Retry preview</button>}</p>}
-    <div ref={container} className="overflow-x-auto bg-slate-100 p-3">
+    <div ref={container} className="overflow-x-auto bg-[color:var(--site-surface-alt)] p-3">
       <div className="relative mx-auto" style={{ width: widths[device] * scale, height: 720 * scale }}>
         <iframe key={attempt} ref={frame} title={`${device} storefront preview`} src={`${PREVIEW_PATH}?token=${token}`}
-          className="absolute left-0 top-0 block origin-top-left rounded-xl border bg-white" style={{ width: widths[device], height: 720, maxWidth: 'none', transform: `scale(${scale})` }}
+          className="absolute left-0 top-0 block origin-top-left rounded-xl border bg-[color:var(--site-surface)]" style={{ width: widths[device], height: 720, maxWidth: 'none', transform: `scale(${scale})` }}
           sandbox="allow-scripts allow-same-origin" />
       </div>
     </div>
-    <p className="p-3 text-xs leading-5 text-slate-500">Scroll inside the preview. Updates wait until typing stops and pause when the preview is offscreen. Fit preserves the selected device layout. Shopping actions are disabled here; no customer cart or account is changed.</p>
+    <p className="p-3 text-xs leading-5 text-[color:var(--site-muted)]">Scroll inside the preview. Updates wait until typing stops and pause when the preview is offscreen. Fit preserves the selected device layout. Shopping actions are disabled here; no customer cart or account is changed.</p>
   </div>;
 }
 

@@ -1,0 +1,35 @@
+.bridal-look { margin-block: 1.5rem; padding: 1rem; color: var(--site-text); background: var(--site-surface); border: 1px solid var(--site-border); border-radius: var(--site-card-radius); }
+.bridal-look__heading { display: flex; justify-content: space-between; align-items: start; gap: .75rem; }
+.bridal-look h2 { font-family: var(--site-heading-font); font-size: 1.35rem; margin: 0; }
+.bridal-look h3 { font-size: .9rem; margin: 1rem 0 .65rem; }
+.bridal-look p { margin: .4rem 0; font-size: .8rem; line-height: 1.5; }
+.bridal-look__heading p, .bridal-look__reason, .bridal-look__card small { color: var(--site-muted); }
+.bridal-look__groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+.bridal-look__group { min-width: 0; }
+.bridal-look__group:only-child { grid-column: 1 / -1; }
+.bridal-look__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+.bridal-look__card:only-child { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(140px, .8fr) minmax(0, 1.2fr); }
+.bridal-look__card { border: 1px solid var(--site-border); border-radius: var(--site-card-radius); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.bridal-look__card.is-selected { border-color: var(--site-primary); box-shadow: 0 0 0 1px var(--site-primary); }
+.bridal-look__photo { width: 100%; aspect-ratio: 1; max-height: 280px; background: var(--site-tint); display: block; padding: 0; border: 0; align-self: start; }
+.bridal-look__photo img { height: 100%; width: 100%; object-fit: contain; }
+.bridal-look__card-body { padding: .75rem; display: flex; flex-direction: column; gap: .4rem; flex: 1; }
+.bridal-look h4 { margin: 0; font-family: var(--site-heading-font); font-size: .9rem; line-height: 1.4; }
+.bridal-look__card-body strong { font-size: .9rem; }
+.bridal-look__card-body small { font-size: .7rem; font-weight: normal; }
+.bridal-look__reason { min-height: 2.5em; }
+.bridal-look__availability { color: var(--site-muted); font-size: .7rem !important; }
+.bridal-look__availability.is-unavailable { color: var(--site-danger); }
+.bridal-look__select { display: flex; align-items: center; gap: .5rem; font-size: .8rem; margin-top: auto; padding-block: .4rem; cursor: pointer; }
+.bridal-look input[type=checkbox] { accent-color: var(--site-primary); width: 18px; height: 18px; flex-shrink: 0; }
+.bridal-look__dates { padding-block: .6rem; border-bottom: 1px solid var(--site-border); }
+.bridal-look__date-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .75rem; }
+.bridal-look__date-fields input, .bridal-look select { min-width: 0; width: 100%; }
+.bridal-look__summary { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid var(--site-border); }
+.bridal-look__summary dl { min-width: 260px; margin: .65rem 0 0; font-size: .8rem; }
+.bridal-look__summary dl div { display: flex; justify-content: space-between; gap: 1rem; margin-block: .4rem; }
+.bridal-look__summary dd { margin: 0; font-weight: 600; }
+.bridal-look__notice { margin-top: .8rem; padding: .75rem; background: var(--site-tint); border-radius: 8px; }
+.bridal-look__state { padding-block: .75rem; color: var(--site-muted); }
+.bridal-look :focus-visible { outline: 2px solid var(--site-primary); outline-offset: 3px; }
+@media (max-width: 767px) { .bridal-look__card:only-child { display: flex; } .bridal-look h3 { min-height: 2.8em; line-height: 1.4; } .bridal-look { margin-block: 1rem; padding: .8rem; } .bridal-look__groups { gap: .65rem; } .bridal-look__cards { grid-template-columns: minmax(0, 1fr); gap: .65rem; } .bridal-look__group:only-child .bridal-look__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bridal-look__card-body { padding: .6rem; } .bridal-look__date-fields { grid-template-columns: minmax(0, 1fr); } .bridal-look__summary { display: block; } .bridal-look__summary button { width: 100%; margin-top: .8rem; } .bridal-look__summary dl { min-width: 0; } }

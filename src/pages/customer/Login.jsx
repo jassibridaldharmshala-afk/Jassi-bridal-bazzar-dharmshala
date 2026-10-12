@@ -308,7 +308,7 @@ export default function Login({ route = '/login' }) {
 
   return (
     <section className="auth-font min-h-screen bg-ivory px-0 py-0">
-      <div className="mx-auto min-h-screen w-full max-w-[470px] overflow-hidden bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.06)] md:max-w-[560px]">
+      <div className="mx-auto min-h-screen w-full max-w-[470px] overflow-hidden bg-[color:var(--site-surface)] shadow-[0_0_0_1px_rgb(var(--site-shadow-rgb)/0.06)] md:max-w-[560px]">
         <div className="relative h-[160px] overflow-hidden bg-gradient-to-r from-blush via-ivory to-blush px-4 pt-4">
           <button
             type="button"
@@ -323,12 +323,12 @@ export default function Login({ route = '/login' }) {
               }
               window.history.back();
             }}
-            className="absolute left-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/75 text-slate-700 backdrop-blur"
+            className="absolute left-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-[color:color-mix(in_srgb,var(--site-surface)_75%,transparent)] text-[color:var(--site-muted)] backdrop-blur"
             aria-label="Back"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="absolute right-4 top-4 rounded-2xl bg-wine px-3 py-2 text-center text-white shadow-lg">
+          <div className="absolute right-4 top-4 rounded-2xl bg-wine px-3 py-2 text-center text-[color:var(--site-on-fill)] shadow-lg">
             <p className="text-[8px] font-bold leading-none">UP TO</p>
             <p className="text-[13px] font-extrabold leading-none">₹200</p>
           </div>
@@ -336,12 +336,12 @@ export default function Login({ route = '/login' }) {
             <div className="max-w-[220px]">
               <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-wine">{brand.websiteName}</p>
               <h1 className="mt-1.5 text-[18px] font-bold leading-[1.02] text-wine sm:text-[21px]">GET 25% OFF, UP TO ₹200</h1>
-              <p className="mt-2 text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-600 sm:text-[9px]">On your 1st order + exciting offers</p>
+              <p className="mt-2 text-[8px] font-semibold uppercase tracking-[0.12em] text-[color:var(--site-muted)] sm:text-[9px]">On your 1st order + exciting offers</p>
             </div>
             <div className="relative h-18 w-14 shrink-0 sm:h-20 sm:w-16">
-              <div className="absolute inset-x-3 bottom-0 h-16 rounded-t-full bg-[#ffd6bf]" />
-              <div className="absolute left-1/2 top-1 h-6 w-6 -translate-x-1/2 rounded-full bg-[#ffd6bf]" />
-              <div className="absolute left-1/2 top-5 h-11 w-9 -translate-x-1/2 rounded-t-[40px] bg-[#f0cc73]" />
+              <div className="absolute inset-x-3 bottom-0 h-16 rounded-t-full bg-[color:var(--site-accent-soft)]" />
+              <div className="absolute left-1/2 top-1 h-6 w-6 -translate-x-1/2 rounded-full bg-[color:var(--site-accent-soft)]" />
+              <div className="absolute left-1/2 top-5 h-11 w-9 -translate-x-1/2 rounded-t-[40px] bg-[color:var(--site-accent-soft)]" />
             </div>
           </div>
         </div>
@@ -354,7 +354,7 @@ export default function Login({ route = '/login' }) {
                 </div>
                 <div className="pt-1">
                   <h2 className="text-[17px] font-bold leading-[1.05] text-charcoal sm:text-[21px]">Verify with OTP</h2>
-                  <p className="mt-1 text-[11px] text-slate-500 sm:text-[12px]">{demoOtp ? 'Demo verification for' : 'Sent to'} {maskPhone(phone)}</p>
+                  <p className="mt-1 text-[11px] text-[color:var(--site-muted)] sm:text-[12px]">{demoOtp ? 'Demo verification for' : 'Sent to'} {maskPhone(phone)}</p>
                 </div>
               </div>
               {demoOtp && <p role="status" className="rounded-xl bg-blush px-4 py-3 text-sm text-wine">Demo mode: enter <strong>{demoOtp}</strong>. No SMS is needed.</p>}
@@ -385,12 +385,12 @@ export default function Login({ route = '/login' }) {
               <Button
                 type="submit"
                 disabled={loading || !isOtpComplete}
-                className={`h-10 w-full rounded-xl text-white disabled:opacity-60 ${isOtpComplete ? 'bg-wine hover:bg-wine/90' : 'bg-[#a8a8b3] hover:bg-[#a8a8b3]'}`}
+                className={`h-10 w-full rounded-xl text-[color:var(--site-on-fill)] disabled:opacity-60 ${isOtpComplete ? 'bg-wine hover:bg-wine/90' : 'bg-[color:var(--site-surface-alt)] hover:bg-[color:var(--site-surface-alt)]'}`}
               >
                 {loading ? 'Verifying...' : 'Verify OTP'}
               </Button>
               <div className="flex flex-col items-start gap-4">
-                <button type="button" onClick={doResend} disabled={!!cooldown || resending} className="text-[11px] font-semibold uppercase tracking-[0.08em] text-wine disabled:text-slate-400 sm:text-[12px]">
+                <button type="button" onClick={doResend} disabled={!!cooldown || resending} className="text-[11px] font-semibold uppercase tracking-[0.08em] text-wine disabled:text-[color:var(--site-faint)] sm:text-[12px]">
                   {resending ? 'Sending...' : 'Resend OTP'}
                 </button>
                 <HelpLink />
@@ -401,11 +401,11 @@ export default function Login({ route = '/login' }) {
             <form onSubmit={requestOtp} className="space-y-4">
               <div>
                 <h2 className="text-[18px] font-bold leading-[1.05] text-charcoal sm:text-[21px]">Login or Signup</h2>
-                <p className="mt-2 text-[11px] text-slate-500 sm:text-[12px]">Enter your mobile number to receive a one-time password.</p>
+                <p className="mt-2 text-[11px] text-[color:var(--site-muted)] sm:text-[12px]">Enter your mobile number to receive a one-time password.</p>
               </div>
               <PhoneField value={phone} onChange={setPhoneDigits} countryCode={countryCode} />
-              {phoneHint ? <p className="text-[11px] font-medium text-[#c81e4a]">{phoneHint}</p> : null}
-              <div className="flex items-start gap-3 text-[11px] text-slate-600 sm:text-[12px]">
+              {phoneHint ? <p className="text-[11px] font-medium text-[color:var(--site-primary)]">{phoneHint}</p> : null}
+              <div className="flex items-start gap-3 text-[11px] text-[color:var(--site-muted)] sm:text-[12px]">
                 <input
                   id="login-consent"
                   type="checkbox"
@@ -423,7 +423,7 @@ export default function Login({ route = '/login' }) {
               <Button
                 type="submit"
                 disabled={loading || !canSubmitPhone}
-                className={`h-10 w-full rounded-xl text-white disabled:opacity-60 ${canSubmitPhone ? 'bg-wine hover:bg-wine/90' : 'bg-[#a8a8b3] hover:bg-[#a8a8b3]'}`}
+                className={`h-10 w-full rounded-xl text-[color:var(--site-on-fill)] disabled:opacity-60 ${canSubmitPhone ? 'bg-wine hover:bg-wine/90' : 'bg-[color:var(--site-surface-alt)] hover:bg-[color:var(--site-surface-alt)]'}`}
               >
                 {loading ? 'Sending...' : 'Continue'}
               </Button>
@@ -441,12 +441,12 @@ function StatusMessage({ type, message, onRetry, loading, className = '' }) {
   const isError = type === 'error';
   const isSuccess = type === 'success';
   return (
-    <div className={`body-text mt-4 rounded-2xl p-4 ${className} ${isError ? 'bg-rose/10 text-wine' : isSuccess ? 'bg-emerald-50 text-emerald-800' : 'bg-blush text-wine'}`}>
+    <div className={`body-text mt-4 rounded-2xl p-4 ${className} ${isError ? 'bg-rose/10 text-wine' : isSuccess ? 'bg-[color:var(--site-success-soft)] text-[color:var(--site-success)]' : 'bg-blush text-wine'}`}>
       <p className="text-[12px] font-semibold">{isError ? 'We could not continue right now' : isSuccess ? 'All set' : 'Note'}</p>
       <p className="mt-1 text-[12px] leading-[1.4]">{message}</p>
       {isError && onRetry && (
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={onRetry} disabled={loading} className="rounded-xl bg-white px-4 py-2 text-[12px] text-rose shadow-sm disabled:opacity-60">
+          <button type="button" onClick={onRetry} disabled={loading} className="rounded-xl bg-[color:var(--site-surface)] px-4 py-2 text-[12px] text-rose shadow-sm disabled:opacity-60">
             Try Again
           </button>
         </div>
@@ -467,10 +467,10 @@ function readDemoOtp(response) {
 
 function PhoneField({ value, onChange, countryCode = '+91' }) {
   return (
-    <div className="sc-field-shell w-full overflow-hidden rounded-xl border border-slate-300 focus-within:border-wine focus-within:ring-2 focus-within:ring-wine/10">
+    <div className="sc-field-shell w-full overflow-hidden rounded-xl border border-[color:var(--site-border)] focus-within:border-wine focus-within:ring-2 focus-within:ring-wine/10">
       <div className="flex w-full items-center">
-        <span className="shrink-0 px-4 text-[14px] font-semibold text-slate-500">{countryCode}</span>
-        <span className="h-10 w-px shrink-0 bg-slate-300" />
+        <span className="shrink-0 px-4 text-[14px] font-semibold text-[color:var(--site-muted)]">{countryCode}</span>
+        <span className="h-10 w-px shrink-0 bg-[color:var(--site-surface-alt)]" />
         <TextInput
           value={value}
           onChange={(event) => onChange(event.target.value)}

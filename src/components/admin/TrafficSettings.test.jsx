@@ -8,8 +8,9 @@ beforeEach(() => { jest.clearAllMocks(); api.get.mockResolvedValue(data); api.pu
 test('store-scoped traffic settings save only editable analytics fields and the expected revision', async () => {
   render(<TrafficSettings apiBase="/seller/settings" />);
   fireEvent.change(await screen.findByLabelText('Traffic timezone'), { target: { value: 'Asia/Dubai' } });
+  expect(screen.queryByLabelText('Require explicit analytics consent')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Save traffic settings' }));
-  await waitFor(() => expect(api.put).toHaveBeenCalledWith('/seller/settings/traffic', expect.objectContaining({ timezone: 'Asia/Dubai', expectedRevision: 1 }), { silent: true }));
+  await waitFor(() => expect(api.put).toHaveBeenCalledWith('/seller/settings/traffic', expect.objectContaining({ timezone: 'Asia/Dubai', consentRequired: false, expectedRevision: 1 }), { silent: true }));
 });
 test('retention reduction and complete analytics deletion require deliberate confirmation', async () => {
   render(<TrafficSettings />); await screen.findByLabelText('Traffic timezone');

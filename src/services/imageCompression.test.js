@@ -4,15 +4,18 @@ import { getUploadRetryKey } from './uploadRetry';
 const mockCompress = jest.fn();
 jest.mock('browser-image-compression', () => ({ __esModule: true, default: (...args) => mockCompress(...args) }));
 
-test.each(['image/jpeg', 'image/png', 'image/webp'])('saved %s photos retain their original encoded bytes despite legacy size options', async type => {
+test.each(['image/jpeg', 'image/png', 'image/webp'])('large %s uploads compress once and retain their retry identity', async type => {
   const file = new File([new Uint8Array(3 * 1024 * 1024)], 'detailed-photo.' + type.split('/')[1], { type });
   const progress = jest.fn();
+  mockCompress.mockResolvedValueOnce(new Blob([new Uint8Array(200 * 1024)], { type: 'image/webp' }));
   const output = await compressImageFile(file, { maxWidthOrHeight: 320, targetMaxSizeMb: 0.1, onProgress: progress });
-  expect(output).toBe(file);
-  expect(output.size).toBe(3 * 1024 * 1024);
-  expect(output.__compressionMeta).toMatchObject({ skipped: true, lossless: true, convertedToWebp: false });
+  expect(output.type).toBe('image/webp');
+  expect(output.size).toBe(200 * 1024);
+  expect(output.__compressionMeta).toMatchObject({ skipped: false, lossless: false, convertedToWebp: true });
   expect(progress).toHaveBeenCalledWith(100);
-  expect(mockCompress).not.toHaveBeenCalled();
+  expect(mockCompress).toHaveBeenLastCalledWith(file, expect.objectContaining({ maxSizeMB: 0.7, maxWidthOrHeight: 2200, useWebWorker: true, libURL: window.location.origin + '/vendor/browser-image-compression.js' }));
+  expect(await compressImageFile(file)).toBe(output);
+  expect(getUploadRetryKey({ path: '/admin/uploads', files: [output] })).toBe(getUploadRetryKey({ path: '/admin/uploads', files: [file] }));
 });
 
 test('extension-only photos receive the correct MIME without changing bytes or retry identity', async () => {
@@ -47,7 +50,8 @@ test('document AI gets its own bounded copy while the saved original remains unt
   const analysis = await prepareAnalysisImageFile(original);
   expect(analysis.name).toBe('invoice-analysis.webp'); expect(analysis.size).toBeLessThanOrEqual(512 * 1024);
   expect(mockCompress).toHaveBeenLastCalledWith(original, expect.objectContaining({ maxSizeMB: 0.5, maxWidthOrHeight: 2400, initialQuality: 0.95 }));
-  expect(await compressImageFile(original)).toBe(original);
+  mockCompress.mockResolvedValueOnce(new Blob(['store display'], { type: 'image/webp' }));
+  expect((await compressImageFile(original)).type).toBe('image/webp');
   expect(original.size).toBe(3 * 1024 * 1024);
   mockCompress.mockResolvedValueOnce(new Blob([new Uint8Array(600 * 1024)], { type: 'image/webp' }));
   await expect(prepareAnalysisImageFile(original)).rejects.toThrow('too detailed');

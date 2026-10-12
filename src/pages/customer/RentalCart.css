@@ -12,21 +12,21 @@
 .rental-cart__back { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; color: var(--bag-ink); }
 .rental-cart .sc-bag__layout { gap: 24px; }
 .rental-cart .sc-bag__main { padding: 0; }
-.rental-cart__plan-note { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; padding: 11px 14px; border: 1px solid var(--bag-border); border-radius: 7px; background: #fcf8f2; font-size: 12px; line-height: 1.5; color: var(--bag-muted); }
+.rental-cart__plan-note { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; padding: 11px 14px; border: 1px solid var(--bag-border); border-radius: 7px; background: var(--site-accent-soft); font-size: 12px; line-height: 1.5; color: var(--bag-muted); }
 .rental-cart__plan-note svg { flex-shrink: 0; color: var(--bag-primary); }
 .rental-cart .rental-bag-items { gap: 12px; }
 .rental-cart .rental-bag-item { padding: 16px; gap: 16px; border-color: var(--bag-border); border-radius: 7px; }
-.rental-cart .rental-bag-item__picture { width: 112px; height: 150px; overflow: hidden; border-radius: 5px; background: #f5eee8; }
+.rental-cart .rental-bag-item__picture { width: 112px; height: 150px; overflow: hidden; border-radius: 5px; background: var(--site-accent-soft); }
 .rental-cart .rental-bag-item__image img { width: 100%; height: 100%; border-radius: 0; object-fit: cover; object-position: center top; }
 .rental-cart .rental-bag-item__body { padding-right: 20px; }
 .rental-cart .rental-bag-item__kind { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--bag-primary); font-weight: 600; }
-.rental-cart .rental-bag-item__title { display: block; padding-right: 0; margin-top: 5px; font-size: 14px; line-height: 1.4; font-weight: 650; }
+.rental-cart .rental-bag-item__title { display: block; padding-right: 0; margin-top: 5px; font-size: 14px; line-height: 1.4; font-weight: var(--site-heading-weight); }
 .rental-cart .rental-bag-item p { margin: 5px 0 8px; font-size: 11px; color: var(--bag-muted); }
 .rental-cart .rental-bag-item strong { font-size: 15px; }
 .rental-cart .rental-bag-item strong small { font-size: 11px; font-weight: 400; }
 .rental-cart .rental-bag-item__deposit { display: flex; align-items: center; gap: 5px; max-width: none; line-height: 1.5; }
 .rental-cart .rental-bag-item__deposit svg { flex-shrink: 0; }
-.rental-cart .rental-bag-item__quantity { margin: 0; background: #f8f3ef; border-color: #e7dfd9; }
+.rental-cart .rental-bag-item__quantity { margin: 0; background: var(--site-accent-soft); border-color: var(--site-border); }
 .rental-cart .rental-bag-item__quantity button { width: 36px; height: 34px; }
 .rental-cart .rental-bag-item__quantity span { min-width: 25px; font-size: 12px; }
 .rental-cart .rental-bag-item__remove { top: 7px; right: 7px; }

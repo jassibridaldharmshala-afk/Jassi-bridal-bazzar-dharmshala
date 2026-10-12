@@ -119,6 +119,8 @@ export function applyVisionSuggestion(form, suggestion = {}, locks = {}, categor
     if (!String(next[key] || '').trim() && suggestion[key]) next[key] = Array.isArray(suggestion[key]) ? suggestion[key].join(', ') : suggestion[key];
   }
   next.attributeValues = { ...next.attributeValues };
+  // Appearance remains an unapplied review suggestion in the existing Smart Fill UI.
+  if (suggestion.bridalStyle && Object.keys(suggestion.bridalStyle).length) next.bridalStyleAnalysis = { photoKey: JSON.stringify((form.images || []).map(image => typeof image === 'string' ? image : image.url).filter(Boolean).slice(0, 6)), status: 'completed', suggestion: suggestion.bridalStyle };
   if (categoryCompatible) for (const [key, value] of Object.entries(suggestion.attributeValues || {})) if (!String(next.attributeValues[key] || '').trim()) next.attributeValues[key] = value;
   if (!next.metaTitle && next.name) next.metaTitle = next.name.slice(0, 60);
   if (!next.metaDescription) next.metaDescription = (next.shortDescription || next.description || '').slice(0, 160);

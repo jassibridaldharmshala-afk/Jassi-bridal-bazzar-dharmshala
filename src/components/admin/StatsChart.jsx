@@ -11,12 +11,12 @@ export default function StatsChart({ title = 'Revenue Overview', points = [], la
           {bars.map((point, index) => (
             <div key={`${title}-${index}`} className="flex flex-1 flex-col items-center gap-2">
               <div className="w-full rounded-t-xl bg-gradient-to-t from-wine to-rose" style={{ height: `${Math.max(6, (point / max) * 100)}%` }} />
-              <span className="text-[10px] font-black text-slate-400">{labels[index] || `${index + 1}`}</span>
+              <span className="text-[10px] font-black text-[color:var(--site-faint)]">{labels[index] || `${index + 1}`}</span>
             </div>
           ))}
         </div>
       ) : (
-        <p className="mt-6 text-sm font-semibold text-slate-500">No data for this range yet.</p>
+        <p className="mt-6 text-sm font-semibold text-[color:var(--site-muted)]">No data for this range yet.</p>
       )}
     </div>
   );

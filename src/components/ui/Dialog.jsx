@@ -3,11 +3,11 @@ import { cn } from '../../lib/utils';
 
 export function Dialog({ open, className = '', children }) {
   if (!open) return null;
-  return <div className={cn('fixed inset-0 z-[90] bg-black/45', className)}>{children}</div>;
+  return <div className={cn('fixed inset-0 z-[90] bg-[color:color-mix(in_srgb,var(--site-media-black)_45%,transparent)]', className)}>{children}</div>;
 }
 
 export function DialogContent({ className = '', ...props }) {
-  return <div className={cn('mx-auto w-full max-w-lg rounded-3xl bg-white shadow-2xl', className)} {...props} />;
+  return <div className={cn('mx-auto w-full max-w-lg rounded-3xl bg-[color:var(--site-surface)] shadow-2xl', className)} {...props} />;
 }
 
 export function DialogHeader({ className = '', ...props }) {

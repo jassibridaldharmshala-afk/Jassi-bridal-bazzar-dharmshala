@@ -13,7 +13,8 @@ import {
 } from '@tabler/icons-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { getPrimaryImageUrl, normalizeImageEntries, normalizeImageUrl, normalizeProducts } from '../../services/normalize';
+import { normalizeImageEntries, normalizeImageUrl, normalizeProducts } from '../../services/normalize';
+import { responsiveImage } from '../../utils/responsiveImages';
 import { clearRecentProducts } from '../../utils/recentProducts';
 import api from '../../services/api';
 import { isUnavailable, wishlistStock } from '../../utils/wishlist';
@@ -75,6 +76,7 @@ export default function DesktopLuxuryHome({
   const heroSection = getHomepageSection(websiteConfig, 'hero');
   const activeHeroImage = normalizeImageUrl(activeHero.image);
   const heroImage = activeHeroImage || normalizeImageUrl(heroSection.image) || getProductImage(productsWithImages[0]);
+  const heroMedia = responsiveImage(activeHeroImage ? activeHero.imageMedia || activeHero.image : heroSection.image || normalizeImageEntries(productsWithImages[0]?.images)[0], 'hero');
   const heroAlt = activeHeroImage
     ? activeHero.altText || activeHero.title || 'Featured collection'
     : heroSection.imageAlt || 'Featured collection';
@@ -141,7 +143,7 @@ export default function DesktopLuxuryHome({
             </div>
           </div>
           <div className={styles.heroVisual}>
-            {heroImage ? <img loading="eager" fetchPriority="high" decoding="async" src={heroImage} alt={heroAlt} style={{ objectPosition: heroImagePosition }} /> : <div className={styles.imageFallback}>{websiteConfig?.branding?.websiteName || brand.websiteName}</div>}
+            {heroImage ? <img {...heroMedia} loading="eager" fetchPriority="high" decoding="async" alt={heroAlt} style={{ objectPosition: heroImagePosition }} /> : <div className={styles.imageFallback}>{websiteConfig?.branding?.websiteName || brand.websiteName}</div>}
           </div>
         </div>
         {heroSlides.length > 1 && <>
@@ -306,11 +308,11 @@ function CategorySection({ categories, products, navigate, section }) {
           {categories.map((category) => {
             const categoryId = category._id || category.id || category.slug || category.name;
             const matchingProduct = products.find((product) => normalizeName(product.category).includes(normalizeName(category.name)));
-            const image = category.image ? normalizeImageUrl(category.image) : getProductImage(matchingProduct || products[0]);
+            const image = responsiveImage(category.image ? category.imageMedia || category.image : normalizeImageEntries((matchingProduct || products[0])?.images)[0], 'category');
             return (
               <button key={categoryId} type="button" className={styles.categoryItem} onClick={() => navigate(`/products?category=${encodeURIComponent(categoryId)}`)}>
                 <span className={styles.categoryImageWrap}>
-                  {image ? <img loading="lazy" decoding="async" src={image} alt={category.name} /> : <span className={styles.imageFallback}>{String(category.name || 'SC').slice(0, 2)}</span>}
+                  {image.src ? <img {...image} loading="lazy" decoding="async" alt={category.name} /> : <span className={styles.imageFallback}>{String(category.name || 'SC').slice(0, 2)}</span>}
                 </span>
                 <strong title={category.name}>{category.name}</strong>
               </button>
@@ -448,7 +450,7 @@ const LuxuryProductCard = memo(function LuxuryProductCard({ product, navigate, l
         {(product.isNewArrival || product.isBestSeller) && <span className={styles.productBadge}>{product.isBestSeller ? 'Bestseller' : 'New'}</span>}
         <button type="button" className={styles.wishlistButton} onClick={toggleWishlist} disabled={wishlist.loading} aria-label="Toggle wishlist" data-card-field="wishlist"><IconHeart fill={wishlisted ? '#7b1834' : 'none'} /></button>
         <button type="button" className={styles.cartButton} onClick={addToCart} disabled={unavailable || (!rental && cart.loading)} aria-label={rental ? 'Check rental dates' : unavailable ? 'Out of stock' : needsSize ? 'Select a size' : 'Add to cart'} data-card-field="cart"><IconShoppingBag /></button>
-        <button type="button" data-card-field="quick-view" className="absolute bottom-3 right-3 z-20 rounded-lg bg-white/95 px-3 py-2 text-[10px] font-black uppercase text-wine shadow" onClick={(event) => { event.stopPropagation(); setQuickOpen(true); }}>Quick view</button>
+        <button type="button" data-card-field="quick-view" className="absolute bottom-3 right-3 z-20 rounded-lg bg-[color:color-mix(in_srgb,var(--site-surface)_95%,transparent)] px-3 py-2 text-[10px] font-black uppercase text-wine shadow" onClick={(event) => { event.stopPropagation(); setQuickOpen(true); }}>Quick view</button>
         {productImages.length > 1 && (
           <>
             <button type="button" className={`${styles.productImageArrow} ${styles.productImageArrowLeft}`} onClick={(event) => slideImage(event, -1)} aria-label="Previous product image"><IconChevronLeft /></button>
@@ -481,7 +483,7 @@ const LuxuryProductCard = memo(function LuxuryProductCard({ product, navigate, l
         <span><IconStarFilled />{Number(product.rating || 0).toFixed(1)}</span>
         <small>({product.numReviews})</small>
       </div>}
-      {quickOpen && <LazyBoundary><Suspense fallback={<p role="status" className="p-3 text-sm text-slate-600">Loading quick view…</p>}><QuickViewModal product={product} onClose={() => setQuickOpen(false)} onOpenFull={() => { setQuickOpen(false); navigate(`/product?id=${encodeURIComponent(productId)}`); }} /></Suspense></LazyBoundary>}
+      {quickOpen && <LazyBoundary><Suspense fallback={<p role="status" className="p-3 text-sm text-[color:var(--site-muted)]">Loading quick view…</p>}><QuickViewModal product={product} onClose={() => setQuickOpen(false)} onOpenFull={() => { setQuickOpen(false); navigate(`/product?id=${encodeURIComponent(productId)}`); }} /></Suspense></LazyBoundary>}
     </article>
   );
 });
@@ -612,14 +614,15 @@ function getProductId(product) {
 }
 
 function getProductImage(product) {
-  return normalizeImageUrl(getPrimaryImageUrl(product?.images));
+  const entries = normalizeImageEntries(product?.images || []);
+  return responsiveImage(entries.find(image => image.primary) || entries[0], 'card').src || '';
 }
 
 function getProductImages(product) {
   const entries = normalizeImageEntries(product?.images || []);
   const primary = entries.find((image) => image.primary);
   const ordered = primary ? [primary, ...entries.filter((image) => image !== primary)] : entries;
-  return ordered.map((image) => normalizeImageUrl(image.url)).filter(Boolean).slice(0, 6);
+  return ordered.map((image) => responsiveImage(image, 'card').src).filter(Boolean).slice(0, 6);
 }
 
 function normalizeName(value) {

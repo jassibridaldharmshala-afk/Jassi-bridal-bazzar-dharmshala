@@ -170,6 +170,10 @@ const fontStacks = {
 
 export function buildWebsiteCssVariables(input) {
   const config = mergeWebsiteConfig(input);
+  const darkSurface = onColor(config.colors.surface) === '#ffffff';
+  const statusColors = darkSurface
+    ? { success: '#6dd8a2', danger: '#ff9daf', warning: '#f6cd78', info: '#99caff', violet: '#c9b1f5' }
+    : { success: '#167244', danger: '#a52b45', warning: '#94651b', info: '#2d668f', violet: '#70569a' };
   const shadows = { none: 'none', soft: '0 8px 24px rgba(22, 14, 17, .08)', elevated: '0 16px 36px rgba(22, 14, 17, .16)' };
   const buttonSizes = { small: ['36px', '12px'], medium: ['44px', '18px'], large: ['52px', '24px'] };
   const [buttonHeight, buttonPadding] = buttonSizes[config.buttons.size] || buttonSizes.medium;
@@ -178,6 +182,7 @@ export function buildWebsiteCssVariables(input) {
   const buttonText = config.buttons.style === 'outline' ? config.buttons.background
     : config.buttons.style === 'soft' ? config.colors.primary : config.buttons.textColor;
   return {
+    '--site-color-scheme': darkSurface ? 'dark' : 'light',
     '--site-primary': config.colors.primary,
     '--site-primary-rgb': rgbChannels(config.colors.primary),
     '--site-secondary-rgb': rgbChannels(config.colors.secondary),
@@ -187,6 +192,24 @@ export function buildWebsiteCssVariables(input) {
     '--site-on-primary': onColor(config.colors.primary),
     '--site-primary-dark': `color-mix(in srgb, ${config.colors.primary} 82%, black)`,
     '--site-border': `color-mix(in srgb, ${config.colors.text} 16%, ${config.colors.surface})`,
+    '--site-border-strong': `color-mix(in srgb, ${config.colors.text} 28%, ${config.colors.surface})`,
+    '--site-surface-alt': `color-mix(in srgb, ${config.colors.background} 60%, ${config.colors.surface})`,
+    '--site-tint': `color-mix(in srgb, ${config.colors.primary} 8%, ${config.colors.surface})`,
+    '--site-primary-border': `color-mix(in srgb, ${config.colors.primary} 26%, ${config.colors.surface})`,
+    '--site-accent-soft': `color-mix(in srgb, ${config.colors.accent} 10%, ${config.colors.surface})`,
+    '--site-accent-border': `color-mix(in srgb, ${config.colors.accent} 30%, ${config.colors.surface})`,
+    '--site-faint': `color-mix(in srgb, ${config.colors.mutedText} 65%, ${config.colors.surface})`,
+    '--site-overlay': 'rgb(0 0 0 / 45%)',
+    '--site-media-black': '#000000',
+    '--site-on-media': '#ffffff',
+    '--site-on-fill': onColor(config.colors.primary),
+    '--site-shadow-rgb': darkSurface ? '0 0 0' : rgbChannels(config.colors.text),
+    ...Object.fromEntries(Object.entries(statusColors).flatMap(([status, color]) => [
+      [`--site-${status}`, color],
+      [`--site-${status}-soft`, `color-mix(in srgb, ${color} 9%, ${config.colors.surface})`],
+      [`--site-${status}-border`, `color-mix(in srgb, ${color} 25%, ${config.colors.surface})`],
+      [`--site-on-${status}`, onColor(color)],
+    ])),
     '--site-skeleton': `color-mix(in srgb, ${config.colors.primary} 10%, ${config.colors.surface})`,
     '--site-loader': config.colors.primary,
     '--site-loader-track': `color-mix(in srgb, ${config.colors.primary} 18%, transparent)`,

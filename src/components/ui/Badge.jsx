@@ -6,11 +6,11 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-slate-100 text-slate-700',
+        default: 'bg-[color:var(--site-surface-alt)] text-[color:var(--site-muted)]',
         rose: 'bg-blush text-rose',
-        wine: 'bg-wine text-white',
-        success: 'bg-emerald-50 text-emerald-700',
-        outline: 'border border-slate-200 bg-white text-slate-700',
+        wine: 'bg-wine text-[color:var(--site-on-fill)]',
+        success: 'bg-[color:var(--site-success-soft)] text-[color:var(--site-success)]',
+        outline: 'border border-[color:var(--site-border)] bg-[color:var(--site-surface)] text-[color:var(--site-muted)]',
       },
     },
     defaultVariants: {

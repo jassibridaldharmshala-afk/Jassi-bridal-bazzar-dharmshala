@@ -32,6 +32,10 @@ function removeQueue(key) { memory.delete(`session:${key}`); try { sessionStorag
 const prefix = () => `traffic:${state.config.storeKey}:g${state.config.privacyGeneration}:`;
 const preferenceKey = () => `traffic:${state.config.storeKey}:consent`;
 export function trafficPreference() { return state ? read(preferenceKey())?.value || 'unknown' : 'unknown'; }
+export function trafficPrivacyStatus(storeSlug = '') {
+  if (!state || state.internal || state.preview || String(state.storeSlug || '') !== String(storeSlug || '')) return null;
+  return { enabled: state.config.enabled, ga4Enabled: state.config.ga4Enabled, consentRequired: state.config.consentRequired, preference: trafficPreference(), browserOptOut: navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' };
+}
 export function trafficAllowed() {
   if (!state || !state.config.enabled || state.internal || state.preview) return false;
   const path = boutiquePath(String(state.route || '/').split('?')[0]);

@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { cleanRentalBag } from '../utils/rentalShopping';
 import { clearRentalSession, readRentalSession, saveRentalSession } from '../utils/rentalPlan';
 
-const empty = { items: [], itemCount: 0, ready: false, add: () => false, update: () => {}, remove: () => {}, consume: () => {} };
+const empty = { items: [], itemCount: 0, ready: false, add: () => false, addMany: () => false, update: () => {}, remove: () => {}, consume: () => {} };
 const RentalBagContext = createContext(empty);
 function initialBag(storeSlug, actor, scope) {
   const saved = readRentalSession('bag', storeSlug, actor);
@@ -15,6 +15,7 @@ export function RentalBagProvider({ children, user, storeSlug = '' }) {
   // Cart/wishlist account keys can remount this provider after OTP sign-in.
   // Read the same-store guest bag at initial mount as well as on a scope change.
   const [bag, setBag] = useState(() => initialBag(storeSlug, actor, scope));
+  const bagRef = useRef(bag); bagRef.current = bag;
   useEffect(() => {
     if (bag.scope === scope) return;
     let items = cleanRentalBag(readRentalSession('bag', storeSlug, actor)?.items);
@@ -33,13 +34,25 @@ export function RentalBagProvider({ children, user, storeSlug = '' }) {
       setBag(current => ({ ...current, adoptGuest: false }));
     }
   }, [actor, bag.items, bag.consumed, bag.adoptGuest, ready, storeSlug]);
-  const value = useMemo(() => ({
+  const value = {
     ready, items: ready ? bag.items : [], itemCount: ready ? bag.items.reduce((n, item) => n + item.quantity, 0) : 0,
-    add: (listingId, quantity = 1) => { if (!ready || (!bag.items.some(item => item.listingId === listingId) && bag.items.length >= 10)) return false; setBag(current => ({ ...current, scope, items: cleanRentalBag([...current.items, { listingId, quantity }]) })); return true; },
-    update: (listingId, quantity) => { if (ready) setBag(current => ({ ...current, scope, items: cleanRentalBag(current.items.map(item => item.listingId === listingId ? { listingId, quantity } : item)) })); },
-    remove: listingId => { if (ready) setBag(current => ({ ...current, scope, items: current.items.filter(item => item.listingId !== listingId) })); },
-    consume: (purchased, bookingId) => { if (ready) setBag(current => current.consumed?.includes(bookingId) ? current : ({ ...current, scope, consumed: [...(current.consumed || []), bookingId].slice(-100), items: cleanRentalBag(current.items.map(item => ({ ...item, quantity: item.quantity - (purchased.find(row => row.listingId === item.listingId)?.quantity || 0) }))) })); },
-  }), [bag.items, ready, scope]);
+    add: (listingId, quantity = 1) => append([{ listingId, quantity }]),
+    addMany: append,
+    update: (listingId, quantity) => mutate(current => ({ ...current, items: cleanRentalBag(current.items.map(item => item.listingId === listingId ? { listingId, quantity } : item)) })),
+    remove: listingId => mutate(current => ({ ...current, items: current.items.filter(item => item.listingId !== listingId) })),
+    consume: (purchased, bookingId) => mutate(current => current.consumed?.includes(bookingId) ? current : ({ ...current, consumed: [...(current.consumed || []), bookingId].slice(-100), items: cleanRentalBag(current.items.map(item => ({ ...item, quantity: item.quantity - (purchased.find(row => row.listingId === item.listingId)?.quantity || 0) }))) })),
+  };
+  function mutate(change) {
+    if (!ready || bagRef.current.scope !== scope) return false;
+    const next = change(bagRef.current); bagRef.current = next; setBag(next); return true;
+  }
+  function append(items) {
+    if (!ready || bagRef.current.scope !== scope || !Array.isArray(items) || !items.length || items.some(item => !/^[a-f\d]{24}$/i.test(item.listingId || '') || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 10)) return false;
+    const combined = [...bagRef.current.items, ...items], totals = new Map();
+    for (const item of combined) totals.set(item.listingId, (totals.get(item.listingId) || 0) + item.quantity);
+    if (totals.size > 10 || [...totals.values()].some(total => total > 10)) return false;
+    return mutate(current => ({ ...current, items: cleanRentalBag([...current.items, ...items]) }));
+  }
   return <RentalBagContext.Provider value={value}>{children}</RentalBagContext.Provider>;
 }
 export const useRentalBag = () => useContext(RentalBagContext);

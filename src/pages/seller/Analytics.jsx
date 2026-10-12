@@ -15,7 +15,7 @@ export default function SellerAnalytics() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black">Sales analytics</h1>
-          <p className="text-sm font-semibold text-slate-500">{data.note}</p>
+          <p className="text-sm font-semibold text-[color:var(--site-muted)]">{data.note}</p>
         </div>
         <select aria-label="Analytics period" className="h-11 rounded-xl border px-3 text-sm font-bold" value={range} onChange={(event) => setRange(event.target.value)}>
           <option value="today">Today</option>
@@ -26,17 +26,17 @@ export default function SellerAnalytics() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {events.map(([name, count]) => (
-          <div key={name} className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">{name.replace(/_/g, ' ')}</p>
+          <div key={name} className="rounded-2xl bg-[color:var(--site-surface)] p-4 shadow-sm">
+            <p className="text-[11px] font-black uppercase tracking-widest text-[color:var(--site-faint)]">{name.replace(/_/g, ' ')}</p>
             <p className="mt-2 text-2xl font-black">{count}</p>
           </div>
         ))}
       </div>
-      <div className="overflow-x-auto rounded-2xl bg-white p-5 shadow-sm">
+      <div className="overflow-x-auto rounded-2xl bg-[color:var(--site-surface)] p-5 shadow-sm">
         <h2 className="text-lg font-black">Attributed sales</h2>
-        {!data.attributedSales?.length ? <p className="mt-2 text-sm font-semibold text-slate-500">No attributed orders yet. Share links with source, campaign or reel parameters.</p> : (
+        {!data.attributedSales?.length ? <p className="mt-2 text-sm font-semibold text-[color:var(--site-muted)]">No attributed orders yet. Share links with source, campaign or reel parameters.</p> : (
           <table className="mt-3 min-w-full text-left text-sm">
-            <thead className="text-xs font-black uppercase tracking-wider text-slate-500">
+            <thead className="text-xs font-black uppercase tracking-wider text-[color:var(--site-muted)]">
               <tr>
                 {['Source', 'Campaign', 'Reel', 'Orders', 'Revenue'].map((head) => <th key={head} className="py-2">{head}</th>)}
               </tr>

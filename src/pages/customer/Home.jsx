@@ -6,7 +6,8 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import PageState from '../../components/ui/PageState';
 import StorefrontSkeleton from '../../components/ui/StorefrontSkeleton';
-import { getPrimaryImageUrl, normalizeImageUrl, normalizeProducts } from '../../services/normalize';
+import { getPrimaryImageUrl, normalizeProducts } from '../../services/normalize';
+import { responsiveImage } from '../../utils/responsiveImages';
 import { samiraApi, useGetBannersQuery, useGetCategoriesQuery, useGetFeaturedReviewsQuery, useGetMobileHomeQuery, useGetProductsQuery } from '../../store/apiSlice';
 import { useWebsiteCustomization } from '../../context/WebsiteCustomizationContext';
 import { getHomepageSection } from '../../config/websiteCustomization';
@@ -328,7 +329,9 @@ function MobileHero({ banners = [], heading, section, navigate, industry = 'fash
   const fashion = industry === 'fashion';
   const configuredImage = section?.mobileImage || section?.image;
   const bannerImage = banner?.mobileImage || banner?.image;
-  const heroImage = normalizeImageUrl(bannerImage || configuredImage);
+  const heroImage = responsiveImage(bannerImage
+    ? (banner.mobileImage ? banner.mobileImageMedia || banner.mobileImage : banner.imageMedia || banner.image)
+    : configuredImage, 'hero');
   const heroAlt = bannerImage
     ? banner?.altText || banner?.title || 'Featured collection'
     : section?.imageAlt || 'Featured collection';
@@ -361,11 +364,11 @@ function MobileHero({ banners = [], heading, section, navigate, industry = 'fash
       <button
         type="button"
         onClick={() => section?.buttonLink ? navigate(section.buttonLink) : banner?._id ? openBanner(banner, navigate) : navigate('/products')}
-        className="relative block min-h-[190px] w-full overflow-hidden rounded-[18px] bg-gradient-to-r from-blush via-ivory to-[#f6ddcf] text-left shadow-[0_8px_24px_rgba(122,31,54,0.10)]"
+        className="relative block min-h-[190px] w-full overflow-hidden rounded-[18px] bg-gradient-to-r from-blush via-ivory to-[color:var(--site-tint)] text-left shadow-[0_8px_24px_rgb(var(--site-shadow-rgb)/0.10)]"
         aria-label={`${banner?.title || heading || 'Featured collection'}${slides.length > 1 ? `, slide ${(slideIndex % slides.length) + 1} of ${slides.length}` : ''}`}
       >
-        {heroImage && <img src={heroImage} alt={heroAlt} loading="eager" fetchPriority="high" decoding="async" sizes="100vw" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: heroImagePosition }} />}
-        <span className="absolute inset-0 bg-gradient-to-r from-ivory/95 via-ivory/82 to-[#4b1b2a]/10" />
+        {heroImage.src && <img {...heroImage} alt={heroAlt} loading="eager" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: heroImagePosition }} />}
+        <span className="absolute inset-0 bg-gradient-to-r from-ivory/95 via-ivory/82 to-[color:var(--site-primary-dark)]/10" />
         <div className="relative flex min-h-[190px] items-center px-5 py-5">
           <div className="min-w-0 max-w-[72%]">
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-wine">{fashion ? 'New festive collection' : `New ${industryLabel(industry)} collection`}</p>
@@ -375,23 +378,23 @@ function MobileHero({ banners = [], heading, section, navigate, industry = 'fash
             <p className="mt-1.5 max-w-[190px] text-[12px] leading-[1.35] text-theme-muted">
               {section?.description || banner?.subtitle || (fashion ? 'Elegant sarees, suits & kurtis for every occasion.' : `Discover quality ${industryLabel(industry).toLowerCase()} products selected for you.`)}
             </p>
-            <div className="mt-3 inline-flex items-center rounded-full border border-theme-border bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-wine">
+            <div className="mt-3 inline-flex items-center rounded-full border border-theme-border bg-[color:color-mix(in_srgb,var(--site-surface)_90%,transparent)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-wine">
               {offerLabel}
             </div>
             <div className="mt-3">
-              <span className="inline-flex h-9 items-center rounded-[8px] bg-wine px-4 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
+              <span className="inline-flex h-9 items-center rounded-[8px] bg-wine px-4 text-[10px] font-bold uppercase tracking-[0.08em] text-[color:var(--site-on-fill)]">
                 {section?.buttonText || 'Shop Now'}
               </span>
             </div>
           </div>
-          {!heroImage && <span className="absolute bottom-4 right-4 max-w-[28%] text-right font-display text-lg font-black leading-tight text-wine/70">{brand.websiteName}</span>}
+          {!heroImage.src && <span className="absolute bottom-4 right-4 max-w-[28%] text-right font-display text-lg font-black leading-tight text-wine/70">{brand.websiteName}</span>}
         </div>
       </button>
       {slides.length > 1 && <>
-        <button type="button" onClick={() => move(-1)} aria-label="Previous featured offer" className="absolute left-5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-white/90 text-wine shadow-md"><ChevronLeft className="h-4 w-4" /></button>
-        <button type="button" onClick={() => move(1)} aria-label="Next featured offer" className="absolute right-5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-white/90 text-wine shadow-md"><ChevronRight className="h-4 w-4" /></button>
-        <div className="absolute bottom-7 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/20 px-2 py-1" aria-label="Choose featured offer">
-          {slides.map((slide, index) => <button key={slide._id || slide.id || index} type="button" onClick={() => setSlideIndex(index)} aria-label={`Show featured offer ${index + 1}`} aria-current={index === slideIndex % slides.length ? 'true' : undefined} className={`h-1.5 rounded-full transition-all ${index === slideIndex % slides.length ? 'w-5 bg-white' : 'w-1.5 bg-white/60'}`} />)}
+        <button type="button" onClick={() => move(-1)} aria-label="Previous featured offer" className="absolute left-5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-[color:color-mix(in_srgb,var(--site-border)_70%,transparent)] bg-[color:color-mix(in_srgb,var(--site-surface)_90%,transparent)] text-wine shadow-md"><ChevronLeft className="h-4 w-4" /></button>
+        <button type="button" onClick={() => move(1)} aria-label="Next featured offer" className="absolute right-5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-[color:color-mix(in_srgb,var(--site-border)_70%,transparent)] bg-[color:color-mix(in_srgb,var(--site-surface)_90%,transparent)] text-wine shadow-md"><ChevronRight className="h-4 w-4" /></button>
+        <div className="absolute bottom-7 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-[color:color-mix(in_srgb,var(--site-media-black)_20%,transparent)] px-2 py-1" aria-label="Choose featured offer">
+          {slides.map((slide, index) => <button key={slide._id || slide.id || index} type="button" onClick={() => setSlideIndex(index)} aria-label={`Show featured offer ${index + 1}`} aria-current={index === slideIndex % slides.length ? 'true' : undefined} className={`h-1.5 rounded-full transition-all ${index === slideIndex % slides.length ? 'w-5 bg-[color:var(--site-surface)]' : 'w-1.5 bg-[color:color-mix(in_srgb,var(--site-surface)_60%,transparent)]'}`} />)}
         </div>
       </>}
     </section>
@@ -419,14 +422,14 @@ function MobileServices({ settings, heading }) {
   return (
     <section className="px-3 pb-4" aria-labelledby={heading ? 'mobile-services-heading' : undefined} aria-label={heading ? undefined : 'Store services'}>
       {heading && <h2 id="mobile-services-heading" className="mb-3 text-[16px] font-bold text-charcoal">{heading}</h2>}
-      <div className="grid grid-cols-4 gap-2 rounded-[16px] bg-white px-2.5 py-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
+      <div className="grid grid-cols-4 gap-2 rounded-[16px] bg-[color:var(--site-surface)] px-2.5 py-3.5 shadow-[0_6px_18px_rgb(var(--site-shadow-rgb)/0.04)]">
         {highlights.map(({ icon: IconComp, title, subtitle }) => (
           <div key={title} className="flex flex-col items-center text-center">
             <div className="grid h-10 w-10 place-items-center rounded-full bg-blush text-wine">
               <IconComp className="h-4.5 w-4.5" strokeWidth={1.9} />
             </div>
             <p className="mt-2 text-[11px] font-semibold leading-3 text-charcoal">{title}</p>
-            <p className="mt-1 text-[9px] leading-3 text-slate-400">{subtitle}</p>
+            <p className="mt-1 text-[9px] leading-3 text-[color:var(--site-faint)]">{subtitle}</p>
           </div>
         ))}
       </div>
@@ -458,9 +461,9 @@ function MobileCategoryScroller({ categories, navigate, heading }) {
               onClick={() => { trackEvent('HOME_CATEGORY_CLICK', { metadata: { categoryId: String(categoryId), categoryName: category.name } }); navigate(`/products?category=${encodeURIComponent(categoryId)}`); }}
               className="min-w-[72px] max-w-[72px] text-center"
             >
-              <div className="mx-auto flex h-[60px] w-[60px] items-center justify-center overflow-hidden rounded-full bg-blush ring-1 ring-[#f0dfd3]">
+              <div className="mx-auto flex h-[60px] w-[60px] items-center justify-center overflow-hidden rounded-full bg-blush ring-1 ring-[color:var(--site-accent)]">
                 {category.image ? (
-                  <img loading="lazy" decoding="async" src={normalizeImageUrl(category.image)} alt={category.name} className="h-full w-full object-cover" />
+                  <img {...responsiveImage(category.imageMedia || category.image, 'thumbnail')} loading="lazy" decoding="async" alt={category.name} className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-wine">{category.name?.slice(0, 2)}</span>
                 )}
@@ -469,7 +472,7 @@ function MobileCategoryScroller({ categories, navigate, heading }) {
             </button>
           );
         })}
-      </div> : <div className="rounded-[14px] border border-theme-border bg-white px-4 py-5 text-center text-[12px] font-semibold text-slate-500">Categories will appear here when they are published.</div>}
+      </div> : <div className="rounded-[14px] border border-theme-border bg-[color:var(--site-surface)] px-4 py-5 text-center text-[12px] font-semibold text-[color:var(--site-muted)]">Categories will appear here when they are published.</div>}
     </section>
   );
 }
@@ -480,10 +483,10 @@ function MobileOfferStrip({ navigate, maxDiscount, heading }) {
       <button
         type="button"
         onClick={() => { trackEvent('HOME_VIEW_ALL', { metadata: { sectionId: 'sale' } }); navigate('/products?discount=1'); }}
-        className="flex w-full items-center justify-between rounded-[14px] bg-gradient-to-r from-blush via-[#fff8fb] to-[#fdf2e8] px-4 py-3.5 text-left shadow-[0_6px_18px_rgba(122,31,54,0.05)]"
+        className="flex w-full items-center justify-between rounded-[14px] bg-gradient-to-r from-blush via-[color:var(--site-tint)] to-[color:var(--site-tint)] px-4 py-3.5 text-left shadow-[0_6px_18px_rgb(var(--site-shadow-rgb)/0.05)]"
       >
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-white text-wine shadow-sm">
+          <div className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--site-surface)] text-wine shadow-sm">
             <Sparkles className="h-4.5 w-4.5" strokeWidth={2} />
           </div>
           <div>
@@ -521,9 +524,11 @@ function MobileEditorialBanners({ banners, navigate, heading }) {
 
 function MobileBannerCard({ banner, navigate }) {
   const ref = useBannerEngagement(banner);
-  return <button ref={ref} type="button" onClick={() => openBanner(banner, navigate)} className="relative min-w-[78%] snap-center overflow-hidden rounded-[16px] bg-[#f4e9e0] text-left shadow-[0_6px_16px_rgba(15,23,42,0.05)] first:snap-start last:snap-end">
-    <div className="aspect-[0.92]">{banner.image ? <picture><source media="(max-width: 639px)" srcSet={normalizeImageUrl(banner.mobileImage || banner.image)} /><img loading="lazy" decoding="async" src={normalizeImageUrl(banner.image)} alt={banner.altText || banner.title || 'Collection'} className="h-full w-full object-cover" style={{ objectPosition: banner.focalPoint || 'center' }} /></picture> : <div className="flex h-full items-end bg-gradient-to-br from-[#f7e8de] to-[#ecd2c4] p-3"><span className="text-[11px] font-semibold text-wine">{banner.title || 'Jassi edit'}</span></div>}</div>
-    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#3f2731]/85 via-[#3f2731]/25 to-transparent px-2.5 py-2"><p className="line-clamp-2 text-[10px] font-semibold leading-3 text-white">{banner.title || 'Featured collection'}</p></div>
+  const desktop = responsiveImage(banner.imageMedia || banner.image, 'hero');
+  const mobile = responsiveImage(banner.mobileImageMedia || banner.mobileImage || banner.imageMedia || banner.image, 'hero');
+  return <button ref={ref} type="button" onClick={() => openBanner(banner, navigate)} className="relative min-w-[78%] snap-center overflow-hidden rounded-[16px] bg-[color:var(--site-accent-soft)] text-left shadow-[0_6px_16px_rgb(var(--site-shadow-rgb)/0.05)] first:snap-start last:snap-end">
+    <div className="aspect-[0.92]">{banner.image ? <picture><source media="(max-width: 639px)" srcSet={mobile.srcSet || mobile.src} sizes="80vw" /><img {...desktop} sizes="80vw" loading="lazy" decoding="async" alt={banner.altText || banner.title || 'Collection'} className="h-full w-full object-cover" style={{ objectPosition: banner.focalPoint || 'center' }} /></picture> : <div className="flex h-full items-end bg-gradient-to-br from-[color:var(--site-tint)] to-[color:var(--site-tint)] p-3"><span className="text-[11px] font-semibold text-wine">{banner.title || 'Jassi edit'}</span></div>}</div>
+    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[color:var(--site-primary)]/85 via-[color:var(--site-primary)]/25 to-transparent px-2.5 py-2"><p className="line-clamp-2 text-[10px] font-semibold leading-3 text-[color:var(--site-on-fill)]">{banner.title || 'Featured collection'}</p></div>
   </button>;
 }
 
@@ -543,8 +548,8 @@ function MobileProductSection({ sectionId, eyebrow, title, products = [], naviga
       {products.length ? (
         <MobileCompactProductGrid products={products} navigate={navigate} title={title} sectionId={sectionId} acceptingOrders={acceptingOrders} prefetchProduct={prefetchProduct} />
       ) : (
-        <div className="rounded-[14px] border border-theme-border bg-white px-4 py-5 text-center shadow-[0_6px_18px_rgba(15,23,42,0.04)]">
-          <p className="text-[12px] font-semibold leading-5 text-slate-500">{emptyMessage || `No ${eyebrow.toLowerCase()} are published yet.`}</p>
+        <div className="rounded-[14px] border border-theme-border bg-[color:var(--site-surface)] px-4 py-5 text-center shadow-[0_6px_18px_rgb(var(--site-shadow-rgb)/0.04)]">
+          <p className="text-[12px] font-semibold leading-5 text-[color:var(--site-muted)]">{emptyMessage || `No ${eyebrow.toLowerCase()} are published yet.`}</p>
           <button type="button" onClick={() => navigate('/products')} className="mt-3 text-[11px] font-bold uppercase tracking-[0.08em] text-wine">Browse all products</button>
         </div>
       )}
@@ -591,22 +596,22 @@ function MobileCompactProductCard({ product, navigate, sectionTitle, sectionId, 
   };
 
   const badge = product.isBestSeller
-    ? { label: 'BESTSELLER', className: 'bg-[#f59e0b] text-white' }
+    ? { label: 'BESTSELLER', className: 'bg-[color:var(--site-accent)] text-[color:var(--site-on-fill)]' }
     : product.isNewArrival
-      ? { label: 'NEW', className: 'bg-[#22c55e] text-white' }
+      ? { label: 'NEW', className: 'bg-[color:var(--site-success)] text-[color:var(--site-on-fill)]' }
       : product.showInTrending || sectionTitle === 'Fast-moving styles'
-        ? { label: 'TREND', className: 'bg-[#10b981] text-white' }
+        ? { label: 'TREND', className: 'bg-[color:var(--site-success)] text-[color:var(--site-on-fill)]' }
         : null;
 
   return (
     <article data-mobile-product-card className="min-w-0 shrink-0 snap-start basis-[calc(50%-6px)]">
-      <div data-mobile-product-shell className="relative overflow-hidden rounded-[14px] bg-blush shadow-[0_4px_12px_rgba(15,23,42,0.06)]">
+      <div data-mobile-product-shell className="relative overflow-hidden rounded-[14px] bg-blush shadow-[0_4px_12px_rgb(var(--site-shadow-rgb)/0.06)]">
           <button type="button" onPointerDown={() => prefetchProduct?.(productId)} onFocus={() => prefetchProduct?.(productId)} onClick={openProduct} className="absolute inset-0 z-[1]" aria-label={`View ${product.name}`} />
           <div data-mobile-product-media className="aspect-[0.92]">
             {image ? (
-              <img loading="lazy" decoding="async" sizes="(max-width: 767px) 46vw, 30vw" src={normalizeImageUrl(image)} alt={product.name} className="h-full w-full object-cover" />
+              <img {...responsiveImage(product.images?.find(item => item.primary) || product.images?.[0] || image, 'card')} loading="lazy" decoding="async" sizes="(max-width: 767px) 46vw, 30vw" alt={product.name} className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#f8e2d7] to-[#f5d0d5] text-[12px] font-semibold text-wine">
+              <div className="flex h-full items-center justify-center bg-gradient-to-br from-[color:var(--site-tint)] to-[color:var(--site-tint)] text-[12px] font-semibold text-wine">
                 Jassi
               </div>
             )}
@@ -633,7 +638,7 @@ function MobileCompactProductCard({ product, navigate, sectionTitle, sectionId, 
                 setWishlistBusy(false);
               }
             }}
-            className={`absolute right-1 top-1 z-[2] grid h-11 w-11 place-items-center rounded-full bg-white/95 shadow-sm disabled:opacity-60 ${isWishlisted ? 'text-rose' : 'text-slate-500'}`}
+            className={`absolute right-1 top-1 z-[2] grid h-11 w-11 place-items-center rounded-full bg-[color:color-mix(in_srgb,var(--site-surface)_95%,transparent)] shadow-sm disabled:opacity-60 ${isWishlisted ? 'text-rose' : 'text-[color:var(--site-muted)]'}`}
             aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
             aria-pressed={isWishlisted}
             aria-busy={wishlistPending}
@@ -644,18 +649,18 @@ function MobileCompactProductCard({ product, navigate, sectionTitle, sectionId, 
       <div className="px-1 pt-2">
         <button type="button" onClick={openProduct} className="block min-h-11 w-full text-left">
           <p data-card-field="title" className="truncate text-[11px] font-semibold leading-[1.3] text-charcoal" title={product.name}>{product.name}</p>
-          <p className="mt-0.5 truncate text-[10px] text-slate-500" title={product.category}>{product.category}</p>
+          <p className="mt-0.5 truncate text-[10px] text-[color:var(--site-muted)]" title={product.category}>{product.category}</p>
         </button>
         <div className="mt-2 flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div data-card-field="price" className="flex items-center gap-1">
               <span className="text-[13px] font-bold text-charcoal">{rental ? 'Check rental rates' : `₹${Number(product.price || 0).toLocaleString('en-IN')}`}</span>
-              {!rental && product.originalPrice > product.price && <span className="truncate text-[9px] text-slate-400 line-through">₹{Number(product.originalPrice || 0).toLocaleString('en-IN')}</span>}
+              {!rental && product.originalPrice > product.price && <span className="truncate text-[9px] text-[color:var(--site-faint)] line-through">₹{Number(product.originalPrice || 0).toLocaleString('en-IN')}</span>}
             </div>
             {!rental && product.discountPercentage > 0 && <p data-card-field="discount" className="mt-0.5 text-[9px] font-bold text-rose">({product.discountPercentage}% OFF)</p>}
-            {Number(product.rating) > 0 && <p data-card-field="rating" className="mt-1 inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-600"><Star className="h-3 w-3 fill-current" />{Number(product.rating).toFixed(1)}{Number(product.numReviews) > 0 ? ` (${product.numReviews})` : ''}</p>}
-            {unavailable && <p className="mt-0.5 text-[9px] font-bold text-slate-500">Out of stock</p>}
-            {!rental && !unavailable && Number.isFinite(availableStock) && availableStock > 0 && availableStock <= 3 && <p className="mt-0.5 text-[9px] font-bold text-orange-600">Only {availableStock} left</p>}
+            {Number(product.rating) > 0 && <p data-card-field="rating" className="mt-1 inline-flex items-center gap-0.5 text-[9px] font-bold text-[color:var(--site-warning)]"><Star className="h-3 w-3 fill-current" />{Number(product.rating).toFixed(1)}{Number(product.numReviews) > 0 ? ` (${product.numReviews})` : ''}</p>}
+            {unavailable && <p className="mt-0.5 text-[9px] font-bold text-[color:var(--site-muted)]">Out of stock</p>}
+            {!rental && !unavailable && Number.isFinite(availableStock) && availableStock > 0 && availableStock <= 3 && <p className="mt-0.5 text-[9px] font-bold text-[color:var(--site-warning)]">Only {availableStock} left</p>}
           </div>
           <button
             data-card-field="cart"
@@ -685,7 +690,7 @@ function MobileCompactProductCard({ product, navigate, sectionTitle, sectionId, 
               }
             }}
             disabled={!rental && (!acceptingOrders || unavailable || cart.loading || cartBusy)}
-            className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#e7e5e4] disabled:opacity-40 ${cartItem ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-slate-600'}`}
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[color:var(--site-border)] disabled:opacity-40 ${cartItem ? 'bg-[color:var(--site-success-soft)] text-[color:var(--site-success)]' : 'bg-[color:var(--site-surface)] text-[color:var(--site-muted)]'}`}
             aria-label={rental ? 'Check rental dates' : !acceptingOrders ? 'Orders are temporarily paused' : unavailable ? 'Out of stock' : needsSize ? 'Select a size' : cartItem ? 'Add more to cart' : 'Add to cart'}
             aria-busy={cartBusy}
           >
@@ -699,7 +704,7 @@ function MobileCompactProductCard({ product, navigate, sectionTitle, sectionId, 
 }
 
 function MobileOrderPause({ message }) {
-  return <aside className="mx-3 mt-3 flex items-start gap-3 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950" role="status">
+  return <aside className="mx-3 mt-3 flex items-start gap-3 rounded-[14px] border border-[color:var(--site-warning-border)] bg-[color:var(--site-warning-soft)] px-4 py-3 text-[color:var(--site-warning)]" role="status">
     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
     <div><p className="text-[12px] font-bold">Online orders are temporarily paused</p><p className="mt-1 text-[11px] leading-4">{message || 'You can still browse the collection. Please check again soon.'}</p></div>
   </aside>;
@@ -707,12 +712,12 @@ function MobileOrderPause({ message }) {
 
 function MobileHomeError({ onRetry }) {
   return <section className="grid min-h-[65vh] place-items-center bg-ivory px-6 pb-24 text-center">
-    <div><AlertCircle className="mx-auto h-8 w-8 text-wine" /><h1 className="mt-4 text-xl font-bold text-charcoal">The store could not be loaded</h1><p className="mt-2 text-[12px] leading-5 text-slate-500">Check your connection and try again.</p><button type="button" onClick={onRetry} className="mt-5 min-h-11 rounded-[10px] bg-wine px-6 text-[12px] font-bold text-white">Try again</button></div>
+    <div><AlertCircle className="mx-auto h-8 w-8 text-wine" /><h1 className="mt-4 text-xl font-bold text-charcoal">The store could not be loaded</h1><p className="mt-2 text-[12px] leading-5 text-[color:var(--site-muted)]">Check your connection and try again.</p><button type="button" onClick={onRetry} className="mt-5 min-h-11 rounded-[10px] bg-wine px-6 text-[12px] font-bold text-[color:var(--site-on-fill)]">Try again</button></div>
   </section>;
 }
 
 function MobileSectionNotice({ message, onRetry }) {
-  return <section className="px-3 pb-4"><div className="flex items-center justify-between gap-3 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900"><div className="flex min-w-0 items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0" /><p className="text-[11px] font-semibold">{message}</p></div><button type="button" onClick={onRetry} className="min-h-11 shrink-0 px-2 text-[10px] font-black uppercase">Retry</button></div></section>;
+  return <section className="px-3 pb-4"><div className="flex items-center justify-between gap-3 rounded-[14px] border border-[color:var(--site-warning-border)] bg-[color:var(--site-warning-soft)] px-4 py-3 text-[color:var(--site-warning)]"><div className="flex min-w-0 items-center gap-2"><AlertCircle className="h-4 w-4 shrink-0" /><p className="text-[11px] font-semibold">{message}</p></div><button type="button" onClick={onRetry} className="min-h-11 shrink-0 px-2 text-[10px] font-black uppercase">Retry</button></div></section>;
 }
 
 function dedupeMobileProductSections(sections) {

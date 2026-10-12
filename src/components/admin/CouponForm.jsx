@@ -108,22 +108,22 @@ export default function CouponForm({ coupon, products = [], categories = [], cus
   return (
     <form onSubmit={submit} className="admin-card overflow-hidden">
       <WorkflowSmartFill key={coupon?._id || 'new'} workflow="coupon" form={form} onChange={setForm} apiBase={`${apiBase}/smart-fill`} disabled={saving} />
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-theme-border bg-gradient-to-r from-[#fffaf7] to-white px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-theme-border bg-gradient-to-r from-[color:var(--site-tint)] to-[color:var(--site-surface)] px-5 py-4">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-blush text-wine"><Tag className="h-5 w-5" /></span>
           <div>
             <h2 className="text-base font-black text-charcoal">{editing ? `Edit ${coupon.code}` : 'Create a coupon'}</h2>
-            <p className="mt-1 text-xs text-slate-500">Configure the offer, eligibility, usage and storefront visibility.</p>
+            <p className="mt-1 text-xs text-[color:var(--site-muted)]">Configure the offer, eligibility, usage and storefront visibility.</p>
           </div>
         </div>
-        <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">{estimatedLabel}</span>
+        <span className="rounded-full bg-[color:var(--site-success-soft)] px-3 py-1.5 text-xs font-bold text-[color:var(--site-success)]">{estimatedLabel}</span>
       </div>
 
       <div className="grid gap-6 p-5 xl:grid-cols-2">
-        {!editing ? <div className="xl:col-span-2"><p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Start with a proven offer</p><div className="flex gap-2 overflow-x-auto pb-1">{COUPON_PRESETS.map(([label, preset]) => <button key={label} type="button" onClick={() => applyPreset(preset)} className="min-w-max rounded-full border border-theme-border bg-white px-3 py-2 text-xs font-bold text-wine hover:bg-blush">{label}</button>)}</div></div> : null}
+        {!editing ? <div className="xl:col-span-2"><p className="mb-2 text-xs font-black uppercase tracking-wider text-[color:var(--site-muted)]">Start with a proven offer</p><div className="flex gap-2 overflow-x-auto pb-1">{COUPON_PRESETS.map(([label, preset]) => <button key={label} type="button" onClick={() => applyPreset(preset)} className="min-w-max rounded-full border border-theme-border bg-[color:var(--site-surface)] px-3 py-2 text-xs font-bold text-wine hover:bg-blush">{label}</button>)}</div></div> : null}
         <FormSection title="Offer details" note="Shown to customers in the coupon picker.">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Coupon code" required hint={editing && Number(coupon.usedCount || 0) > 0 ? 'Locked because this coupon has redemption history' : 'Letters, numbers, dash and underscore'}><div className="flex gap-2"><input value={form.code} disabled={editing && Number(coupon.usedCount || 0) > 0} onBlur={checkCode} onChange={(event) => { update('code', sanitizeCode(event.target.value)); setCodeAvailability(null); }} maxLength={32} className="admin-coupon-input min-w-0 flex-1 uppercase disabled:bg-slate-100" placeholder="SAMIRA20" />{!editing ? <button type="button" onClick={() => { update('code', uniqueCode(form.title || 'SAVE')); setCodeAvailability(null); }} className="rounded-xl border border-slate-200 px-3 text-xs font-black text-wine">Generate</button> : null}</div>{codeAvailability ? <span className={`mt-1 block text-[10px] font-bold ${codeAvailability.available ? 'text-emerald-700' : codeAvailability.checking ? 'text-slate-400' : 'text-rose'}`}>{codeAvailability.checking ? 'Checking code...' : codeAvailability.available ? 'Code is available' : 'Code is already in use'}</span> : null}</Field>
+            <Field label="Coupon code" required hint={editing && Number(coupon.usedCount || 0) > 0 ? 'Locked because this coupon has redemption history' : 'Letters, numbers, dash and underscore'}><div className="flex gap-2"><input value={form.code} disabled={editing && Number(coupon.usedCount || 0) > 0} onBlur={checkCode} onChange={(event) => { update('code', sanitizeCode(event.target.value)); setCodeAvailability(null); }} maxLength={32} className="admin-coupon-input min-w-0 flex-1 uppercase disabled:bg-[color:var(--site-surface-alt)]" placeholder="SAMIRA20" />{!editing ? <button type="button" onClick={() => { update('code', uniqueCode(form.title || 'SAVE')); setCodeAvailability(null); }} className="rounded-xl border border-[color:var(--site-border)] px-3 text-xs font-black text-wine">Generate</button> : null}</div>{codeAvailability ? <span className={`mt-1 block text-[10px] font-bold ${codeAvailability.available ? 'text-[color:var(--site-success)]' : codeAvailability.checking ? 'text-[color:var(--site-faint)]' : 'text-rose'}`}>{codeAvailability.checking ? 'Checking code...' : codeAvailability.available ? 'Code is available' : 'Code is already in use'}</span> : null}</Field>
             <Field label="Activation" required><select value={form.activationMode} onChange={(event) => update('activationMode', event.target.value)} className="admin-coupon-input"><option value="CODE">Customer enters code</option><option value="AUTOMATIC">Apply automatically</option></select></Field>
             <Field label="Offer benefit" required><select value={form.benefitType} onChange={(event) => update('benefitType', event.target.value)} className="admin-coupon-input"><option value="DISCOUNT">Price discount</option><option value="FREE_SHIPPING">Free delivery</option><option value="BUY_X_GET_Y">Buy X get Y</option></select></Field>
             {form.benefitType === 'DISCOUNT' && <Field label="Discount type" required><select value={form.type} onChange={(event) => update('type', event.target.value)} className="admin-coupon-input"><option value="Percentage">Percentage</option><option value="Flat">Flat amount</option></select></Field>}
@@ -146,9 +146,9 @@ export default function CouponForm({ coupon, products = [], categories = [], cus
             <Field label="Limit per customer" hint="Requires a signed-in customer"><NumberInput value={form.customerLimit} onChange={(value) => update('customerLimit', value)} min="0" step="1" placeholder="Unlimited" /></Field>
             <Field label="Campaign budget (Rs.)" hint="Stops new redemptions after this saving"><NumberInput value={form.totalBudget} onChange={(value) => update('totalBudget', value)} min="0" step="0.01" placeholder="Unlimited" /></Field>
             <Field label="Offer stacking"><select value={form.stackingMode} onChange={(event) => update('stackingMode', event.target.value)} className="admin-coupon-input"><option value="EXCLUSIVE">Exclusive coupon</option><option value="ALLOW_PRODUCT_OFFERS">Allow with product discounts</option></select></Field>
-            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm font-bold text-charcoal sm:col-span-2"><input type="checkbox" checked={form.evergreen} onChange={(event) => setForm((current) => ({ ...current, evergreen: event.target.checked, expiryDate: event.target.checked ? '' : current.expiryDate }))} className="h-4 w-4 accent-rose" />Evergreen offer with no expiry</label>
-            <p className="text-[11px] text-slate-500 sm:col-span-2">Schedule timezone: <strong>{timezone}</strong>. Times are saved safely as UTC.</p>
-            {editing ? <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 sm:col-span-2"><span className="text-xs font-bold text-slate-500">Redemptions</span><p className="mt-1 text-sm font-black text-charcoal">{Number(coupon.usedCount || 0).toLocaleString('en-IN')} used{coupon.usageLimit ? ` of ${Number(coupon.usageLimit).toLocaleString('en-IN')}` : ''}</p></div> : null}
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[color:var(--site-border)] p-3 text-sm font-bold text-charcoal sm:col-span-2"><input type="checkbox" checked={form.evergreen} onChange={(event) => setForm((current) => ({ ...current, evergreen: event.target.checked, expiryDate: event.target.checked ? '' : current.expiryDate }))} className="h-4 w-4 accent-rose" />Evergreen offer with no expiry</label>
+            <p className="text-[11px] text-[color:var(--site-muted)] sm:col-span-2">Schedule timezone: <strong>{timezone}</strong>. Times are saved safely as UTC.</p>
+            {editing ? <div className="rounded-xl border border-[color:var(--site-border)] bg-[color:var(--site-background)] p-3 sm:col-span-2"><span className="text-xs font-bold text-[color:var(--site-muted)]">Redemptions</span><p className="mt-1 text-sm font-black text-charcoal">{Number(coupon.usedCount || 0).toLocaleString('en-IN')} used{coupon.usageLimit ? ` of ${Number(coupon.usageLimit).toLocaleString('en-IN')}` : ''}</p></div> : null}
           </div>
         </FormSection>
 
@@ -167,8 +167,8 @@ export default function CouponForm({ coupon, products = [], categories = [], cus
             {form.customerSegment === 'VIP' ? <Field label="Minimum lifetime spend (Rs.)" hint="VIP qualifies when either threshold is met"><NumberInput value={form.minimumLifetimeSpend} onChange={(value) => update('minimumLifetimeSpend', value)} min="0" step="0.01" /></Field> : null}
             {form.customerSegment === 'INACTIVE' ? <Field label="Days since last order"><NumberInput value={form.inactiveDays} onChange={(value) => update('inactiveDays', value)} min="1" max="3650" step="1" /></Field> : null}
           </div>
-          <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm font-bold text-charcoal"><input type="checkbox" checked={form.firstOrderOnly} onChange={(event) => update('firstOrderOnly', event.target.checked)} className="h-4 w-4 accent-rose" />First order only</label>
-          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm font-bold text-charcoal"><input type="checkbox" checked={form.restoreOnFullRefund} onChange={(event) => update('restoreOnFullRefund', event.target.checked)} className="mt-0.5 h-4 w-4 accent-rose" /><span>Restore coupon usage after a full refund<small className="mt-1 block text-[10px] font-normal text-slate-500">Partial refunds never restore a redemption. Cancellation before fulfilment is always restored.</small></span></label>
+          <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-[color:var(--site-border)] p-3 text-sm font-bold text-charcoal"><input type="checkbox" checked={form.firstOrderOnly} onChange={(event) => update('firstOrderOnly', event.target.checked)} className="h-4 w-4 accent-rose" />First order only</label>
+          <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--site-border)] p-3 text-sm font-bold text-charcoal"><input type="checkbox" checked={form.restoreOnFullRefund} onChange={(event) => update('restoreOnFullRefund', event.target.checked)} className="mt-0.5 h-4 w-4 accent-rose" /><span>Restore coupon usage after a full refund<small className="mt-1 block text-[10px] font-normal text-[color:var(--site-muted)]">Partial refunds never restore a redemption. Cancellation before fulfilment is always restored.</small></span></label>
         </FormSection>
 
         <FormSection title="Visibility & terms" note="Private coupons work by code but are not advertised.">
@@ -180,7 +180,7 @@ export default function CouponForm({ coupon, products = [], categories = [], cus
         </FormSection>
       </div>
 
-      {warnings.length ? <div className="mx-5 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"><strong className="text-xs text-amber-900">Review before publishing</strong>{warnings.map((warning) => <p key={warning} className="mt-1 text-xs text-amber-800">{warning}</p>)}</div> : null}
+      {warnings.length ? <div className="mx-5 mb-4 rounded-xl border border-[color:var(--site-warning-border)] bg-[color:var(--site-warning-soft)] px-4 py-3"><strong className="text-xs text-[color:var(--site-warning)]">Review before publishing</strong>{warnings.map((warning) => <p key={warning} className="mt-1 text-xs text-[color:var(--site-warning)]">{warning}</p>)}</div> : null}
 
       <AdminFeedback message={message} type="success" title="Coupons" onDismiss={() => setMessage(null)} />
       <div className="flex flex-wrap justify-end gap-3 border-t border-theme-border bg-ivory px-5 py-4">
@@ -192,11 +192,11 @@ export default function CouponForm({ coupon, products = [], categories = [], cus
 }
 
 function FormSection({ title, note, children }) {
-  return <fieldset className="rounded-2xl border border-theme-border p-4"><legend className="px-2 text-sm font-black text-charcoal">{title}</legend><p className="mb-4 text-xs text-slate-500">{note}</p>{children}</fieldset>;
+  return <fieldset className="rounded-2xl border border-theme-border p-4"><legend className="px-2 text-sm font-black text-charcoal">{title}</legend><p className="mb-4 text-xs text-[color:var(--site-muted)]">{note}</p>{children}</fieldset>;
 }
 
 function Field({ label, hint, required, className = '', children }) {
-  return <label className={`block ${className}`}><span className="mb-1.5 flex items-center gap-1 text-xs font-bold text-slate-700">{label}{required ? <em className="not-italic text-rose">*</em> : null}</span>{children}{hint ? <span className="mt-1 block text-[10px] text-slate-400">{hint}</span> : null}</label>;
+  return <label className={`block ${className}`}><span className="mb-1.5 flex items-center gap-1 text-xs font-bold text-[color:var(--site-muted)]">{label}{required ? <em className="not-italic text-rose">*</em> : null}</span>{children}{hint ? <span className="mt-1 block text-[10px] text-[color:var(--site-faint)]">{hint}</span> : null}</label>;
 }
 
 function NumberInput({ onChange, ...props }) {
@@ -204,11 +204,11 @@ function NumberInput({ onChange, ...props }) {
 }
 
 function DateTimeInput({ value, onChange, disabled = false }) {
-  return <span className="relative block"><CalendarDays className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" /><input type="datetime-local" value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className="admin-coupon-input pl-10 disabled:bg-slate-100 disabled:text-slate-400" /></span>;
+  return <span className="relative block"><CalendarDays className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[color:var(--site-faint)]" /><input type="datetime-local" value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className="admin-coupon-input pl-10 disabled:bg-[color:var(--site-surface-alt)] disabled:text-[color:var(--site-faint)]" /></span>;
 }
 
 function ChoiceGrid({ label, items, selected, onToggle }) {
-  return <div><p className="mb-2 text-xs font-bold text-slate-700">{label}</p><div className="flex flex-wrap gap-2">{items.map(([value, text]) => { const active = selected.includes(value); return <button key={value} type="button" onClick={() => onToggle(value)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold ${active ? 'border-wine bg-wine text-white' : 'border-slate-200 bg-white text-slate-600'}`}>{active ? <Check className="h-3 w-3" /> : null}{text}</button>; })}</div></div>;
+  return <div><p className="mb-2 text-xs font-bold text-[color:var(--site-muted)]">{label}</p><div className="flex flex-wrap gap-2">{items.map(([value, text]) => { const active = selected.includes(value); return <button key={value} type="button" onClick={() => onToggle(value)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold ${active ? 'border-wine bg-wine text-[color:var(--site-on-fill)]' : 'border-[color:var(--site-border)] bg-[color:var(--site-surface)] text-[color:var(--site-muted)]'}`}>{active ? <Check className="h-3 w-3" /> : null}{text}</button>; })}</div></div>;
 }
 
 function SearchableMultiSelect({ label, options, loadOptions, selected, onChange, emptyLabel, className = '' }) {
@@ -232,7 +232,7 @@ function SearchableMultiSelect({ label, options, loadOptions, selected, onChange
   }, [loadOptions, search, selected]);
   const needle = search.trim().toLowerCase();
   const visible = remoteOptions.filter(([value, text, subtitle]) => selected.includes(String(value)) || !needle || `${text || ''} ${subtitle || ''}`.toLowerCase().includes(needle)).slice(0, 100);
-  return <div className={className}><Field label={label} hint={selected.length ? `${selected.length} selected` : emptyLabel}><input value={search} onChange={(event) => setSearch(event.target.value)} className="admin-coupon-input mb-2" placeholder={`Search ${label.toLowerCase()}`} /></Field><div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2">{loading ? <p className="px-2 py-1 text-[10px] font-bold text-slate-400">Searching...</p> : null}{visible.length ? visible.map(([value, text, subtitle]) => { const active = selected.includes(String(value)); return <button key={value} type="button" onClick={() => onChange(active ? selected.filter((item) => item !== String(value)) : [...selected, String(value)])} className={`mb-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs ${active ? 'bg-wine text-white' : 'hover:bg-slate-50'}`}><span className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${active ? 'border-white' : 'border-slate-300'}`}>{active ? <Check className="h-3 w-3" /> : null}</span><span className="min-w-0"><strong className="block truncate font-bold">{text}</strong>{subtitle ? <small className={`block truncate text-[10px] ${active ? 'text-white/75' : 'text-slate-400'}`}>{subtitle}</small> : null}</span></button>; }) : <p className="p-2 text-xs text-slate-400">No matching options</p>}</div></div>;
+  return <div className={className}><Field label={label} hint={selected.length ? `${selected.length} selected` : emptyLabel}><input value={search} onChange={(event) => setSearch(event.target.value)} className="admin-coupon-input mb-2" placeholder={`Search ${label.toLowerCase()}`} /></Field><div className="max-h-40 overflow-y-auto rounded-xl border border-[color:var(--site-border)] bg-[color:var(--site-surface)] p-2">{loading ? <p className="px-2 py-1 text-[10px] font-bold text-[color:var(--site-faint)]">Searching...</p> : null}{visible.length ? visible.map(([value, text, subtitle]) => { const active = selected.includes(String(value)); return <button key={value} type="button" onClick={() => onChange(active ? selected.filter((item) => item !== String(value)) : [...selected, String(value)])} className={`mb-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs ${active ? 'bg-wine text-[color:var(--site-on-fill)]' : 'hover:bg-[color:var(--site-background)]'}`}><span className={`grid h-4 w-4 shrink-0 place-items-center rounded border ${active ? 'border-[color:var(--site-border)]' : 'border-[color:var(--site-border)]'}`}>{active ? <Check className="h-3 w-3" /> : null}</span><span className="min-w-0"><strong className="block truncate font-bold">{text}</strong>{subtitle ? <small className={`block truncate text-[10px] ${active ? 'text-[color:color-mix(in_srgb,var(--site-on-fill)_75%,transparent)]' : 'text-[color:var(--site-faint)]'}`}>{subtitle}</small> : null}</span></button>; }) : <p className="p-2 text-xs text-[color:var(--site-faint)]">No matching options</p>}</div></div>;
 }
 
 function mergeOptionPairs(...groups) {
@@ -242,7 +242,7 @@ function mergeOptionPairs(...groups) {
 }
 
 function Toggle({ checked, onChange, label, note }) {
-  return <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><span><strong className="block text-xs text-charcoal">{label}</strong><small className="mt-1 block text-[10px] text-slate-500">{note}</small></span><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-rose" /></label>;
+  return <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[color:var(--site-border)] p-3"><span><strong className="block text-xs text-charcoal">{label}</strong><small className="mt-1 block text-[10px] text-[color:var(--site-muted)]">{note}</small></span><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-rose" /></label>;
 }
 
 function sanitizeCode(value) {

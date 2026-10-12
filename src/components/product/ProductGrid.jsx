@@ -7,7 +7,7 @@ export default function ProductGrid({ products, navigate, className = '', gridCl
       <Card className={className ? `text-center ${className}` : 'text-center'}>
         <CardContent className="p-6 md:p-10">
           <CardTitle className="text-xl">No products found</CardTitle>
-          <p className="body-text mt-2 text-slate-500">Try changing filters or search terms.</p>
+          <p className="body-text mt-2 text-[color:var(--site-muted)]">Try changing filters or search terms.</p>
         </CardContent>
       </Card>
     );

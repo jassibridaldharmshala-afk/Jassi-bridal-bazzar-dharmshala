@@ -23,12 +23,17 @@ test('real Mantine controls and portals use the published theme through strict-m
   expect(button.dataset.radius).toBe('20px');
   expect(button.dataset.contrast).toBe('true');
   expect(button.style.getPropertyValue('--button-color')).toBe('var(--mantine-color-black)');
-  useWebsiteCustomization.mockReturnValue({ config: mergeWebsiteConfig({ colors: { primary: '#123456' }, buttons: { borderRadius: 4 } }) });
+  useWebsiteCustomization.mockReturnValue({ config: mergeWebsiteConfig({ colors: { primary: '#123456', surface: '#182533', background: '#101820', text: '#ecf5ee' }, buttons: { borderRadius: 4 } }) });
   view.rerender(<StrictMode><ApplicationTheme><PortalButton /></ApplicationTheme></StrictMode>);
   expect(screen.getByTestId('themed-dialog-action').dataset.brand).toBe('#123456');
   expect(screen.getByTestId('themed-dialog-action').dataset.radius).toBe('4px');
   expect(screen.getByTestId('themed-dialog-action').style.getPropertyValue('--button-color')).toBe('var(--mantine-color-white)');
   expect(document.documentElement.style.getPropertyValue('--site-loader')).toBe('#123456');
+  expect(document.documentElement.dataset.mantineColorScheme).toBe('dark');
+  expect(document.documentElement.style.getPropertyValue('--site-color-scheme')).toBe('dark');
+  const themeStyles = [...document.querySelectorAll('[data-mantine-styles]')].map(element => element.textContent).join('');
+  expect(themeStyles).toMatch(/--mantine-color-default:\s*var\(--site-surface\)/);
+  expect(themeStyles).toMatch(/--mantine-color-text:\s*var\(--site-text\)/);
   view.unmount();
   expect(document.documentElement.hasAttribute('data-app-theme')).toBe(false);
 });

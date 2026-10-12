@@ -1,10 +1,28 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import api from '../../services/api';
 import ProductSmartFill from './ProductSmartFill';
 
 jest.mock('../../services/api', () => ({ get: jest.fn(), post: jest.fn() }));
 const structure = { industry: 'boutique', features: { sizing: true }, attributes: [] };
+beforeEach(() => jest.clearAllMocks());
+afterEach(() => jest.useRealTimers());
+
+test('opening existing photos makes no AI call; a relevant photo change analyses once and stores reviewed suggestions separately', async () => {
+  jest.useFakeTimers();
+  api.get.mockResolvedValue({ enabled: true, maxPhotos: 6 });
+  api.post.mockResolvedValue({ suggestion: { bridalStyle: { mainColour: 'Blue', metallicTone: 'gold-tone' } }, mode: 'ai', analysisStatus: 'completed', warnings: [] });
+  const onAnalysis = jest.fn(), onApply = jest.fn(), form = { images: [{ url: '/uploads/existing.webp' }], bridalStyle: { mainColour: 'Wine' } };
+  const props = { form, onAnalysis, onApply, structure, categories: [] };
+  const view = render(<ProductSmartFill {...props} />);
+  await act(async () => jest.advanceTimersByTime(5000)); expect(api.post).not.toHaveBeenCalled();
+  view.rerender(<ProductSmartFill {...props} form={{ ...form, images: [{ url: '/uploads/new.webp' }] }} />);
+  await act(async () => {}); await act(async () => jest.advanceTimersByTime(1200));
+  expect(api.post).toHaveBeenCalledTimes(1); expect(onAnalysis).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed', suggestion: { mainColour: 'Blue', metallicTone: 'gold-tone' } }));
+  expect(onApply).not.toHaveBeenCalled();
+  const protectedField = screen.getByText('Visible main colour').closest('label').querySelector('input'); expect(protectedField).toBeDisabled();
+  await act(async () => jest.advanceTimersByTime(10000)); expect(api.post).toHaveBeenCalledTimes(1);
+});
 
 test('six views are sent together and bridal size suggestions are excluded from review', async () => {
   api.get.mockResolvedValue({ enabled: true, maxPhotos: 6 });

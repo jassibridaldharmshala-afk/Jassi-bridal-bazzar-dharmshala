@@ -11,6 +11,27 @@ test('no consent means no visitor ID, persistent queue or collection', async () 
   configureTraffic(config, context); expect(recordTrafficEvent('PAGE_VIEW')).toBe(false); await flushTraffic();
   expect(getTrafficContext()).toBeUndefined(); expect(global.fetch).not.toHaveBeenCalled(); expect(localStorage.length).toBe(0);
 });
+
+test('basic background statistics do not invent an explicit consent choice and respect saved opt-outs', async () => {
+  configureTraffic({ ...config, consentRequired: false }, context);
+  updateTrafficRoute('/products'); await flushTraffic();
+  expect(getTrafficContext()).toBeDefined();
+  expect(batches()[0].consent).toBe(false);
+  expect(localStorage.getItem('traffic:brand-a:consent')).toBeNull();
+  await setTrafficConsent(false); global.fetch.mockClear();
+  configureTraffic({ ...config, consentRequired: false }, context);
+  expect(getTrafficContext()).toBeUndefined(); await flushTraffic();
+  expect(global.fetch).not.toHaveBeenCalled();
+});
+test('browser privacy signals also stop basic background statistics without a prompt', async () => {
+  Object.defineProperty(navigator, 'globalPrivacyControl', { configurable: true, value: true });
+  try {
+    configureTraffic({ ...config, consentRequired: false }, context);
+    updateTrafficRoute('/products'); await flushTraffic();
+    expect(getTrafficContext()).toBeUndefined(); expect(global.fetch).not.toHaveBeenCalled();
+    expect(localStorage.length).toBe(0);
+  } finally { delete navigator.globalPrivacyControl; }
+});
 test('refresh keeps visitor/session but records a new page view; config refresh does not', async () => {
   configureTraffic(config, context); await setTrafficConsent(true); const before = getTrafficContext(); await flushTraffic();
   configureTraffic(config, context); updateTrafficRoute('/'); await flushTraffic(); expect(batches().length).toBe(1);

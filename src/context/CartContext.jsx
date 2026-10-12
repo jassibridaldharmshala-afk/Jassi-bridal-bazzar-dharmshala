@@ -199,7 +199,7 @@ export function CartProvider({ children, storageName: storageNameProp, legacySto
   const value = { items, ...totals, coupon, setCoupon, loading, hydrated, error, pendingCount, refresh,
     selectedItems: selectedBagItems(items), addToCart, addToCartConfirmed, updateQuantity, increaseQuantity,
     decreaseQuantity, removeFromCart, removeItems, updateItemOptions, selectItems, getCartItem, clearCart, completeCheckout, isSynced: !error };
-  return <CartContext.Provider value={value}>{children}{notice && <button type="button" role="status" onClick={() => setNotice('')} className="fixed bottom-24 left-1/2 z-[90] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 rounded-xl bg-charcoal px-4 py-3 text-sm font-bold text-white shadow-2xl md:bottom-6">{notice}</button>}</CartContext.Provider>;
+  return <CartContext.Provider value={value}>{children}{notice && <button type="button" role="status" onClick={() => setNotice('')} className="fixed bottom-24 left-1/2 z-[90] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 rounded-xl bg-charcoal px-4 py-3 text-sm font-bold text-[color:var(--site-on-fill)] shadow-2xl md:bottom-6">{notice}</button>}</CartContext.Provider>;
 }
 
 export const useCart = () => useContext(CartContext);

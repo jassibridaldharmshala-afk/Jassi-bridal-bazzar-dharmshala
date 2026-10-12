@@ -13,8 +13,16 @@ export default function ApplicationTheme({ children }) {
     primaryColor: 'brand', primaryShade: 6, autoContrast: true, luminanceThreshold: .179,
     defaultRadius: variables['--site-button-radius'],
     fontFamily: variables['--site-body-font'],
-    headings: { fontFamily: variables['--site-heading-font'] },
+    headings: { fontFamily: variables['--site-heading-font'], fontWeight: String(variables['--site-heading-weight']) },
     colors: { brand: brandShades(config.colors.primary), maroon: brandShades(config.colors.primary) },
+    components: {
+      Button: { styles: (_theme, props) => ({ root: {
+        fontFamily: 'var(--site-button-font)', fontWeight: 'var(--site-button-weight)',
+        ...((!props.variant || props.variant === 'filled') && (!props.color || ['brand', 'maroon'].includes(props.color)) ? {
+          backgroundColor: 'var(--site-action-bg)', color: 'var(--site-action-text)', borderColor: 'var(--site-action-border)',
+        } : {}),
+      } }) },
+    },
   }), [config.colors.primary, variables]);
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -27,5 +35,24 @@ export default function ApplicationTheme({ children }) {
       if (marker === null) root.removeAttribute('data-app-theme'); else root.setAttribute('data-app-theme', marker);
     };
   }, [variables]);
-  return <MantineProvider theme={theme}>{children}</MantineProvider>;
+  return <MantineProvider theme={theme} forceColorScheme={variables['--site-color-scheme']} cssVariablesResolver={resolveThemeVariables}>{children}</MantineProvider>;
+}
+
+// Mantine's floating dropdowns and portals inherit the same published surfaces
+// as CSS components, including after a light/dark switch while they are open.
+function resolveThemeVariables() {
+  const surfaces = {
+    '--mantine-color-body': 'var(--site-background)',
+    '--mantine-color-text': 'var(--site-text)',
+    '--mantine-color-dimmed': 'var(--site-muted)',
+    '--mantine-color-placeholder': 'var(--site-muted)',
+    '--mantine-color-default': 'var(--site-surface)',
+    '--mantine-color-default-hover': 'var(--site-tint)',
+    '--mantine-color-default-color': 'var(--site-text)',
+    '--mantine-color-default-border': 'var(--site-border)',
+    '--mantine-color-disabled': 'var(--site-surface-alt)',
+    '--mantine-color-disabled-color': 'var(--site-muted)',
+    '--mantine-color-error': 'var(--site-danger)',
+  };
+  return { variables: surfaces, light: surfaces, dark: surfaces };
 }

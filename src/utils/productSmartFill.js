@@ -72,6 +72,10 @@ export function suggestionRows(result, baseline, { categories = [], structure, p
     const before = fieldValue(baseline, key);
     if (!sameValue(value, before)) rows.push({ key, field: key, label: attribute.label, value, before, empty: empty(before, key), evidence: result.fieldSources?.['attribute.' + attribute.key], categoryBefore: id(baseline.category), categoryTarget: categoryId, categoryDependent: !(structure?.attributes || []).some(item => item.key === attribute.key) || [...(definition?.attributes || []), ...(category?.attributeOverrides || [])].some(item => item?.key === attribute.key) });
   }
+  for (const [field, label] of Object.entries({ mainColour: 'Visible main colour', accentColours: 'Visible accent colours', metallicTone: 'Visible metallic finish', style: 'Bridal style', accessoryType: 'Accessory type', workIntensity: 'Visible work intensity', neckline: 'Visible neckline' })) {
+    const key = 'bridalStyle.' + field, value = data.bridalStyle?.[field], before = fieldValue(baseline, key);
+    if (!empty(value, key) && !sameValue(before, value)) rows.push({ key, field: key, label, value, before, empty: empty(before, key), evidence: result.fieldSources?.[key] });
+  }
   if (baseline.commerceMode !== 'SALE_ONLY' && data.rentalPricing) {
     for (const [path, label] of [['dailyRatePaise', 'Daily rent (owner stated)'], ['depositPaise', 'Refundable security (owner stated)'], ['advanceMode', 'Rental advance method'], ['advancePercent', 'Rental advance percentage'], ['fitting.instructions', 'Rental fitting instructions'], ['fitting.includedItems', 'Exact set contents']]) {
       const key = 'rentalPricing.' + path, value = path.split('.').reduce((v, p) => v?.[p], data.rentalPricing), before = fieldValue(baseline, key), evidence = result.fieldSources?.[key];
@@ -107,7 +111,8 @@ export function applySmartPatch(form, patch, undo = false) {
     const expected = undo ? row.value : row.before;
     if (!sameValue(fieldValue(next, row.key), expected)) continue;
     const value = undo ? row.before : row.value;
-    if (row.key.startsWith('attributeValues.')) next.attributeValues = { ...next.attributeValues, [row.key.split('.')[1]]: value ?? '' };
+    if (row.key.startsWith('bridalStyle.')) next.bridalStyle = { ...next.bridalStyle, [row.key.split('.')[1]]: value ?? '' };
+    else if (row.key.startsWith('attributeValues.')) next.attributeValues = { ...next.attributeValues, [row.key.split('.')[1]]: value ?? '' };
     else if (row.key.startsWith('rentalPricing.')) { const parts = row.key.split('.').slice(1); next.rentalPricing = { ...(next.rentalPricing || {}) }; if (parts.length === 2) next.rentalPricing[parts[0]] = { ...next.rentalPricing[parts[0]], [parts[1]]: value ?? '' }; else next.rentalPricing[parts[0]] = value ?? ''; }
     else next[row.key] = value ?? '';
   }

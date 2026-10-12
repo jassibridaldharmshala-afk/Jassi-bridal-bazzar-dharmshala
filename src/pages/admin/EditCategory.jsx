@@ -11,7 +11,7 @@ export default function EditCategory({ route = '' }) {
       {categoryId ? (
         <CategoryForm mode="Update" categoryId={categoryId} />
       ) : (
-        <div className="rounded-2xl bg-white p-5 text-sm font-semibold text-slate-600 shadow-sm">
+        <div className="rounded-2xl bg-[color:var(--site-surface)] p-5 text-sm font-semibold text-[color:var(--site-muted)] shadow-sm">
           Category id is missing. Please open the edit screen from the categories list.
         </div>
       )}

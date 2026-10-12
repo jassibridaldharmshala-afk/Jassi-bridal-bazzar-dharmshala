@@ -101,29 +101,29 @@ export default function MobileHeader({ navigate, route = '/' }) {
 
   return (
     <>
-      <header data-mobile-header className="sticky top-0 z-50 overflow-hidden border-b border-slate-200 bg-white/95 backdrop-blur lg:hidden">
+      <header data-mobile-header className="sticky top-0 z-50 overflow-hidden border-b border-[color:var(--site-border)] bg-[color:color-mix(in_srgb,var(--site-surface)_95%,transparent)] backdrop-blur lg:hidden">
         <div className="grid h-[58px] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-1 px-3 pt-1">
-          <button onClick={() => setOpen(true)} className="grid h-11 w-11 place-items-center text-slate-600" aria-label="Open menu">
+          <button onClick={() => setOpen(true)} className="grid h-11 w-11 place-items-center text-[color:var(--site-muted)]" aria-label="Open menu">
             <Icon name="menu" className="h-5.5 w-5.5" />
           </button>
           {compactUtilityRoute ? <span aria-hidden="true" /> : <button type="button" onClick={() => go('/')} aria-label={brand.websiteName + ' home'} className="min-w-0 justify-self-start"><StoreLogo src={normalizeImageUrl(brand.logo) || logoFallback} name={brand.websiteName} className="h-9 max-w-full object-contain" /></button>}
           <div className="col-start-3 flex shrink-0 justify-end gap-1">
             <NotificationBell navigate={navigate} />
-            <button onClick={() => setSearchOpen(true)} className="grid h-11 w-10 place-items-center text-slate-700" aria-label="Search products">
+            <button onClick={() => setSearchOpen(true)} className="grid h-11 w-10 place-items-center text-[color:var(--site-muted)]" aria-label="Search products">
               <Search className="h-5.5 w-5.5" strokeWidth={1.9} />
             </button>
-            <button onClick={() => go(rentalShopping ? '/wishlist?mode=rent' : '/wishlist')} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open wishlist">
+            <button onClick={() => go(rentalShopping ? '/wishlist?mode=rent' : '/wishlist')} className="relative grid h-11 w-11 place-items-center text-[color:var(--site-muted)]" aria-label="Open wishlist">
               <Icon name="heart" className="h-5.5 w-5.5" />
               {wishlist.items.length > 0 && (
-                <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-wine px-1 text-[9px] font-black leading-none text-white">
+                <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-wine px-1 text-[9px] font-black leading-none text-[color:var(--site-on-fill)]">
                   {wishlist.items.length}
                 </span>
               )}
             </button>
-            <button onClick={() => go(bagDestination)} className="relative grid h-11 w-11 place-items-center text-slate-700" aria-label="Open cart">
+            <button onClick={() => go(bagDestination)} className="relative grid h-11 w-11 place-items-center text-[color:var(--site-muted)]" aria-label="Open cart">
               <Icon name="bag" className="h-5.5 w-5.5" />
               {bagCount > 0 && (
-                <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-wine px-1 text-[9px] font-black leading-none text-white">
+                <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-wine px-1 text-[9px] font-black leading-none text-[color:var(--site-on-fill)]">
                   {bagCount}
                 </span>
               )}
@@ -139,47 +139,47 @@ export default function MobileHeader({ navigate, route = '/' }) {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className={`absolute inset-0 z-0 bg-[#17121a]/55 backdrop-blur-[1px] transition-opacity duration-300 motion-reduce:duration-0 ${open ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 z-0 bg-[color:var(--site-primary-dark)]/55 backdrop-blur-[1px] transition-opacity duration-300 motion-reduce:duration-0 ${open ? 'opacity-100' : 'opacity-0'}`}
             aria-label="Close menu"
           />
           <aside
-            className={`absolute inset-y-0 left-0 z-10 flex w-[min(88vw,360px)] flex-col overflow-hidden bg-white shadow-[18px_0_45px_rgba(20,12,17,.22)] transition-transform duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:duration-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`absolute inset-y-0 left-0 z-10 flex w-[min(88vw,360px)] flex-col overflow-hidden bg-[color:var(--site-surface)] shadow-[18px_0_45px_rgb(var(--site-shadow-rgb)/.22)] transition-transform duration-300 ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:duration-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
             role="dialog"
             aria-modal="true"
             aria-label="Shopping menu"
           >
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-wine via-wine to-wine px-5 pb-5 pt-[calc(env(safe-area-inset-top)+18px)] text-white">
-              <div className="pointer-events-none absolute -right-10 -top-12 z-0 h-36 w-36 rounded-full border-[24px] border-white/5" />
+            <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-wine via-wine to-wine px-5 pb-5 pt-[calc(env(safe-area-inset-top)+18px)] text-[color:var(--site-on-fill)]">
+              <div className="pointer-events-none absolute -right-10 -top-12 z-0 h-36 w-36 rounded-full border-[24px] border-[color:color-mix(in_srgb,var(--site-border)_5%,transparent)]" />
               <button
                 type="button"
                 onClick={(event) => { event.stopPropagation(); setOpen(false); }}
-                className="absolute right-3 top-[calc(env(safe-area-inset-top)+8px)] z-20 grid h-10 w-10 touch-manipulation place-items-center rounded-full bg-white/10 text-white"
+                className="absolute right-3 top-[calc(env(safe-area-inset-top)+8px)] z-20 grid h-10 w-10 touch-manipulation place-items-center rounded-full bg-[color:color-mix(in_srgb,var(--site-surface)_10%,transparent)] text-[color:var(--site-on-fill)]"
                 aria-label="Close menu panel"
               >
                 <X className="h-5 w-5" />
               </button>
               <div className="relative flex items-center gap-3 pr-10">
-                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-white/30 bg-white/15 shadow-inner">
-                  {user?.name ? <span className="text-xl font-black uppercase">{user.name.trim().charAt(0)}</span> : <Icon name="user" className="h-6 w-6 text-white" />}
+                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[color:color-mix(in_srgb,var(--site-border)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--site-surface)_15%,transparent)] shadow-inner">
+                  {user?.name ? <span className="text-xl font-black uppercase">{user.name.trim().charAt(0)}</span> : <Icon name="user" className="h-6 w-6 text-[color:var(--site-on-fill)]" />}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-[16px] font-black leading-tight">{user?.name || 'Welcome'}</p>
-                  <p className="mt-1 truncate text-[11px] font-medium text-white/75">{user?.phone || user?.email || 'Sign in to view orders and rewards'}</p>
+                  <p className="mt-1 truncate text-[11px] font-medium text-[color:color-mix(in_srgb,var(--site-on-fill)_75%,transparent)]">{user?.phone || user?.email || 'Sign in to view orders and rewards'}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => go(user ? '/profile' : '/login?redirect=/profile')}
-                className="relative mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 text-[11px] font-black uppercase tracking-[.06em] text-white"
+                className="relative mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color:color-mix(in_srgb,var(--site-border)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--site-surface)_10%,transparent)] px-3 text-[11px] font-black uppercase tracking-[.06em] text-[color:var(--site-on-fill)]"
               >
                 {user ? 'View profile' : 'Login / Sign up'}
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
-              {!user && <p className="relative mt-2 text-[9px] font-semibold text-white/60">Secure login with mobile number and OTP</p>}
+              {!user && <p className="relative mt-2 text-[9px] font-semibold text-[color:color-mix(in_srgb,var(--site-on-fill)_60%,transparent)]">Secure login with mobile number and OTP</p>}
             </div>
 
-            <nav className="min-h-0 flex-1 overflow-y-auto bg-white pb-[calc(env(safe-area-inset-bottom)+16px)]">
-              <div className="border-b-[6px] border-[#f7f7f7] py-2">
+            <nav className="min-h-0 flex-1 overflow-y-auto bg-[color:var(--site-surface)] pb-[calc(env(safe-area-inset-bottom)+16px)]">
+              <div className="border-b-[6px] border-[color:var(--site-border)] py-2">
                 {menuItems.map((item, index) => <DrawerLink key={`${item.path}-${index}`} icon={item.path === '/' ? Home : item.path === '/products' ? Grid2x2 : /newArrival/i.test(item.path) ? Sparkles : /discount|offer/i.test(item.path) ? Tag : undefined} label={item.label} badge={/newArrival/i.test(item.path) ? 'NEW' : /discount|offer/i.test(item.path) ? 'SALE' : ''} accent={/discount|offer/i.test(item.path)} onClick={() => go(item.path)} />)}
               </div>
 
@@ -203,11 +203,11 @@ export default function MobileHeader({ navigate, route = '/' }) {
               </DrawerSection>
 
               {user?.role === 'admin' && user?.availableModes?.includes('admin') && (
-                <div className="border-t border-slate-100 px-5 py-4">
+                <div className="border-t border-[color:var(--site-border)] px-5 py-4">
                   <button
                     type="button"
                     onClick={() => { setOpen(false); if (user.activeMode === 'admin') navigate('/admin'); else switchMode('admin'); }}
-                    className="h-11 w-full rounded-xl bg-wine px-4 text-[12px] font-black text-white shadow-sm"
+                    className="h-11 w-full rounded-xl bg-wine px-4 text-[12px] font-black text-[color:var(--site-on-fill)] shadow-sm"
                   >
                     {user.activeMode === 'admin' ? 'Admin Dashboard' : 'Switch to Admin'}
                   </button>
@@ -215,9 +215,9 @@ export default function MobileHeader({ navigate, route = '/' }) {
               )}
 
               <div className="px-5 pb-2 pt-5">
-                <p className="text-[9px] font-bold uppercase tracking-[.16em] text-slate-500">{brand.websiteName}</p>
-                <p className="mt-1 text-[10px] font-medium text-slate-400">{brand.tagline}</p>
-                {announcementVisible && headerConfig.announcementText && (headerConfig.announcementLink ? <button type="button" onClick={() => go(headerConfig.announcementLink)} className="mt-3 w-full rounded-lg bg-[#faf2ee] p-3 text-left text-[11px] font-bold text-wine">{headerConfig.announcementText}</button> : <p className="mt-3 rounded-lg bg-[#faf2ee] p-3 text-[11px] text-wine">{headerConfig.announcementText}</p>)}
+                <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[color:var(--site-muted)]">{brand.websiteName}</p>
+                <p className="mt-1 text-[10px] font-medium text-[color:var(--site-faint)]">{brand.tagline}</p>
+                {announcementVisible && headerConfig.announcementText && (headerConfig.announcementLink ? <button type="button" onClick={() => go(headerConfig.announcementLink)} className="mt-3 w-full rounded-lg bg-[color:var(--site-tint)] p-3 text-left text-[11px] font-bold text-wine">{headerConfig.announcementText}</button> : <p className="mt-3 rounded-lg bg-[color:var(--site-tint)] p-3 text-[11px] text-wine">{headerConfig.announcementText}</p>)}
               </div>
             </nav>
           </aside>
@@ -228,8 +228,8 @@ export default function MobileHeader({ navigate, route = '/' }) {
 
 function DrawerSection({ title, children }) {
   return (
-    <section className="border-b-[6px] border-[#f7f7f7] py-3">
-      <h2 className="px-5 pb-2 text-[10px] font-black uppercase tracking-[.15em] text-slate-400">{title}</h2>
+    <section className="border-b-[6px] border-[color:var(--site-border)] py-3">
+      <h2 className="px-5 pb-2 text-[10px] font-black uppercase tracking-[.15em] text-[color:var(--site-faint)]">{title}</h2>
       {children}
     </section>
   );
@@ -240,18 +240,18 @@ function DrawerLink({ icon: RowIcon, label, badge, accent = false, compact = fal
     <button
       type="button"
       onClick={onClick}
-      className={`group flex w-full items-center gap-3 px-5 text-left transition-colors active:bg-[#fff2f6] ${compact ? 'h-10' : 'h-12'} ${accent ? 'text-[#e11d5b]' : 'text-charcoal'}`}
+      className={`group flex w-full items-center gap-3 px-5 text-left transition-colors active:bg-[color:var(--site-tint)] ${compact ? 'h-10' : 'h-12'} ${accent ? 'text-[color:var(--site-primary)]' : 'text-charcoal'}`}
     >
       {RowIcon ? (
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${accent ? 'bg-[#fff0f5] text-[#e11d5b]' : 'bg-[#f7f4f2] text-slate-500'}`}>
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${accent ? 'bg-[color:var(--site-tint)] text-[color:var(--site-primary)]' : 'bg-[color:var(--site-accent-soft)] text-[color:var(--site-muted)]'}`}>
           <RowIcon className="h-4 w-4" strokeWidth={1.9} />
         </span>
-      ) : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#d7c6cc]" />}
+      ) : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--site-surface-alt)]" />}
       <span className={`min-w-0 flex-1 truncate ${accent ? 'font-black' : 'font-semibold'} ${compact ? 'text-[13px]' : 'text-[13px]'}`}>{label}</span>
       {badge !== undefined && badge !== '' ? (
-        <span className={`rounded-full px-2 py-0.5 text-[8px] font-black ${accent ? 'bg-[#e11d5b] text-white' : 'bg-[#fff0f5] text-[#d31352]'}`}>{badge}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[8px] font-black ${accent ? 'bg-[color:var(--site-primary)] text-[color:var(--site-on-fill)]' : 'bg-[color:var(--site-tint)] text-[color:var(--site-primary)]'}`}>{badge}</span>
       ) : null}
-      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-active:translate-x-0.5" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-[color:var(--site-faint)] transition-transform group-active:translate-x-0.5" />
     </button>
   );
 }

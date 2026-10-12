@@ -5,9 +5,11 @@ import { SmartFillReview } from './WorkflowSmartFill';
 import { applySmartReview, reviewSmartSuggestions, smartEndpoint } from '../../utils/workflowSmartFill';
 import './WorkflowSmartFill.css';
 import useUnsavedChanges from '../../hooks/useUnsavedChanges';
+import CatalogueLookBatch from './CatalogueLookBatch';
 
 export default function BulkCatalogSmartFill({ ids, apiBase, disabled = false, onSaved, onClose, onBusyChange }) {
   const [records, setRecords] = useState([]), [busy, setBusy] = useState(''), [error, setError] = useState('');
+  const [photos, setPhotos] = useState(false);
   const active = useRef(null), generation = useRef(0), stateRef = useRef(records); stateRef.current = records;
   const selection = ids.join(',');
   const dirty = records.some(record => record.staged && !record.saved);
@@ -44,10 +46,12 @@ export default function BulkCatalogSmartFill({ ids, apiBase, disabled = false, o
     if (version === generation.current) { setBusy(''); if (count) onSaved?.(count); }
   };
   const prepared = records.filter(record => record.staged && !record.saved && !record.error).length;
+  if (photos) return <CatalogueLookBatch ids={ids} apiPrefix={apiBase.split('/smart-fill')[0]} query={apiBase.split('?')[1] || ''} onClose={() => setPhotos(false)} onSaved={onSaved} onBusyChange={onBusyChange} />;
   return <section className="workflow-smart workflow-smart-bulk" aria-label="Bulk catalog Smart Fill">
     <div className="workflow-smart__body"><header className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold">Bulk catalog Smart Fill</h2><p>Review up to 20 selected products. Only descriptions, tags and SEO can be saved here.</p></div><button type="button" className="admin-btn-ghost" disabled={!!busy} onClick={() => { if (!dirty || window.confirm('Discard the staged catalog changes?')) onClose(); }}><X size={15} />Close</button></header>
       <p>Price, stock, variants, publication and category structure are protected. Suggested category matches are reviewed in the individual product editor. Partial save results are shown per product; changed revisions are never overwritten.</p>
       <button type="button" className="admin-btn" disabled={disabled || !!busy || !ids.length || ids.length > 20} onClick={preview}><Sparkles size={15} />{busy === 'preview' ? 'Preparing previews…' : `Prepare ${ids.length} product previews`}</button>
+      <button type="button" className="admin-btn-ghost" disabled={disabled || !!busy || dirty || !ids.length || ids.length > 20} onClick={() => setPhotos(true)}><Sparkles size={15} />Analyse bridal matching photos</button>
       {ids.length > 20 && <p role="alert" className="workflow-smart__warning">Select no more than 20 products per batch.</p>}{error && <p role="alert" className="workflow-smart__warning">{error}</p>}
       {records.map(record => <article key={record.id} className="workflow-smart-bulk__record"><h3>{record.name}</h3>{record.warnings?.map((warning, index) => <p key={index} className="text-sm text-theme-muted">{warning}</p>)}
         {record.saved ? <p role="status" className="workflow-smart__notice">Reviewed content saved.</p> : record.staged ? <div><p role="status">{Object.keys(record.changes).length} fields staged. Not saved yet.</p><button type="button" className="admin-btn-ghost mt-3" disabled={!!busy} onClick={() => setRecords(current => current.map(row => row.id === record.id ? { ...row, staged: false, draft: row.current, changes: {} } : row))}>Discard this product's staged changes</button></div> : record.rows.length ? <SmartFillReview rows={record.rows} form={record.draft} disabled={!!busy || disabled} onApply={(rows, replace) => {

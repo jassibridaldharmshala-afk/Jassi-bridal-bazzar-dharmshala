@@ -77,19 +77,19 @@ export default function ProductListingPage({
             />
 
             <div className="sc-plp__grid">
-              {error && !products.length ? <div className="col-span-full rounded-2xl bg-white p-8 text-center" role="alert"><p>Store data service is temporarily unavailable.</p><button type="button" onClick={onRetry} className="mt-4 rounded-xl bg-wine px-5 py-3 text-sm font-bold text-white">Try again</button></div>
+              {error && !products.length ? <div className="col-span-full rounded-2xl bg-[color:var(--site-surface)] p-8 text-center" role="alert"><p>Store data service is temporarily unavailable.</p><button type="button" onClick={onRetry} className="mt-4 rounded-xl bg-wine px-5 py-3 text-sm font-bold text-[color:var(--site-on-fill)]">Try again</button></div>
                 : loading ? Array.from({ length: 8 }, (_, index) => <ProductSkeleton key={index} />)
                 : products.length ? products.map((product, index) => (
                 <ProductCard key={product.id || product._id || product.slug} product={product} navigate={navigate} shoppingMode={shoppingMode} onBeforeOpen={onBeforeProductOpen} imagePriority={index < 4} />
               )) : (
-                <div className="col-span-full rounded-2xl border border-theme-border bg-white p-8 text-center text-sm font-semibold text-[#6f625c]">
+                <div className="col-span-full rounded-2xl border border-theme-border bg-[color:var(--site-surface)] p-8 text-center text-sm font-semibold text-[color:var(--site-muted)]">
                   <p>No products match these filters.</p>
                   <button type="button" onClick={onClearFilters} className="mt-4 min-h-11 rounded-lg border border-wine px-5 font-bold text-wine">Clear filters</button>
                 </div>
               )}
               {!loading && products.length && (hasMore || error) ? <div ref={loadMoreRef} className="sc-plp__more" aria-live="polite">
-                {hasMore && <><p>Showing {products.length} of {totalProducts} products</p><button type="button" disabled={loadingMore} onClick={onLoadMore} className="min-h-11 rounded-lg border border-wine bg-white px-6 text-xs font-bold text-wine disabled:opacity-50">{loadingMore ? 'Loading more…' : 'Load more'}</button></>}
-                {error && <button type="button" onClick={onRetry} className="min-h-11 rounded-lg bg-wine px-6 text-xs font-bold text-white">Retry</button>}
+                {hasMore && <><p>Showing {products.length} of {totalProducts} products</p><button type="button" disabled={loadingMore} onClick={onLoadMore} className="min-h-11 rounded-lg border border-wine bg-[color:var(--site-surface)] px-6 text-xs font-bold text-wine disabled:opacity-50">{loadingMore ? 'Loading more…' : 'Load more'}</button></>}
+                {error && <button type="button" onClick={onRetry} className="min-h-11 rounded-lg bg-wine px-6 text-xs font-bold text-[color:var(--site-on-fill)]">Retry</button>}
               </div> : null}
             </div>
           </div>
@@ -100,8 +100,8 @@ export default function ProductListingPage({
 }
 
 function ProductSkeleton() {
-  return <div className="overflow-hidden rounded-lg border border-slate-100 bg-white" role="status" aria-label="Loading product">
-    <div className="aspect-[4/5] animate-pulse bg-slate-100" />
-    <div className="space-y-2 p-3"><span className="block h-3 w-4/5 animate-pulse rounded bg-slate-100" /><span className="block h-3 w-2/5 animate-pulse rounded bg-slate-100" /><span className="block h-9 w-full animate-pulse rounded bg-slate-100" /></div>
+  return <div className="overflow-hidden rounded-lg border border-[color:var(--site-border)] bg-[color:var(--site-surface)]" role="status" aria-label="Loading product">
+    <div className="aspect-[4/5] animate-pulse bg-[color:var(--site-surface-alt)]" />
+    <div className="space-y-2 p-3"><span className="block h-3 w-4/5 animate-pulse rounded bg-[color:var(--site-surface-alt)]" /><span className="block h-3 w-2/5 animate-pulse rounded bg-[color:var(--site-surface-alt)]" /><span className="block h-9 w-full animate-pulse rounded bg-[color:var(--site-surface-alt)]" /></div>
   </div>;
 }

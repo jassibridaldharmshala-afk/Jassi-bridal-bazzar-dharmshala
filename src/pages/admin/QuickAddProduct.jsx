@@ -268,7 +268,7 @@ export default function QuickAddProduct() {
         <PageHeader title="Quick Add Product" note="The listing is in the catalog. You can add another or open the full editor." />
         <div className="admin-form-card">
           <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#edf8f0] text-[#2f8a52]">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--site-success-soft)] text-[color:var(--site-success)]">
               <Check className="h-5 w-5" />
             </span>
             <div>
@@ -341,7 +341,7 @@ export default function QuickAddProduct() {
         <div className="admin-form-card">
           <h2>Review</h2>
           <p className="admin-form-card__note">Review the product details and confirm your available stock.</p>
-          <div className="mt-4"><ProductSmartFill form={form} categories={categories} structure={structure} disabled={saving || analyzing || !structure}
+          <div className="mt-4"><ProductSmartFill onAnalysis={analysis => setForm(current => ({ ...current, bridalStyleAnalysis: analysis }))} form={form} categories={categories} structure={structure} disabled={saving || analyzing || !structure}
             onApply={(patch, undo) => {
               nameTouchedRef.current = true; copyTouchedRef.current = true; categoryTouchedRef.current = true;
               setNameTouched(true); setCopyTouched(true); setCategoryTouched(true);

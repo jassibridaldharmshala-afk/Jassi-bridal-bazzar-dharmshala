@@ -36,6 +36,20 @@ beforeEach(() => {
 });
 afterEach(() => jest.useRealTimers());
 
+test('published catalogue analysis is store scoped and saves only reviewed appearance with its original timestamp', async () => {
+  const product = { ...makeDraft(1), _id: '700000000000000000000001', status: undefined, updatedAt: '2026-10-12T01:00:00.000Z', bridalStyle: { mainColour: 'Wine' } };
+  api.get.mockImplementation(async url => url.includes('/status') ? status : product);
+  api.post.mockResolvedValue({ ...suggestion, suggestion: { ...suggestion.suggestion, bridalStyle: { mainColour: 'Blue', metallicTone: 'gold-tone' } } });
+  render(<DraftBatchSmartFill published query="storeId=700000000000000000000099" drafts={[{ _id: product._id }]} categories={[]} structure={structure} apiPrefix="/admin" onSave={onSave} onClose={jest.fn()} />);
+  const start = await screen.findByRole('button', { name: /Run Smart Fill for 1/ }); await waitFor(() => expect(start).toBeEnabled()); fireEvent.click(start);
+  await screen.findByText('1/1 products analysed · 0 saved');
+  expect(screen.queryByLabelText('Selling price for product 1')).not.toBeInTheDocument(); expect(screen.getByLabelText('Visible main colour for product 1')).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: /Save selected details for 1/ })); await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+  expect(onSave.mock.calls[0][0]).toMatchObject({ updatedAt: product.updatedAt, bridalStyle: { mainColour: 'Wine', metallicTone: 'gold-tone' }, sellingPrice: product.sellingPrice });
+  expect(api.post.mock.calls[0][0]).toBe('/admin/products/smart-fill?storeId=700000000000000000000099');
+  expect(api.get.mock.calls.every(([url]) => url.endsWith('?storeId=700000000000000000000099'))).toBe(true);
+});
+
 test('one action analyses all 30 drafts with isolated photo groups; saving is reviewed and preserves prices and rental configuration', async () => {
   const drafts = Array.from({ length: 30 }, (_, index) => makeDraft(index, [4, 6, 2][index % 3]));
   show(drafts);

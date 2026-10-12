@@ -179,7 +179,7 @@ function ImportWorkspace({ navigate }) {
           <h2 className="text-lg font-black text-charcoal">Upload Product Reel</h2>
           <p className="reel-import-note">Review the suggested products before publishing.</p>
           {capabilities && !capabilities.ready && (
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-900" role="alert">
+            <div className="mt-4 rounded-2xl border border-[color:var(--site-warning-border)] bg-[color:var(--site-warning-soft)] p-4 text-xs font-bold leading-5 text-[color:var(--site-warning)]" role="alert">
               <p>Reel Import needs attention before uploads can start:</p>
               <ul className="mt-1 list-disc pl-5">{(capabilities.issues || ['The processing service is unavailable.']).map((issue) => <li key={issue}>{issue}</li>)}</ul>
             </div>
@@ -198,26 +198,26 @@ function ImportWorkspace({ navigate }) {
           </button>
           <input ref={inputRef} type="file" accept=".mp4,.mov,.webm" className="hidden" onChange={(event) => chooseFile(event.target.files)} />
           {file && (
-            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-theme-border bg-[#fffdfa] p-4">
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-theme-border bg-[color:var(--site-accent-soft)] p-4">
               <FileVideo className="h-6 w-6 text-wine" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black text-charcoal">{file.name}</p>
-                <p className="text-xs font-semibold text-slate-500">{formatBytes(file.size)}</p>
+                <p className="text-xs font-semibold text-[color:var(--site-muted)]">{formatBytes(file.size)}</p>
               </div>
-              {!uploading && <button type="button" onClick={() => setFile(null)} aria-label="Remove selected file"><X className="h-5 w-5 text-slate-500" /></button>}
+              {!uploading && <button type="button" onClick={() => setFile(null)} aria-label="Remove selected file"><X className="h-5 w-5 text-[color:var(--site-muted)]" /></button>}
             </div>
           )}
           {uploading && (
             <div className="mt-4">
-              <div className="flex justify-between text-xs font-black text-slate-500"><span>Uploading video</span><span>{uploadProgress}%</span></div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-wine transition-all" style={{ width: `${uploadProgress}%` }} /></div>
+              <div className="flex justify-between text-xs font-black text-[color:var(--site-muted)]"><span>Uploading video</span><span>{uploadProgress}%</span></div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[color:var(--site-surface-alt)]"><div className="h-full bg-wine transition-all" style={{ width: `${uploadProgress}%` }} /></div>
             </div>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" disabled={!file || uploading || capabilities?.ready === false} onClick={upload} className="admin-btn disabled:opacity-50">
               <Upload className="h-4 w-4" />{uploading ? 'Uploading…' : 'Upload and process'}
             </button>
-            {uploading && <button type="button" onClick={cancelUpload} className="h-11 rounded-xl border border-rose-200 px-5 text-sm font-black text-rose">Cancel upload</button>}
+            {uploading && <button type="button" onClick={cancelUpload} className="h-11 rounded-xl border border-[color:var(--site-primary-border)] px-5 text-sm font-black text-rose">Cancel upload</button>}
           </div>
         </div>
 
@@ -225,7 +225,7 @@ function ImportWorkspace({ navigate }) {
 
       <div className="admin-card reel-import-history">
         <div className="reel-import-history-toolbar">
-          <div><h2 className="text-lg font-black text-charcoal">Import history</h2><p className="text-xs font-semibold text-slate-500">{pagination.total || items.length} imports</p></div>
+          <div><h2 className="text-lg font-black text-charcoal">Import history</h2><p className="text-xs font-semibold text-[color:var(--site-muted)]">{pagination.total || items.length} imports</p></div>
           <div className="reel-import-history-filters">
             <label className="reel-import-search"><Search size={17} /><input aria-label="Search reels" value={search} onChange={(event) => { setSearch(event.target.value); setPagination((current) => ({ ...current, page: 1 })); }} placeholder="Search reels" /></label>
             <Select aria-label="Filter reel status" value={status} onChange={(event) => { setStatus(event.target.value); setPagination((current) => ({ ...current, page: 1 })); }}>
@@ -249,25 +249,25 @@ function HistoryRow({ job, onCancel, onRetry, onDelete }) {
   const id = job._id || job.id;
   const progress = Number(job.progress?.percentage || 0);
   return (
-    <article className="grid gap-3 rounded-2xl border border-[#eee3da] bg-[#fffdfa] p-4 md:grid-cols-[1fr_180px_auto] md:items-center">
+    <article className="grid gap-3 rounded-2xl border border-[color:var(--site-accent-border)] bg-[color:var(--site-accent-soft)] p-4 md:grid-cols-[1fr_180px_auto] md:items-center">
       <div className="min-w-0">
         <p className="truncate text-sm font-black text-charcoal">{job.sourceVideo?.originalFilename || 'Product reel'}</p>
-        <p className="mt-1 text-xs font-semibold text-slate-500">{formatDate(job.createdAt)} · {formatDuration(job.sourceVideo?.durationSeconds)} · {job.statistics?.detectedProducts || 0} products</p>
+        <p className="mt-1 text-xs font-semibold text-[color:var(--site-muted)]">{formatDate(job.createdAt)} · {formatDuration(job.sourceVideo?.durationSeconds)} · {job.statistics?.detectedProducts || 0} products</p>
         {job.status === 'failed' && job.error?.safeMessage ? (
-          <p className="mt-1 text-xs font-semibold text-rose-700">{job.error.safeMessage}</p>
+          <p className="mt-1 text-xs font-semibold text-[color:var(--site-primary)]">{job.error.safeMessage}</p>
         ) : job.progress?.message && !TERMINAL.has(job.status) ? (
-          <p className="mt-1 text-xs font-semibold text-slate-500">{job.progress.message}</p>
+          <p className="mt-1 text-xs font-semibold text-[color:var(--site-muted)]">{job.progress.message}</p>
         ) : null}
       </div>
       <div>
-        <div className="flex items-center justify-between gap-2"><StatusBadge value={labelStatus(job.status)} /><span className="text-xs font-black text-slate-500">{progress}%</span></div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-wine" style={{ width: `${progress}%` }} /></div>
+        <div className="flex items-center justify-between gap-2"><StatusBadge value={labelStatus(job.status)} /><span className="text-xs font-black text-[color:var(--site-muted)]">{progress}%</span></div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[color:var(--site-surface-alt)]"><div className="h-full bg-wine" style={{ width: `${progress}%` }} /></div>
       </div>
       <div className="flex flex-wrap gap-2 md:justify-end">
-        <a href={`/admin/reel-import?jobId=${id}`} className="rounded-xl bg-wine px-3 py-2 text-xs font-black text-white">{job.status === 'review_required' || job.status === 'completed' ? 'Open results' : 'View progress'}</a>
-        {['failed', 'cancelled'].includes(job.status) && <button type="button" onClick={() => onRetry(job)} className="rounded-xl border border-slate-200 p-2" aria-label="Retry"><RefreshCcw className="h-4 w-4" /></button>}
-        {['queued', 'processing'].includes(job.status) && <button type="button" onClick={() => onCancel(job)} className="rounded-xl border border-slate-200 p-2" aria-label="Cancel"><X className="h-4 w-4" /></button>}
-        {!['processing', 'creating_drafts'].includes(job.status) && <button type="button" onClick={() => onDelete(job)} className="rounded-xl border border-rose-100 p-2 text-rose" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>}
+        <a href={`/admin/reel-import?jobId=${id}`} className="rounded-xl bg-wine px-3 py-2 text-xs font-black text-[color:var(--site-on-fill)]">{job.status === 'review_required' || job.status === 'completed' ? 'Open results' : 'View progress'}</a>
+        {['failed', 'cancelled'].includes(job.status) && <button type="button" onClick={() => onRetry(job)} className="rounded-xl border border-[color:var(--site-border)] p-2" aria-label="Retry"><RefreshCcw className="h-4 w-4" /></button>}
+        {['queued', 'processing'].includes(job.status) && <button type="button" onClick={() => onCancel(job)} className="rounded-xl border border-[color:var(--site-border)] p-2" aria-label="Cancel"><X className="h-4 w-4" /></button>}
+        {!['processing', 'creating_drafts'].includes(job.status) && <button type="button" onClick={() => onDelete(job)} className="rounded-xl border border-[color:var(--site-primary-border)] p-2 text-rose" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>}
       </div>
     </article>
   );
@@ -566,7 +566,7 @@ function ReviewWorkspace({ jobId }) {
   return (
     <section className="reel-import-workspace reel-import-review">
       <div className="reel-import-toolbar"><h2 className="reel-import-filename">{job.sourceVideo?.originalFilename || 'Product reel'}</h2><a href="/admin/reel-import" className="admin-btn-ghost"><ArrowLeft size={16} />Import history</a></div>
-      {publishedProducts.length > 0 && <div role="status" className="admin-card p-5"><p className="font-bold text-emerald-800">Your products are published and ready to edit.</p><div className="mt-3 flex flex-wrap gap-3">{publishedProducts.map((product) => <a key={product._id} href={'/admin/products/edit?id=' + product._id} className="admin-btn-ghost">Edit {product.name}</a>)}</div></div>}
+      {publishedProducts.length > 0 && <div role="status" className="admin-card p-5"><p className="font-bold text-[color:var(--site-success)]">Your products are published and ready to edit.</p><div className="mt-3 flex flex-wrap gap-3">{publishedProducts.map((product) => <a key={product._id} href={'/admin/products/edit?id=' + product._id} className="admin-btn-ghost">Edit {product.name}</a>)}</div></div>}
       <div className="reel-import-stats">
         <Stat label="Status" value={labelStatus(job.status)} />
         <Stat label="Extracted" value={job.statistics?.extractedFrames || 0} />
@@ -580,53 +580,53 @@ function ReviewWorkspace({ jobId }) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-black text-charcoal">{job.progress?.currentStep || 'Processing reel'}</p>
-              <p className="mt-1 text-xs font-semibold text-slate-500">{reelActivityLabel(job)} · Attempt {Math.max(1, Number(job.attemptCount || 0))}</p>
+              <p className="mt-1 text-xs font-semibold text-[color:var(--site-muted)]">{reelActivityLabel(job)} · Attempt {Math.max(1, Number(job.attemptCount || 0))}</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-black text-wine">{Number(job.progress?.percentage || 0)}%</span>
-              {active && <button type="button" disabled={Boolean(jobAction)} onClick={cancelJob} className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-black disabled:opacity-50">{jobAction === 'cancel' ? 'Cancelling…' : 'Cancel'}</button>}
-              {['failed', 'cancelled'].includes(job.status) && <button type="button" disabled={Boolean(jobAction)} onClick={retryJob} className="inline-flex h-9 items-center gap-2 rounded-xl bg-wine px-3 text-xs font-black text-white disabled:opacity-50"><RefreshCcw className="h-3.5 w-3.5" />{jobAction === 'retry' ? 'Queueing…' : 'Retry'}</button>}
+              {active && <button type="button" disabled={Boolean(jobAction)} onClick={cancelJob} className="h-9 rounded-xl border border-[color:var(--site-border)] px-3 text-xs font-black disabled:opacity-50">{jobAction === 'cancel' ? 'Cancelling…' : 'Cancel'}</button>}
+              {['failed', 'cancelled'].includes(job.status) && <button type="button" disabled={Boolean(jobAction)} onClick={retryJob} className="inline-flex h-9 items-center gap-2 rounded-xl bg-wine px-3 text-xs font-black text-[color:var(--site-on-fill)] disabled:opacity-50"><RefreshCcw className="h-3.5 w-3.5" />{jobAction === 'retry' ? 'Queueing…' : 'Retry'}</button>}
             </div>
           </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-wine transition-all" style={{ width: `${job.progress?.percentage || 0}%` }} /></div>
-          <p className="mt-3 text-xs font-semibold text-slate-500">{job.progress?.message}</p>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--site-surface-alt)]"><div className="h-full bg-wine transition-all" style={{ width: `${job.progress?.percentage || 0}%` }} /></div>
+          <p className="mt-3 text-xs font-semibold text-[color:var(--site-muted)]">{job.progress?.message}</p>
           <div className="mt-5 overflow-x-auto pb-1" aria-label="Reel import processing stages">
             <ol className="grid min-w-[840px] grid-cols-10 gap-2">
               {progressSteps.map((step, index) => (
                 <li key={step.key} className="relative text-center">
-                  {index > 0 && <span className={`absolute right-1/2 top-3 h-0.5 w-full ${step.status === 'pending' ? 'bg-slate-200' : 'bg-wine/50'}`} />}
+                  {index > 0 && <span className={`absolute right-1/2 top-3 h-0.5 w-full ${step.status === 'pending' ? 'bg-[color:var(--site-surface-alt)]' : 'bg-wine/50'}`} />}
                   <span className={`relative mx-auto grid h-6 w-6 place-items-center rounded-full border text-[10px] font-black ${progressStepClass(step.status)}`}>
                     {step.status === 'completed' ? <Check className="h-3.5 w-3.5" /> : ['failed', 'cancelled'].includes(step.status) ? <X className="h-3.5 w-3.5" /> : index + 1}
                   </span>
-                  <span className={`relative mt-1.5 block text-[10px] font-bold ${step.status === 'pending' ? 'text-slate-400' : 'text-slate-700'}`}>{step.label}</span>
+                  <span className={`relative mt-1.5 block text-[10px] font-bold ${step.status === 'pending' ? 'text-[color:var(--site-faint)]' : 'text-[color:var(--site-muted)]'}`}>{step.label}</span>
                 </li>
               ))}
             </ol>
           </div>
         </div>
       )}
-      {pollError && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">Live progress could not be refreshed: {pollError}</div>}
-      {job.error?.safeMessage && <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800">{job.error.safeMessage}</div>}
+      {pollError && <div className="rounded-2xl border border-[color:var(--site-warning-border)] bg-[color:var(--site-warning-soft)] p-4 text-sm font-bold text-[color:var(--site-warning)]">Live progress could not be refreshed: {pollError}</div>}
+      {job.error?.safeMessage && <div className="rounded-2xl border border-[color:var(--site-primary-border)] bg-[color:var(--site-tint)] p-4 text-sm font-bold text-[color:var(--site-primary)]">{job.error.safeMessage}</div>}
 
       {candidates.length > 0 && (
         <>
-          <div className="relative overflow-hidden rounded-[24px] border border-wine/15 bg-gradient-to-br from-ivory via-white to-[#f8edf1] p-5 shadow-sm md:p-6">
+          <div className="relative overflow-hidden rounded-[24px] border border-wine/15 bg-gradient-to-br from-ivory via-[color:var(--site-surface)] to-[color:var(--site-tint)] p-5 shadow-sm md:p-6">
             <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full bg-wine/5" />
             <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-start gap-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-wine text-white shadow-lg shadow-wine/15"><Sparkles className="h-5 w-5" /></span>
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-wine text-[color:var(--site-on-fill)] shadow-lg shadow-wine/15"><Sparkles className="h-5 w-5" /></span>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-wine px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-white">New</span>
+                    <span className="rounded-full bg-wine px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[color:var(--site-on-fill)]">New</span>
                     <p className="text-base font-black text-charcoal">Smart Reel Assistant</p>
                     {analyzedCount > 0 && <span className="text-xs font-bold text-wine">{analyzedCount}/{candidates.length} analyzed</span>}
                   </div>
-                  <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-600">
+                  <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[color:var(--site-muted)]">
                     Reads product views, video text and audio to fill the name, category, description and stated details. Clear product prices are filled too. Review what is missing, then publish here.
                   </p>
-                  <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-slate-500"><Info className="h-3.5 w-3.5" />Stock stays manual. Prices, sizes and measurements are filled only when stated in the source.</p>
+                  <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[color:var(--site-muted)]"><Info className="h-3.5 w-3.5" />Stock stays manual. Prices, sizes and measurements are filled only when stated in the source.</p>
                   {capabilities?.smartSuggestionsEnabled === false && (
-                    <div className="mt-3 space-y-3"><p className="text-xs font-black text-amber-800">{capabilities.smartSuggestionsMessage || 'AI setup could not be checked. Try checking it again.'}</p><div className="flex flex-wrap gap-2"><a className="admin-btn-ghost" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Get a Gemini API key</a><button type="button" className="admin-btn-ghost" disabled={checkingSetup} onClick={checkSetup}>{checkingSetup ? 'Checking…' : 'Check setup again'}</button></div></div>
+                    <div className="mt-3 space-y-3"><p className="text-xs font-black text-[color:var(--site-warning)]">{capabilities.smartSuggestionsMessage || 'AI setup could not be checked. Try checking it again.'}</p><div className="flex flex-wrap gap-2"><a className="admin-btn-ghost" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Get a Gemini API key</a><button type="button" className="admin-btn-ghost" disabled={checkingSetup} onClick={checkSetup}>{checkingSetup ? 'Checking…' : 'Check setup again'}</button></div></div>
                   )}
                 </div>
               </div>
@@ -634,21 +634,21 @@ function ReviewWorkspace({ jobId }) {
                 type="button"
                 onClick={smartFillAll}
                 disabled={smartFillingAll || capabilities?.smartSuggestionsEnabled !== true}
-                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-wine px-5 text-sm font-black text-white shadow-lg shadow-wine/15 disabled:cursor-not-allowed disabled:opacity-45"
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-wine px-5 text-sm font-black text-[color:var(--site-on-fill)] shadow-lg shadow-wine/15 disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <WandSparkles className={`h-4 w-4 ${smartFillingAll ? 'animate-pulse' : ''}`} />
                 {smartFillingAll ? `Analyzing ${smartFilling.length ? `(${smartFilling.length})` : ''}` : (analyzedCount ? 'Refresh all suggestions' : 'Smart fill all products')}
               </button>
             </div>
           </div>
-          <div className="sticky top-[74px] z-20 flex flex-wrap items-center justify-between gap-2 rounded-[20px] border border-theme-border bg-white/95 p-3 shadow-lg backdrop-blur">
-            <p className="text-xs font-black text-slate-500">{draftSelected.length} selected for drafts · {selected.length} selected to merge</p>
+          <div className="sticky top-[74px] z-20 flex flex-wrap items-center justify-between gap-2 rounded-[20px] border border-theme-border bg-[color:color-mix(in_srgb,var(--site-surface)_95%,transparent)] p-3 shadow-lg backdrop-blur">
+            <p className="text-xs font-black text-[color:var(--site-muted)]">{draftSelected.length} selected for drafts · {selected.length} selected to merge</p>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={merge} disabled={selected.length < 2} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-black disabled:opacity-40"><GitMerge className="h-4 w-4" />Merge</button>
-              <button type="button" onClick={approveHighConfidence} className="h-10 rounded-xl border border-slate-200 px-3 text-xs font-black">Approve high confidence</button>
+              <button type="button" onClick={merge} disabled={selected.length < 2} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[color:var(--site-border)] px-3 text-xs font-black disabled:opacity-40"><GitMerge className="h-4 w-4" />Merge</button>
+              <button type="button" onClick={approveHighConfidence} className="h-10 rounded-xl border border-[color:var(--site-border)] px-3 text-xs font-black">Approve high confidence</button>
               <button type="button" onClick={saveAll} disabled={saving} className="h-10 rounded-xl border border-wine px-3 text-xs font-black text-wine">Save all reviews</button>
               <button type="button" onClick={() => createDrafts(false)} disabled={saving || !draftSelected.length} className="h-10 rounded-xl border border-wine px-4 text-xs font-black text-wine disabled:opacity-50">Save for later</button>
-              <button type="button" onClick={() => createDrafts(true)} disabled={saving || !draftSelected.length} className="h-10 rounded-xl bg-wine px-4 text-xs font-black text-white disabled:opacity-50">{saving ? 'Saving…' : 'Publish selected products'}</button>
+              <button type="button" onClick={() => createDrafts(true)} disabled={saving || !draftSelected.length} className="h-10 rounded-xl bg-wine px-4 text-xs font-black text-[color:var(--site-on-fill)] disabled:opacity-50">{saving ? 'Saving…' : 'Publish selected products'}</button>
             </div>
           </div>
           <div className="grid gap-4 xl:grid-cols-2">
@@ -691,18 +691,18 @@ function CandidateCard({ candidate, candidates, categories, structure, form, sma
   useEffect(() => {
     fetchSubcategories(api, form.category).then(setSubcategories);
   }, [form.category]);
-  if (candidate.savedDraft?.publishedProductId) return <article className="admin-card p-5"><h2 className="font-bold">{candidate.savedDraft.name}</h2><p className="my-3 text-sm text-emerald-700">{candidate.savedDraft.publishedProductDeleted ? 'Product permanently removed. Import history retained; a duplicate cannot be created.' : 'Published product'}</p>{!candidate.savedDraft.publishedProductDeleted && <a className="admin-btn-ghost" href={'/admin/products/edit?id=' + candidate.savedDraft.publishedProductId}>Edit product</a>}</article>;
+  if (candidate.savedDraft?.publishedProductId) return <article className="admin-card p-5"><h2 className="font-bold">{candidate.savedDraft.name}</h2><p className="my-3 text-sm text-[color:var(--site-success)]">{candidate.savedDraft.publishedProductDeleted ? 'Product permanently removed. Import history retained; a duplicate cannot be created.' : 'Published product'}</p>{!candidate.savedDraft.publishedProductDeleted && <a className="admin-btn-ghost" href={'/admin/products/edit?id=' + candidate.savedDraft.publishedProductId}>Edit product</a>}</article>;
   return (
     <article className="admin-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2"><h2 className="text-base font-black text-charcoal">Candidate {candidate.groupNumber}</h2><StatusBadge value={labelStatus(candidate.status)} /></div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs font-semibold text-[color:var(--site-muted)]">
             <span>{formatDuration(candidate.sourceRange?.startSeconds)}–{formatDuration(candidate.sourceRange?.endSeconds)}</span>
             <span>·</span>
             <span>{completion.completed}/{completion.total} catalog details ready</span>
-            {analysisStatus === 'completed' && <span className="rounded-full bg-emerald-50 px-2 py-1 font-black text-emerald-700">{candidate.analysis?.source === 'gemini-reel-context' ? 'Details filled from reel' : `Smart confidence ${confidence}%`}</span>}
-            {analysisStatus === 'failed' && <span className="rounded-full bg-amber-50 px-2 py-1 font-black text-amber-800">Needs another look</span>}
+            {analysisStatus === 'completed' && <span className="rounded-full bg-[color:var(--site-success-soft)] px-2 py-1 font-black text-[color:var(--site-success)]">{candidate.analysis?.source === 'gemini-reel-context' ? 'Details filled from reel' : `Smart confidence ${confidence}%`}</span>}
+            {analysisStatus === 'failed' && <span className="rounded-full bg-[color:var(--site-warning-soft)] px-2 py-1 font-black text-[color:var(--site-warning)]">Needs another look</span>}
           </div>
         </div>
         <div className="flex gap-3 text-xs font-black">
@@ -711,18 +711,18 @@ function CandidateCard({ candidate, candidates, categories, structure, form, sma
         </div>
       </div>
       {candidate.analysis?.error && analysisStatus === 'failed' && (
-        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">{candidate.analysis.error}</p>
+        <p className="mt-3 rounded-xl border border-[color:var(--site-warning-border)] bg-[color:var(--site-warning-soft)] px-3 py-2 text-xs font-bold text-[color:var(--site-warning)]">{candidate.analysis.error}</p>
       )}
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {(candidate.frames || []).map((frame) => (
-          <div key={frame._id || frame.storageKey} className={`overflow-hidden rounded-xl border ${form.selectedFrameIds.includes(String(frame._id)) ? 'border-wine ring-2 ring-wine/10' : 'border-slate-200'}`}>
+          <div key={frame._id || frame.storageKey} className={`overflow-hidden rounded-xl border ${form.selectedFrameIds.includes(String(frame._id)) ? 'border-wine ring-2 ring-wine/10' : 'border-[color:var(--site-border)]'}`}>
             <button type="button" onClick={() => onUpdate('selectedFrameIds', toggleValue(form.selectedFrameIds, String(frame._id)))} className="relative block w-full">
-              <img src={frame.url} alt={candidate.suggestions?.altText || `Candidate ${candidate.groupNumber}`} className="h-36 w-full bg-slate-50 object-contain" />
-              <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white">{Number(frame.timestampSeconds || 0).toFixed(1)}s</span>
-              {form.selectedFrameIds.includes(String(frame._id)) && <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-wine text-white"><Check className="h-3 w-3" /></span>}
+              <img src={frame.url} alt={candidate.suggestions?.altText || `Candidate ${candidate.groupNumber}`} className="h-36 w-full bg-[color:var(--site-background)] object-contain" />
+              <span className="absolute bottom-1 left-1 rounded bg-[color:color-mix(in_srgb,var(--site-media-black)_70%,transparent)] px-1.5 py-0.5 text-[9px] font-bold text-[color:var(--site-on-fill)]">{Number(frame.timestampSeconds || 0).toFixed(1)}s</span>
+              {form.selectedFrameIds.includes(String(frame._id)) && <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-wine text-[color:var(--site-on-fill)]"><Check className="h-3 w-3" /></span>}
             </button>
-            <div className="grid gap-1 p-2 text-[10px] font-semibold text-slate-600">
-              {frame.selectionVersion && <><span className="text-emerald-700">{frame.recommendedCover ? 'Suggested cover' : frame.recommended ? 'Recommended' : 'Alternative view'}</span><span>Clarity {Math.round((frame.qualityScore || 0) * 100)} / 100{frame.viewType && frame.viewType !== 'unknown' ? ' · ' + frame.viewType : ''}</span>{frame.qualityWarnings?.map((warning) => <span key={warning} className="text-amber-800">{warning}</span>)}</>}
+            <div className="grid gap-1 p-2 text-[10px] font-semibold text-[color:var(--site-muted)]">
+              {frame.selectionVersion && <><span className="text-[color:var(--site-success)]">{frame.recommendedCover ? 'Suggested cover' : frame.recommended ? 'Recommended' : 'Alternative view'}</span><span>Clarity {Math.round((frame.qualityScore || 0) * 100)} / 100{frame.viewType && frame.viewType !== 'unknown' ? ' · ' + frame.viewType : ''}</span>{frame.qualityWarnings?.map((warning) => <span key={warning} className="text-[color:var(--site-warning)]">{warning}</span>)}</>}
               <a href={frame.url} target="_blank" rel="noreferrer" className="flex min-h-9 items-center text-wine underline">View full photo</a>
               <button type="button" aria-pressed={form.primaryFrameId === String(frame._id)} onClick={() => { if (!form.selectedFrameIds.includes(String(frame._id))) onUpdate('selectedFrameIds', [...form.selectedFrameIds, String(frame._id)]); onUpdate('primaryFrameId', String(frame._id)); }} className="min-h-9 rounded-lg border border-wine/20 text-wine">{form.primaryFrameId === String(frame._id) ? 'Cover photo' : 'Set as cover'}</button>
             </div>
@@ -730,14 +730,14 @@ function CandidateCard({ candidate, candidates, categories, structure, form, sma
           </div>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#fbf7f3] px-3 py-2.5">
-        <p className="text-xs font-semibold text-slate-600">Choose the clearest views, then let Smart Fill compare them.</p>
-        {candidate.frames?.some((frame) => frame.selectionVersion) && <button type="button" className="min-h-10 rounded-xl border border-wine/20 bg-white px-3 text-xs font-black text-wine" onClick={() => { const recommended = candidate.frames.filter((frame) => frame.recommended !== false); onUpdate('selectedFrameIds', recommended.map((frame) => String(frame._id))); onUpdate('primaryFrameId', String((recommended.find((frame) => frame.recommendedCover) || recommended[0])?._id || '')); }}>Use recommended photos</button>}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[color:var(--site-accent-soft)] px-3 py-2.5">
+        <p className="text-xs font-semibold text-[color:var(--site-muted)]">Choose the clearest views, then let Smart Fill compare them.</p>
+        {candidate.frames?.some((frame) => frame.selectionVersion) && <button type="button" className="min-h-10 rounded-xl border border-wine/20 bg-[color:var(--site-surface)] px-3 text-xs font-black text-wine" onClick={() => { const recommended = candidate.frames.filter((frame) => frame.recommended !== false); onUpdate('selectedFrameIds', recommended.map((frame) => String(frame._id))); onUpdate('primaryFrameId', String((recommended.find((frame) => frame.recommendedCover) || recommended[0])?._id || '')); }}>Use recommended photos</button>}
         <button
           type="button"
           disabled={!smartEnabled || smartFilling}
           onClick={onSmartFill}
-          className="inline-flex h-9 items-center gap-2 rounded-xl border border-wine/20 bg-white px-3 text-xs font-black text-wine disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex h-9 items-center gap-2 rounded-xl border border-wine/20 bg-[color:var(--site-surface)] px-3 text-xs font-black text-wine disabled:cursor-not-allowed disabled:opacity-45"
         >
           <WandSparkles className={`h-3.5 w-3.5 ${smartFilling ? 'animate-pulse' : ''}`} />
           {smartFilling ? 'Reading views…' : (analysisStatus === 'completed' ? 'Refresh suggestions' : 'Smart fill details')}
@@ -754,7 +754,7 @@ function CandidateCard({ candidate, candidates, categories, structure, form, sma
         <Labeled label="Stock" hint="Your inventory"><TextInput type="number" min="0" step="1" value={form.stock} onChange={(event) => onUpdate('stock', event.target.value)} placeholder="Available quantity" className="w-full" /></Labeled>
       </div>
       {candidate.suggestions?.fieldSources?.price && <p className="social-import__price-source">Price from {({ speech: 'reel audio', on_screen: 'video text', caption: 'the caption' })[candidate.suggestions.fieldSources.price.source] || 'the source'}: “{candidate.suggestions.fieldSources.price.quote}”</p>}
-      {candidate.suggestions?.priceAmbiguous && <p className="mt-3 text-xs font-bold text-amber-800">The source has several products or an unclear price. Confirm the price for this product.</p>}
+      {candidate.suggestions?.priceAmbiguous && <p className="mt-3 text-xs font-bold text-[color:var(--site-warning)]">The source has several products or an unclear price. Confirm the price for this product.</p>}
       <div className="my-4"><ImportSizeFields form={form} onUpdate={onUpdate} categories={categories} structure={structure} /></div>
       {productAttributeDefinitions(structure, categories, form).filter((item) => item.required).map((item) => <Labeled key={item.key} label={item.label} hint="Required"><TextInput value={form.attributeValues[item.key] || ''} onChange={(event) => onUpdate('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></Labeled>)}
       <details className="social-import__additional"><summary className="cursor-pointer text-sm font-bold text-wine">Review all filled details & optional fields</summary><div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -774,9 +774,9 @@ function CandidateCard({ candidate, candidates, categories, structure, form, sma
         {productAttributeDefinitions(structure, categories, form).filter((item) => !item.required).map((item) => <Labeled key={item.key} label={item.label}><TextInput value={form.attributeValues[item.key] || ''} onChange={(event) => onUpdate('attributeValues', { ...form.attributeValues, [item.key]: event.target.value })} /></Labeled>)}
       </div></details>
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={onSave} className="inline-flex h-10 items-center gap-2 rounded-xl bg-wine px-4 text-xs font-black text-white"><Check className="h-4 w-4" />Save candidate</button>
-        <button type="button" onClick={onSplit} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-xs font-black"><Scissors className="h-4 w-4" />Split by timestamp</button>
-        <button type="button" onClick={() => onUpdate('status', form.status === 'ignored' ? 'suggested' : 'ignored')} className="h-10 rounded-xl border border-rose-100 px-4 text-xs font-black text-rose">{form.status === 'ignored' ? 'Restore' : 'Ignore product'}</button>
+        <button type="button" onClick={onSave} className="inline-flex h-10 items-center gap-2 rounded-xl bg-wine px-4 text-xs font-black text-[color:var(--site-on-fill)]"><Check className="h-4 w-4" />Save candidate</button>
+        <button type="button" onClick={onSplit} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[color:var(--site-border)] px-4 text-xs font-black"><Scissors className="h-4 w-4" />Split by timestamp</button>
+        <button type="button" onClick={() => onUpdate('status', form.status === 'ignored' ? 'suggested' : 'ignored')} className="h-10 rounded-xl border border-[color:var(--site-primary-border)] px-4 text-xs font-black text-rose">{form.status === 'ignored' ? 'Restore' : 'Ignore product'}</button>
       </div>
     </article>
   );
@@ -788,21 +788,21 @@ function MoveFrame({ frame, sourceId, candidates, onMove }) {
   if (!targets.length) return null;
   return (
     <div className="flex items-center gap-1 p-1">
-      <select value={target} onChange={(event) => setTarget(event.target.value)} aria-label="Move frame target" className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-1 py-1 text-[9px] font-bold">
+      <select value={target} onChange={(event) => setTarget(event.target.value)} aria-label="Move frame target" className="min-w-0 flex-1 rounded-lg border border-[color:var(--site-border)] bg-[color:var(--site-surface)] px-1 py-1 text-[9px] font-bold">
         <option value="">Move to…</option>
         {targets.map((item) => <option key={item._id || item.id} value={item._id || item.id}>Candidate {item.groupNumber}</option>)}
       </select>
-      <button type="button" disabled={!target} onClick={() => { onMove(frame._id, target); setTarget(''); }} className="grid h-6 w-6 place-items-center rounded-lg bg-slate-100 disabled:opacity-30" aria-label="Move frame"><MoveRight className="h-3 w-3" /></button>
+      <button type="button" disabled={!target} onClick={() => { onMove(frame._id, target); setTarget(''); }} className="grid h-6 w-6 place-items-center rounded-lg bg-[color:var(--site-surface-alt)] disabled:opacity-30" aria-label="Move frame"><MoveRight className="h-3 w-3" /></button>
     </div>
   );
 }
 
 function Stat({ label, value }) {
-  return <div className="rounded-2xl border border-theme-border bg-white p-4"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-wine/60">{label}</p><p className="mt-2 truncate text-lg font-black text-charcoal">{value}</p></div>;
+  return <div className="rounded-2xl border border-theme-border bg-[color:var(--site-surface)] p-4"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-wine/60">{label}</p><p className="mt-2 truncate text-lg font-black text-charcoal">{value}</p></div>;
 }
 
 function Labeled({ label, hint = '', children }) {
-  return <label className="grid gap-1.5"><span className="flex items-center justify-between gap-2 text-xs font-black text-slate-600"><span>{label}</span>{hint && <span className="text-[9px] font-black uppercase tracking-[0.08em] text-wine/60">{hint}</span>}</span>{children}</label>;
+  return <label className="grid gap-1.5"><span className="flex items-center justify-between gap-2 text-xs font-black text-[color:var(--site-muted)]"><span>{label}</span>{hint && <span className="text-[9px] font-black uppercase tracking-[0.08em] text-wine/60">{hint}</span>}</span>{children}</label>;
 }
 
 function candidateForm(candidate) {
@@ -885,11 +885,11 @@ function labelStatus(value = '') {
 }
 
 function progressStepClass(status) {
-  if (status === 'completed') return 'border-wine bg-wine text-white';
-  if (status === 'running') return 'border-wine bg-white text-wine ring-4 ring-wine/10';
-  if (status === 'failed') return 'border-rose-500 bg-rose-50 text-rose-700';
-  if (status === 'cancelled') return 'border-slate-400 bg-slate-100 text-slate-600';
-  return 'border-slate-200 bg-white text-slate-400';
+  if (status === 'completed') return 'border-wine bg-wine text-[color:var(--site-on-fill)]';
+  if (status === 'running') return 'border-wine bg-[color:var(--site-surface)] text-wine ring-4 ring-wine/10';
+  if (status === 'failed') return 'border-[color:var(--site-primary-border)] bg-[color:var(--site-tint)] text-[color:var(--site-primary)]';
+  if (status === 'cancelled') return 'border-[color:var(--site-border)] bg-[color:var(--site-surface-alt)] text-[color:var(--site-muted)]';
+  return 'border-[color:var(--site-border)] bg-[color:var(--site-surface)] text-[color:var(--site-faint)]';
 }
 
 function formatDate(value) {

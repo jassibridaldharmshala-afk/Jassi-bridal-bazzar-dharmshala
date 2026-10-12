@@ -20,7 +20,7 @@ export default function ConfirmModal({ open, title, message, confirmLabel = 'Con
   };
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-[90] grid place-items-center bg-[color:color-mix(in_srgb,var(--site-media-black)_40%,transparent)] p-4">
       <div role="dialog" aria-modal="true" aria-labelledby={titleId} aria-busy={busy} className="admin-card w-full max-w-md p-6">
         <h2 id={titleId}>{title}</h2>
         <p className="admin-note">{message}</p>

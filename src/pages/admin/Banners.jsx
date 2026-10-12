@@ -94,9 +94,9 @@ export default function Banners() {
     <div className="admin-compact-stats"><Metric icon={ImageIcon} label="Banners" value={stats.total} /><Metric icon={PlayCircle} label="Live" value={stats.live} /><Metric icon={Eye} label="Impressions" value={formatNumber(stats.impressions)} /><Metric icon={MousePointerClick} label="Clicks" value={formatNumber(stats.clicks)} /><Metric icon={BarChart3} label="Revenue" value={`Rs. ${formatNumber(stats.revenue)}`} /></div>
     {showForm ? <BannerForm initialValues={editing} saving={saving} message={message?.type === 'error' ? message.text : ''} products={products} categories={categories} coupons={coupons} onSubmit={save} onCancel={() => { setShowForm(false); setEditing(null); }} /> : null}
     {!showForm && <AdminFeedback message={message} type="success" title="Banners" onDismiss={() => setMessage(null)} />}
-    <div className="flex gap-2 overflow-x-auto">{[['active', 'Current'], ['archived', 'Archived'], ['all', 'All']].map(([value, label]) => <button key={value} onClick={() => setArchive(value)} className={`min-w-max rounded-full px-4 py-2 text-xs font-black ${archive === value ? 'bg-wine text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>{label}</button>)}</div>
+    <div className="flex gap-2 overflow-x-auto">{[['active', 'Current'], ['archived', 'Archived'], ['all', 'All']].map(([value, label]) => <button key={value} onClick={() => setArchive(value)} className={`min-w-max rounded-full px-4 py-2 text-xs font-black ${archive === value ? 'bg-wine text-[color:var(--site-on-fill)]' : 'border border-[color:var(--site-border)] bg-[color:var(--site-surface)] text-[color:var(--site-muted)]'}`}>{label}</button>)}</div>
     <SearchFilterBar search={search} onSearch={setSearch} placeholder="Search title, campaign or destination"><Select value={position} onChange={(event) => setPosition(event.target.value)}><option value="">All positions</option>{positions.filter(Boolean).map((item) => <option key={item}>{item}</option>)}</Select><Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All status</option>{['live', 'scheduled', 'paused', 'ended', 'archived'].map((item) => <option key={item} value={item}>{capitalize(item)}</option>)}</Select></SearchFilterBar>
-    {loadError ? <div className="admin-card p-8 text-center"><p className="font-bold text-rose">{loadError}</p><button type="button" onClick={() => load()} className="admin-btn mt-4">Try again</button></div> : loading ? <div className="admin-card p-10 text-center font-bold text-slate-500">Loading banners...</div> : !filtered.length ? <div className="admin-card p-10 text-center"><h2>No banners found</h2><p className="admin-note mt-2">Clear filters or create a new campaign creative.</p></div> : <div className="grid gap-4 xl:grid-cols-2">{filtered.map((banner) => <BannerCard key={banner._id} banner={banner} base={base} busy={actionId === banner._id} onEdit={() => { setEditing(banner); setShowForm(true); }} onAction={(action) => action === 'archive' ? setConfirmTarget(banner) : act(banner, action)} onMove={move} />)}</div>}
+    {loadError ? <div className="admin-card p-8 text-center"><p className="font-bold text-rose">{loadError}</p><button type="button" onClick={() => load()} className="admin-btn mt-4">Try again</button></div> : loading ? <div className="admin-card p-10 text-center font-bold text-[color:var(--site-muted)]">Loading banners...</div> : !filtered.length ? <div className="admin-card p-10 text-center"><h2>No banners found</h2><p className="admin-note mt-2">Clear filters or create a new campaign creative.</p></div> : <div className="grid gap-4 xl:grid-cols-2">{filtered.map((banner) => <BannerCard key={banner._id} banner={banner} base={base} busy={actionId === banner._id} onEdit={() => { setEditing(banner); setShowForm(true); }} onAction={(action) => action === 'archive' ? setConfirmTarget(banner) : act(banner, action)} onMove={move} />)}</div>}
     <ConfirmModal open={!!confirmTarget} title="Archive banner?" message={`Archive ${confirmTarget?.title || 'this banner'}? Its images and performance history will be preserved.`} confirmLabel="Archive" onClose={() => !actionId && setConfirmTarget(null)} onConfirm={() => act(confirmTarget, 'archive')} />
   </section>;
 }
@@ -107,24 +107,24 @@ function BannerCard({ banner, base, busy, onEdit, onAction, onMove }) {
   const managed = Boolean(banner.campaignId);
   return (
     <article className="admin-card overflow-hidden">
-      <div className="relative aspect-[16/6] bg-[#f5e9e2]">
+      <div className="relative aspect-[16/6] bg-[color:var(--site-accent-soft)]">
         {banner.image ? <img src={normalizeImageUrl(banner.image)} alt={banner.altText || banner.title} className="h-full w-full object-cover" style={{ objectPosition: banner.focalPoint || 'center' }} /> : null}
         <span className="absolute left-3 top-3"><StatusBadge value={banner.status || (banner.isActive ? 'Live' : 'Paused')} /></span>
-        {managed ? <span className="absolute right-3 top-3 rounded-full bg-violet-50 px-2.5 py-1 text-[9px] font-black uppercase text-violet-700 shadow-sm">Campaign managed</span> : null}
+        {managed ? <span className="absolute right-3 top-3 rounded-full bg-[color:var(--site-violet-soft)] px-2.5 py-1 text-[9px] font-black uppercase text-[color:var(--site-violet)] shadow-sm">Campaign managed</span> : null}
       </div>
       <div className="p-4 md:p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[.12em] text-wine">{banner.position}</p>
             <h3 className="mt-1 text-lg font-black text-charcoal">{banner.title}</h3>
-            <p className="mt-1 line-clamp-2 text-xs text-slate-500">{banner.subtitle || banner.link}</p>
+            <p className="mt-1 line-clamp-2 text-xs text-[color:var(--site-muted)]">{banner.subtitle || banner.link}</p>
           </div>
           <div className="flex gap-1">
             <button onClick={() => onMove(banner, -1)} disabled={busy || managed} className="admin-catalog-action disabled:opacity-35" title={managed ? 'Change placement order from Campaigns' : 'Move up'}><ArrowUp className="h-4 w-4" /></button>
             <button onClick={() => onMove(banner, 1)} disabled={busy || managed} className="admin-catalog-action disabled:opacity-35" title={managed ? 'Change placement order from Campaigns' : 'Move down'}><ArrowDown className="h-4 w-4" /></button>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-4 gap-2 rounded-xl bg-[#faf7f4] p-3 text-center">
+        <div className="mt-4 grid grid-cols-4 gap-2 rounded-xl bg-[color:var(--site-accent-soft)] p-3 text-center">
           <SmallMetric label="Views" value={formatNumber(impressions)} />
           <SmallMetric label="Clicks" value={formatNumber(banner.clicks)} />
           <SmallMetric label="CTR" value={`${ctr.toFixed(1)}%`} />
@@ -149,8 +149,8 @@ function BannerCard({ banner, base, busy, onEdit, onAction, onMove }) {
     </article>
   );
 }
-function Metric({ icon: Icon, label, value }) { return <div className="admin-card flex items-center gap-3 p-4"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blush text-wine"><Icon className="h-5 w-5" /></span><span><small className="block text-xs font-bold text-slate-500">{label}</small><strong className="block text-lg font-black text-charcoal">{value}</strong></span></div>; }
-function SmallMetric({ label, value }) { return <span><small className="block text-[10px] font-bold uppercase text-slate-400">{label}</small><strong className="mt-1 block text-xs text-charcoal">{value || 0}</strong></span>; }
+function Metric({ icon: Icon, label, value }) { return <div className="admin-card flex items-center gap-3 p-4"><span className="grid h-10 w-10 place-items-center rounded-xl bg-blush text-wine"><Icon className="h-5 w-5" /></span><span><small className="block text-xs font-bold text-[color:var(--site-muted)]">{label}</small><strong className="block text-lg font-black text-charcoal">{value}</strong></span></div>; }
+function SmallMetric({ label, value }) { return <span><small className="block text-[10px] font-bold uppercase text-[color:var(--site-faint)]">{label}</small><strong className="mt-1 block text-xs text-charcoal">{value || 0}</strong></span>; }
 function asList(value) { const items = Array.isArray(value) ? value : value?.items; if (!Array.isArray(items)) throw new Error('The server returned invalid campaign data.'); return items; }
 function formatNumber(value) { return Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }); }
 function capitalize(value) { return `${String(value).charAt(0).toUpperCase()}${String(value).slice(1)}`; }

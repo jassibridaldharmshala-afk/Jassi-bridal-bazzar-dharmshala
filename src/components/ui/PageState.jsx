@@ -18,9 +18,9 @@ export default function PageState({
     return (
       <>
         <MobileOverlayLoader label={loadingLabel} overlay={false} />
-        <div className="hidden rounded-2xl bg-white p-8 text-center shadow-sm md:block" role="status" aria-busy="true">
+        <div className="hidden rounded-2xl bg-[color:var(--site-surface)] p-8 text-center shadow-sm md:block" role="status" aria-busy="true">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-wine border-t-transparent" aria-hidden="true" />
-          <p className="mt-3 text-sm font-semibold text-slate-500">{loadingLabel}</p>
+          <p className="mt-3 text-sm font-semibold text-[color:var(--site-muted)]">{loadingLabel}</p>
         </div>
       </>
     );
@@ -28,10 +28,10 @@ export default function PageState({
 
   if (error) {
     return (
-      <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
+      <div className="rounded-2xl bg-[color:var(--site-surface)] p-8 text-center shadow-sm">
         <p className="text-sm font-bold text-rose">{error}</p>
         {onRetry ? (
-          <button type="button" onClick={onRetry} className="mt-4 h-11 rounded-xl bg-wine px-5 text-sm font-black text-white">
+          <button type="button" onClick={onRetry} className="mt-4 h-11 rounded-xl bg-wine px-5 text-sm font-black text-[color:var(--site-on-fill)]">
             {retryLabel}
           </button>
         ) : null}
@@ -41,11 +41,11 @@ export default function PageState({
 
   if (empty) {
     return (
-      <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
+      <div className="rounded-2xl bg-[color:var(--site-surface)] p-8 text-center shadow-sm">
         <h2 className="text-xl font-black text-charcoal">{emptyTitle}</h2>
-        <p className="mt-2 text-sm font-semibold text-slate-500">{emptyNote}</p>
+        <p className="mt-2 text-sm font-semibold text-[color:var(--site-muted)]">{emptyNote}</p>
         {onRetry ? (
-          <button type="button" onClick={onRetry} className="mt-4 h-11 rounded-xl border border-slate-200 px-5 text-sm font-black">
+          <button type="button" onClick={onRetry} className="mt-4 h-11 rounded-xl border border-[color:var(--site-border)] px-5 text-sm font-black">
             Refresh
           </button>
         ) : null}

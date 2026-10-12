@@ -1,0 +1,8 @@
+.traffic-policy { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--site-border, #e5d8ce); font-size: .875rem; line-height: 1.7; }
+.traffic-policy h2 { font-size: 1.05rem; font-weight: var(--site-heading-weight); margin-bottom: .5rem; }
+.traffic-policy p { margin: .5rem 0; color: var(--site-muted, #64748b); }
+.traffic-policy summary { cursor: pointer; font-weight: 600; margin-top: .75rem; }
+.traffic-policy__actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+.traffic-policy__actions button { min-height: 40px; padding: .5rem .75rem; border: 1px solid var(--site-border, #e5d8ce); border-radius: .5rem; color: var(--site-primary, #751d39); background: var(--site-surface, white); }
+.traffic-policy__actions button:disabled { opacity: .5; cursor: not-allowed; }
+.traffic-policy__actions button:focus-visible { outline: 2px solid var(--site-primary, #751d39); outline-offset: 3px; }

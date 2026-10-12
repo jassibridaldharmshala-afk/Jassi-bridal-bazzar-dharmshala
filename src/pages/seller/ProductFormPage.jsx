@@ -8,7 +8,7 @@ export default function SellerProductFormPage({ navigate, route = '' }) {
       <div>
         <p className="text-[11px] font-black uppercase tracking-[0.14em] text-wine">Boutique / Catalog</p>
         <h1 className="text-xl font-black text-charcoal md:text-3xl">{editing ? 'Edit product' : 'Add product'}</h1>
-        <p className="text-sm font-semibold text-slate-500">Saved to this boutique only. Drafts never auto-publish to the live storefront until you mark the product active.</p>
+        <p className="text-sm font-semibold text-[color:var(--site-muted)]">Saved to this boutique only. Drafts never auto-publish to the live storefront until you mark the product active.</p>
       </div>
       <ProductForm
         mode={editing ? 'Update' : 'Add'}

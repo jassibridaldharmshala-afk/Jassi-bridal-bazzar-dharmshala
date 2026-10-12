@@ -110,28 +110,28 @@ export default function Onboarding() {
     <section className="space-y-5">
       <div>
         <h1 className="text-2xl font-black">Seller onboarding</h1>
-        <p className="mt-1 text-sm font-semibold text-slate-500">Complete these steps before publishing. Existing Jassi shoppers are unchanged.</p>
+        <p className="mt-1 text-sm font-semibold text-[color:var(--site-muted)]">Complete these steps before publishing. Existing Jassi shoppers are unchanged.</p>
       </div>
       {progress && (
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-[color:var(--site-surface)] p-5 shadow-sm">
           <p className="text-sm font-black">{progress.percent}% complete</p>
-          <div className="mt-2 h-2 rounded-full bg-slate-100">
+          <div className="mt-2 h-2 rounded-full bg-[color:var(--site-surface-alt)]">
             <div className="h-2 rounded-full bg-wine" style={{ width: `${progress.percent}%` }} />
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {Object.entries(progress.steps || {}).map(([key, done]) => (
-              <p key={key} className={`text-sm font-bold ${done ? 'text-emerald-700' : 'text-slate-400'}`}>{done ? 'Done' : 'Pending'} — {key}</p>
+              <p key={key} className={`text-sm font-bold ${done ? 'text-[color:var(--site-success)]' : 'text-[color:var(--site-faint)]'}`}>{done ? 'Done' : 'Pending'} — {key}</p>
             ))}
           </div>
         </div>
       )}
-      {!canEdit && <p role="status" className="rounded-xl bg-white p-3 text-sm text-slate-600">Only the store owner or manager can edit and publish these settings.</p>}
-      <form onSubmit={save} className="rounded-2xl bg-white p-5 shadow-sm">
+      {!canEdit && <p role="status" className="rounded-xl bg-[color:var(--site-surface)] p-3 text-sm text-[color:var(--site-muted)]">Only the store owner or manager can edit and publish these settings.</p>}
+      <form onSubmit={save} className="rounded-2xl bg-[color:var(--site-surface)] p-5 shadow-sm">
         <fieldset disabled={saving || !canEdit} className="grid min-w-0 gap-3 md:grid-cols-2">
         <Field label="Boutique name" value={form.name} onChange={(value) => update('name', value)} />
         <Field label="URL slug" value={form.slug} onChange={(value) => update('slug', value)} />
         <Field label="Custom domain" value={form.customDomain} onChange={(value) => update('customDomain', value)} />
-        <p className="md:col-span-2 text-xs font-semibold text-slate-500">Point a CNAME to this platform yourself. DNS is not changed automatically. Subdomains work when PLATFORM_ROOT_DOMAIN is set on the server.</p>
+        <p className="md:col-span-2 text-xs font-semibold text-[color:var(--site-muted)]">Point a CNAME to this platform yourself. DNS is not changed automatically. Subdomains work when PLATFORM_ROOT_DOMAIN is set on the server.</p>
         <Field label="Instagram handle" value={form.instagramHandle} onChange={(value) => update('instagramHandle', value)} />
         <Field label="Instagram URL" value={form.instagramUrl} onChange={(value) => update('instagramUrl', value)} />
         <Field label="WhatsApp number" value={form.whatsappNumber} onChange={(value) => update('whatsappNumber', value)} />
@@ -147,7 +147,7 @@ export default function Onboarding() {
         <AddressFields title="Return address" value={form.returnAddress} onChange={(field, value) => updateAddress('returnAddress', field, value)} />
         {message && <p role="status" className="text-sm font-bold text-wine md:col-span-2">{message}</p>}
         <div className="flex flex-wrap gap-3 md:col-span-2">
-          <button type="submit" className="h-11 rounded-xl bg-wine px-5 text-sm font-black text-white">Save</button>
+          <button type="submit" className="h-11 rounded-xl bg-wine px-5 text-sm font-black text-[color:var(--site-on-fill)]">Save</button>
           <button type="button" disabled={!hasStore} onClick={publish} className="h-11 rounded-xl border px-5 text-sm font-black disabled:opacity-50">Publish storefront</button>
         </div>
         </fieldset>
@@ -166,7 +166,7 @@ function Field({ label, value, onChange }) {
 
 function AddressFields({ title, value, onChange }) {
   return (
-    <div className="rounded-2xl bg-[#fbf8f4] p-4 md:col-span-2">
+    <div className="rounded-2xl bg-[color:var(--site-accent-soft)] p-4 md:col-span-2">
       <p className="mb-3 text-sm font-black">{title}</p>
       <div className="grid gap-3 md:grid-cols-3">
         {['fullName', 'mobile', 'pincode', 'city', 'state', 'houseNo', 'area'].map((field) => (

@@ -7,6 +7,19 @@ import { applyVisionSuggestion, buildQuickAddPayload } from './quickAddProduct';
 const structure = { industry: 'boutique', features: { sizing: true }, attributes: [{ key: 'size', label: 'Size' }, { key: 'pattern', label: 'Pattern' }], categoryDefinitions: [{ key: 'jewellery', name: 'Bridal Jewellery', attributes: [{ key: 'jewellery_type', label: 'Jewellery type' }] }] };
 const categories = [{ _id: 'jewellery', name: 'Bridal Jewellery', definitionKey: 'jewellery' }, { _id: 'lehenga', name: 'Lehengas' }];
 
+test('appearance suggestions require review, protect existing and later manual details, and preserve photos', () => {
+  const images = [{ url: '/uploads/original.webp', primary: true }];
+  const form = { bridalStyle: { mainColour: 'Wine' }, images };
+  const rows = suggestionRows({ suggestion: { bridalStyle: { mainColour: 'Blue', metallicTone: 'gold-tone', accentColours: ['Gold'] } } }, form, { structure, seo: false });
+  const keys = rows.map(row => row.key);
+  const next = applySmartPatch(form, selectedSmartPatch(rows, keys, form));
+  expect(next.bridalStyle).toEqual({ mainColour: 'Wine', metallicTone: 'gold-tone', accentColours: ['Gold'] }); expect(next.images).toBe(images);
+  const changed = { ...form, bridalStyle: { ...form.bridalStyle, metallicTone: 'silver-tone' } };
+  expect(applySmartPatch(changed, selectedSmartPatch(rows, keys, changed, true)).bridalStyle.metallicTone).toBe('silver-tone');
+  const pending = applyVisionSuggestion({ ...form, images }, { bridalStyle: { mainColour: 'Blue' } }, {}, categories);
+  expect(pending.bridalStyle.mainColour).toBe('Wine'); expect(pending.bridalStyleAnalysis.suggestion.mainColour).toBe('Blue');
+});
+
 test('bridal Smart Fill reviews rich fields, SEO and category specifications without any size suggestions', () => {
   const form = { name: '', category: '', sizes: '', attributeValues: {} };
   const result = { suggestion: { name: 'Gold Bridal Necklace', category: 'jewellery', description: 'Gold-tone necklace with visible floral detailing.', highlights: ['Floral detailing'], tags: ['bridal', 'necklace'], sizes: ['M'], sizingMode: 'sized', attributeValues: { size: 'M', jewellery_type: 'Necklace Set', pattern: 'Floral' } } };

@@ -3,8 +3,8 @@ import { CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { digitsOnly, isValidIndianMobile, PHONE_VALIDATION_MESSAGE } from '../../utils/phoneInput';
 
-const baseInputClass = 'h-[48px] w-full rounded-none border border-[#e5e7eb] px-4 text-[14px] text-[#182033] outline-none placeholder:text-slate-400 focus:border-[#ff4f7d]';
-const fieldLabelClass = 'absolute left-4 top-[-9px] bg-white px-1 text-[12px] text-slate-400';
+const baseInputClass = 'h-[48px] w-full rounded-none border border-[color:var(--site-border)] px-4 text-[14px] text-[color:var(--site-text)] outline-none placeholder:text-[color:var(--site-faint)] focus:border-[color:var(--site-primary-border)]';
+const fieldLabelClass = 'absolute left-4 top-[-9px] bg-[color:var(--site-surface)] px-1 text-[12px] text-[color:var(--site-faint)]';
 
 export default function ProfileDetails() {
   const {
@@ -222,9 +222,9 @@ export default function ProfileDetails() {
   };
 
   return (
-    <section className="min-h-screen bg-[#f6f7fb] pb-28">
-      <div className="mx-auto w-full max-w-[470px] bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.06)] md:mt-6 md:rounded-[24px] md:pb-6">
-        <div className="border-b border-slate-100 px-5 py-6">
+    <section className="min-h-screen bg-[color:var(--site-surface-alt)] pb-28">
+      <div className="mx-auto w-full max-w-[470px] bg-[color:var(--site-surface)] shadow-[0_0_0_1px_rgb(var(--site-shadow-rgb)/0.06)] md:mt-6 md:rounded-[24px] md:pb-6">
+        <div className="border-b border-[color:var(--site-border)] px-5 py-6">
           <h1 className="text-[18px] font-bold text-charcoal md:text-[22px]">Edit Details</h1>
         </div>
 
@@ -234,13 +234,13 @@ export default function ProfileDetails() {
               <span className={fieldLabelClass}>Mobile Number*</span>
               <div className={`${baseInputClass} flex items-center justify-between gap-2`}>
                 <span className="truncate">{form.phone}</span>
-                {mobileVerified ? <CheckCircle2 className="h-5 w-5 shrink-0 text-[#00a86b]" /> : null}
+                {mobileVerified ? <CheckCircle2 className="h-5 w-5 shrink-0 text-[color:var(--site-success)]" /> : null}
               </div>
             </div>
             <button
               type="button"
               onClick={() => setMobileEditable((value) => !value)}
-              className="h-[48px] border border-[#e5e7eb] text-[14px] font-bold text-charcoal"
+              className="h-[48px] border border-[color:var(--site-border)] text-[14px] font-bold text-charcoal"
             >
               {mobileEditable ? 'DONE' : 'CHANGE'}
             </button>
@@ -258,12 +258,12 @@ export default function ProfileDetails() {
                   pattern="[0-9]*"
                 />
                 {form.phone && !isValidIndianMobile(form.phone) ? (
-                  <p className="text-[12px] font-medium text-[#c81e4a]">{PHONE_VALIDATION_MESSAGE}</p>
+                  <p className="text-[12px] font-medium text-[color:var(--site-primary)]">{PHONE_VALIDATION_MESSAGE}</p>
                 ) : null}
                 {phoneChanged ? (
                   <>
                     <div className="flex gap-3">
-                      <button type="button" onClick={requestPhoneOtp} disabled={phoneOtpSending || phoneOtpVerifying || saving} className="h-[44px] min-w-[128px] border border-[#e5e7eb] px-4 text-[13px] font-bold text-charcoal disabled:opacity-60">
+                      <button type="button" onClick={requestPhoneOtp} disabled={phoneOtpSending || phoneOtpVerifying || saving} className="h-[44px] min-w-[128px] border border-[color:var(--site-border)] px-4 text-[13px] font-bold text-charcoal disabled:opacity-60">
                         {phoneOtpSending ? 'Sending...' : (phoneOtpSent ? 'Resend OTP' : 'Send OTP')}
                       </button>
                       <input
@@ -275,13 +275,13 @@ export default function ProfileDetails() {
                         inputMode="numeric"
                       />
                     </div>
-                    <button type="button" onClick={confirmPhoneOtp} disabled={phoneOtpSending || phoneOtpVerifying || saving || phoneOtp.length !== 6} className="h-[44px] w-full border border-[#ff3f7f] text-[13px] font-bold text-[#ff3f7f] disabled:opacity-60">
+                    <button type="button" onClick={confirmPhoneOtp} disabled={phoneOtpSending || phoneOtpVerifying || saving || phoneOtp.length !== 6} className="h-[44px] w-full border border-[color:var(--site-primary-border)] text-[13px] font-bold text-[color:var(--site-primary)] disabled:opacity-60">
                       {phoneOtpVerifying ? 'Verifying...' : (phoneVerificationToken ? 'Verified' : 'Verify Mobile Number')}
                     </button>
                     <VerificationNote verified={Boolean(phoneVerificationToken)} pendingText="New number needs OTP verification before save." />
                   </>
                 ) : (
-                  <p className="text-[12px] text-slate-500">Your current number is already linked to this account.</p>
+                  <p className="text-[12px] text-[color:var(--site-muted)]">Your current number is already linked to this account.</p>
                 )}
               </div>
             ) : null}
@@ -292,13 +292,13 @@ export default function ProfileDetails() {
               <span className={fieldLabelClass}>Email</span>
               <div className={`${baseInputClass} flex items-center justify-between gap-2`}>
                 <span className="truncate">{form.email || 'Add your email'}</span>
-                {emailVerified ? <CheckCircle2 className="h-5 w-5 shrink-0 text-[#00a86b]" /> : null}
+                {emailVerified ? <CheckCircle2 className="h-5 w-5 shrink-0 text-[color:var(--site-success)]" /> : null}
               </div>
             </div>
             <button
               type="button"
               onClick={() => setEmailEditable((value) => !value)}
-              className="h-[48px] border border-[#e5e7eb] text-[14px] font-bold text-charcoal"
+              className="h-[48px] border border-[color:var(--site-border)] text-[14px] font-bold text-charcoal"
             >
               {emailEditable ? 'DONE' : 'CHANGE'}
             </button>
@@ -315,7 +315,7 @@ export default function ProfileDetails() {
                 {normalizedDraftEmail && emailChanged ? (
                   <>
                     <div className="flex gap-3">
-                      <button type="button" onClick={requestEmailOtp} disabled={emailOtpSending || emailOtpVerifying || saving} className="h-[44px] min-w-[128px] border border-[#e5e7eb] px-4 text-[13px] font-bold text-charcoal disabled:opacity-60">
+                      <button type="button" onClick={requestEmailOtp} disabled={emailOtpSending || emailOtpVerifying || saving} className="h-[44px] min-w-[128px] border border-[color:var(--site-border)] px-4 text-[13px] font-bold text-charcoal disabled:opacity-60">
                         {emailOtpSending ? 'Sending...' : (emailOtpSent ? 'Resend OTP' : 'Send OTP')}
                       </button>
                       <input
@@ -327,15 +327,15 @@ export default function ProfileDetails() {
                         inputMode="numeric"
                       />
                     </div>
-                    <button type="button" onClick={confirmEmailOtp} disabled={emailOtpSending || emailOtpVerifying || saving || emailOtp.length !== 6} className="h-[44px] w-full border border-[#ff3f7f] text-[13px] font-bold text-[#ff3f7f] disabled:opacity-60">
+                    <button type="button" onClick={confirmEmailOtp} disabled={emailOtpSending || emailOtpVerifying || saving || emailOtp.length !== 6} className="h-[44px] w-full border border-[color:var(--site-primary-border)] text-[13px] font-bold text-[color:var(--site-primary)] disabled:opacity-60">
                       {emailOtpVerifying ? 'Verifying...' : (emailVerificationToken ? 'Verified' : 'Verify Email')}
                     </button>
                     <VerificationNote verified={Boolean(emailVerificationToken)} pendingText="Email must be verified before save." />
                   </>
                 ) : normalizedDraftEmail ? (
-                  <p className="text-[12px] text-slate-500">{emailVerified ? 'Your email is verified.' : 'This email is on your account.'}</p>
+                  <p className="text-[12px] text-[color:var(--site-muted)]">{emailVerified ? 'Your email is verified.' : 'This email is on your account.'}</p>
                 ) : (
-                  <p className="text-[12px] text-slate-500">Add an email and verify it with OTP before saving.</p>
+                  <p className="text-[12px] text-[color:var(--site-muted)]">Add an email and verify it with OTP before saving.</p>
                 )}
               </div>
             ) : null}
@@ -346,15 +346,15 @@ export default function ProfileDetails() {
             <input value={form.name} onChange={(event) => onChange('name', event.target.value)} className={baseInputClass} placeholder="Full name" />
           </div>
 
-          <div className="grid grid-cols-2 overflow-hidden border border-[#e5e7eb]">
+          <div className="grid grid-cols-2 overflow-hidden border border-[color:var(--site-border)]">
             {['male', 'female'].map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => onChange('gender', value)}
-                className={`flex h-[48px] items-center justify-center gap-2 text-[14px] ${form.gender === value ? 'text-[#182033]' : 'text-slate-500'} ${value === 'male' ? 'border-r border-[#e5e7eb]' : ''}`}
+                className={`flex h-[48px] items-center justify-center gap-2 text-[14px] ${form.gender === value ? 'text-[color:var(--site-text)]' : 'text-[color:var(--site-muted)]'} ${value === 'male' ? 'border-r border-[color:var(--site-border)]' : ''}`}
               >
-                <span className={`text-[15px] ${form.gender === value ? 'text-[#ff4f7d]' : 'text-transparent'}`}>✓</span>
+                <span className={`text-[15px] ${form.gender === value ? 'text-[color:var(--site-primary)]' : 'text-transparent'}`}>✓</span>
                 <span className="capitalize">{value}</span>
               </button>
             ))}
@@ -369,12 +369,12 @@ export default function ProfileDetails() {
             <h2 className="text-[16px] font-bold text-charcoal">Alternate mobile details</h2>
             <div className="mt-5 space-y-5">
               <div>
-                <div className="sc-field-shell flex h-[48px] overflow-hidden border border-[#e5e7eb] focus-within:border-wine focus-within:ring-2 focus-within:ring-wine/10">
-                  <div className="flex w-[64px] items-center justify-center border-r border-[#e5e7eb] text-[13px] text-slate-400">+91</div>
-                  <input value={form.alternatePhone} onChange={(event) => onChange('alternatePhone', digitsOnly(event.target.value, 10))} className="h-full w-full px-4 text-[14px] text-[#182033] outline-none placeholder:text-slate-400" placeholder="Alternate mobile number" inputMode="numeric" autoComplete="tel" maxLength={10} pattern="[0-9]*" />
+                <div className="sc-field-shell flex h-[48px] overflow-hidden border border-[color:var(--site-border)] focus-within:border-wine focus-within:ring-2 focus-within:ring-wine/10">
+                  <div className="flex w-[64px] items-center justify-center border-r border-[color:var(--site-border)] text-[13px] text-[color:var(--site-faint)]">+91</div>
+                  <input value={form.alternatePhone} onChange={(event) => onChange('alternatePhone', digitsOnly(event.target.value, 10))} className="h-full w-full px-4 text-[14px] text-[color:var(--site-text)] outline-none placeholder:text-[color:var(--site-faint)]" placeholder="Alternate mobile number" inputMode="numeric" autoComplete="tel" maxLength={10} pattern="[0-9]*" />
                 </div>
                 {form.alternatePhone && !isValidIndianMobile(form.alternatePhone) ? (
-                  <p className="mt-2 text-[12px] font-medium text-[#c81e4a]">{PHONE_VALIDATION_MESSAGE}</p>
+                  <p className="mt-2 text-[12px] font-medium text-[color:var(--site-primary)]">{PHONE_VALIDATION_MESSAGE}</p>
                 ) : null}
               </div>
 
@@ -386,21 +386,21 @@ export default function ProfileDetails() {
           </div>
 
           {(error || success) ? (
-            <div className={`rounded-[14px] px-4 py-3 text-[13px] font-medium ${error ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+            <div className={`rounded-[14px] px-4 py-3 text-[13px] font-medium ${error ? 'bg-[color:var(--site-tint)] text-[color:var(--site-primary)]' : 'bg-[color:var(--site-success-soft)] text-[color:var(--site-success)]'}`}>
               {error || success}
             </div>
           ) : null}
 
-          <div className="border-t border-slate-100 pt-6 text-center">
-            <button type="button" onClick={onDelete} disabled={deleting} className="text-[14px] font-bold uppercase tracking-[0.01em] text-[#ff4f7d] disabled:opacity-60">
+          <div className="border-t border-[color:var(--site-border)] pt-6 text-center">
+            <button type="button" onClick={onDelete} disabled={deleting} className="text-[14px] font-bold uppercase tracking-[0.01em] text-[color:var(--site-primary)] disabled:opacity-60">
               {deleting ? 'Deleting Account...' : 'Delete Account'}
             </button>
           </div>
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:px-5 md:pt-0">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[color:var(--site-border)] bg-[color:color-mix(in_srgb,var(--site-surface)_95%,transparent)] px-4 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:px-5 md:pt-0">
           <div className="mx-auto w-full max-w-[470px]">
-            <button type="button" onClick={onSave} disabled={saving || deleting || phoneOtpSending || phoneOtpVerifying || emailOtpSending || emailOtpVerifying} className="h-[46px] w-full rounded-[4px] bg-[#ff3f7f] text-[15px] font-bold uppercase tracking-[0.01em] text-white disabled:opacity-60">
+            <button type="button" onClick={onSave} disabled={saving || deleting || phoneOtpSending || phoneOtpVerifying || emailOtpSending || emailOtpVerifying} className="h-[46px] w-full rounded-[4px] bg-[color:var(--site-tint)] text-[15px] font-bold uppercase tracking-[0.01em] text-[color:var(--site-on-fill)] disabled:opacity-60">
               {saving ? 'Saving Details...' : 'Save Details'}
             </button>
           </div>
@@ -411,8 +411,8 @@ export default function ProfileDetails() {
 }
 
 function VerificationNote({ verified, pendingText }) {
-  if (verified) return <p className="text-[12px] font-medium text-emerald-600">Verified successfully.</p>;
-  return <p className="text-[12px] text-slate-500">{pendingText}</p>;
+  if (verified) return <p className="text-[12px] font-medium text-[color:var(--site-success)]">Verified successfully.</p>;
+  return <p className="text-[12px] text-[color:var(--site-muted)]">{pendingText}</p>;
 }
 
 function resetVerificationState(setPhoneOtp, setEmailOtp, setPhoneVerificationToken, setEmailVerificationToken, setPhoneOtpSent, setEmailOtpSent) {

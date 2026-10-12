@@ -24,26 +24,26 @@ export default function ProductCaptionModal({ open, product, settings, onClose }
   };
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/55 p-3 sm:p-4">
-      <div className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.3)]">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+    <div className="fixed inset-0 z-[90] bg-[color:color-mix(in_srgb,var(--site-media-black)_55%,transparent)] p-3 sm:p-4">
+      <div className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-[28px] bg-[color:var(--site-surface)] shadow-[0_24px_80px_rgb(var(--site-shadow-rgb)/0.3)]">
+        <div className="flex items-center justify-between border-b border-[color:var(--site-border)] px-4 py-3">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-wine/60">Social Caption</p>
             <h2 className="text-lg font-black text-charcoal">Generate copy-ready caption</h2>
           </div>
-          <button type="button" aria-label="Close caption" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full border border-slate-200">
+          <button type="button" aria-label="Close caption" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full border border-[color:var(--site-border)]">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
-          <textarea aria-label="Product caption" value={caption} onChange={(event) => setCaption(event.target.value)} className="min-h-[340px] flex-1 rounded-[24px] border border-slate-200 bg-ivory p-4 text-sm leading-6 text-charcoal" />
+          <textarea aria-label="Product caption" value={caption} onChange={(event) => setCaption(event.target.value)} className="min-h-[340px] flex-1 rounded-[24px] border border-[color:var(--site-border)] bg-ivory p-4 text-sm leading-6 text-charcoal" />
           <AdminFeedback message={message} type="info" title="Product Caption Modal" onDismiss={() => setMessage('')} />
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={copy} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-wine px-4 text-sm font-black text-white">
+            <button type="button" onClick={copy} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-wine px-4 text-sm font-black text-[color:var(--site-on-fill)]">
               <Copy className="h-4 w-4" />
               Copy caption
             </button>
-            <button type="button" onClick={() => setCaption(buildCaption(product, settings))} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-700">
+            <button type="button" onClick={() => setCaption(buildCaption(product, settings))} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[color:var(--site-border)] px-4 text-sm font-black text-[color:var(--site-muted)]">
               <RefreshCcw className="h-4 w-4" />
               Regenerate
             </button>

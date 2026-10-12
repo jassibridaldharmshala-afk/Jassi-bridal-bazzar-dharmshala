@@ -2,7 +2,7 @@ export default function MobileOverlayLoader({ label = 'Loading', overlay = true 
   return (
     <div
       className={overlay
-        ? 'fixed inset-0 z-[140] flex items-center justify-center bg-black/40 md:hidden'
+        ? 'fixed inset-0 z-[140] flex items-center justify-center bg-[color:color-mix(in_srgb,var(--site-media-black)_40%,transparent)] md:hidden'
         : 'grid min-h-[50vh] place-items-center px-4 md:hidden'}
       data-mobile-loader
       data-overlay={overlay ? 'true' : 'false'}

@@ -8,6 +8,8 @@ import RentalShop from './RentalShop';
 
 let mockQuery;
 let mockRequest;
+let mockDesktop = false;
+jest.mock('@mantine/hooks', () => ({ useMediaQuery: () => mockDesktop }));
 jest.mock('../../store/apiSlice', () => ({
   useGetProductsQuery: params => { mockRequest = params; return mockQuery; },
   useGetCategoriesQuery: () => ({ data: [] }),
@@ -28,6 +30,7 @@ function mount() {
 }
 
 beforeEach(() => {
+  mockDesktop = false;
   mockQuery = { currentData: undefined, isLoading: true, isFetching: true, refetch: jest.fn() };
 });
 
@@ -48,15 +51,19 @@ test('a background refresh preserves already-loaded products and a failed refres
   expect(screen.getByText(/Showing the last loaded products/)).toBeInTheDocument();
 });
 
-test('rent uses both existing product layouts and clearing filters retains the rental mode', async () => {
+test('rent mounts only the active screen layout and clearing filters retains the rental mode', async () => {
   mockQuery = { ...mockQuery, currentData: { items: [{ _id: 'one', name: 'Rental lehenga', rentalPreview: { dailyRatePaise: 50000 } }], page: 1, total: 1, totalPages: 1 }, isLoading: false, isFetching: false };
   const store = configureStore({ reducer: { catalog: catalogReducer } });
   const navigate = jest.fn();
-  render(<Provider store={store}><Products route="/products?mode=rent&category=lehenga" navigate={navigate} /></Provider>);
+  const view = render(<Provider store={store}><Products route="/products?mode=rent&category=lehenga" navigate={navigate} /></Provider>);
   expect(await screen.findByText('Rental lehenga')).toBeInTheDocument();
   expect(mockRequest).toMatchObject({ mode: 'rent', category: 'lehenga', limit: 24 });
-  expect(screen.getByTestId('desktop-grid')).toHaveAttribute('data-mode', 'rental');
+  expect(screen.queryByTestId('desktop-grid')).not.toBeInTheDocument();
   expect(screen.getByTestId('mobile-grid')).toHaveAttribute('data-mode', 'rental');
+  mockDesktop = true;
+  view.rerender(<Provider store={store}><Products route="/products?mode=rent&category=lehenga" navigate={navigate} /></Provider>);
+  expect(screen.getByTestId('desktop-grid')).toHaveAttribute('data-mode', 'rental');
+  expect(screen.queryByTestId('mobile-grid')).not.toBeInTheDocument();
   expect(screen.queryByRole('option', { name: 'Discount' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByText('Clear shared filters'));
   expect(navigate).toHaveBeenLastCalledWith('/products?mode=rent');

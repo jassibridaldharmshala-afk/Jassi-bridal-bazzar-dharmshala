@@ -27,10 +27,12 @@ function waitForNextRequest(milliseconds, signal) {
   });
 }
 
-export default function DraftBatchSmartFill({ drafts, categories, structure, apiPrefix, onSave, onSaved, onClose, onBusyChange }) {
+export default function DraftBatchSmartFill({ drafts, categories, structure, apiPrefix, onSave, onSaved, onClose, onBusyChange, published = false, query = '' }) {
   const auth = useAuth() || {};
   const authRef = useRef(auth); authRef.current = auth;
-  const scope = batchScope(apiPrefix, auth);
+  const scopedPrefix = `${apiPrefix}${query ? `?${query}` : ''}`;
+  const endpoint = path => `${apiPrefix}${path}${query ? `?${query}` : ''}`;
+  const scope = batchScope(scopedPrefix, auth);
   const initialScope = useRef(scope);
   const alive = useRef(true), operation = useRef(null);
   const lastAnalysisStart = useRef(0);
@@ -38,18 +40,18 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
   const [busy, setBusy] = useState(''), [notice, setNotice] = useAdminFeedback('', 'info', 'Smart Fill');
   useAdminActivity(Boolean(busy), busy === 'analysis' ? 'Smart Fill in progress' : 'Saving reviewed details', busy === 'analysis' ? 'generating' : 'saving');
   const [status, setStatus] = useState(null), [statusError, setStatusError] = useState('');
-  const currentScope = () => batchScope(apiPrefix, authRef.current);
+  const currentScope = () => batchScope(scopedPrefix, authRef.current);
   const valid = controller => alive.current && !controller.signal.aborted && operation.current === controller && currentScope() === initialScope.current;
   const update = (id, values) => { if (alive.current) setRecords(current => current.map(record => record.id === id ? { ...record, ...values } : record)); };
 
   useEffect(() => {
     alive.current = true;
     const controller = new AbortController();
-    api.get(`${apiPrefix}/products/smart-fill/status`, { silent: true, signal: controller.signal })
+    api.get(`${apiPrefix}/products/smart-fill/status${query ? `?${query}` : ''}`, { silent: true, signal: controller.signal })
       .then(result => { if (alive.current && !controller.signal.aborted) { setStatus(result); setStatusError(''); } })
       .catch(error => { if (alive.current && !controller.signal.aborted) setStatusError(error.message || 'Smart Fill availability could not be checked.'); });
     return () => { alive.current = false; controller.abort(); operation.current?.abort(); onBusyChange?.(false); };
-  }, [apiPrefix, onBusyChange]);
+  }, [apiPrefix, query, onBusyChange]);
 
   useEffect(() => {
     if (scope !== initialScope.current) {
@@ -76,19 +78,20 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
         if (!valid(controller)) break;
         update(record.id, { state: 'reading', error: '' });
         try {
-          const response = await api.get(`${apiPrefix}/product-drafts/${encodeURIComponent(record.id)}`, { silent: true, signal: controller.signal, cache: 'no-store' });
+          const response = await api.get(endpoint(`/${published ? 'products' : 'product-drafts'}/${encodeURIComponent(record.id)}`), { silent: true, signal: controller.signal, cache: 'no-store', forceRefetch: true });
           if (!valid(controller)) break;
           const latest = response?.data || response;
-          if (draftId(latest) !== record.id || latest.status !== 'draft' || !Number.isSafeInteger(latest.revision)) throw new Error('This draft changed or is unavailable. Reload it before running Smart Fill.');
+          if (draftId(latest) !== record.id || (!published && (latest.status !== 'draft' || !Number.isSafeInteger(latest.revision))) || (published && !Number.isFinite(Date.parse(latest.updatedAt)))) throw new Error('This product changed or is unavailable. Reload it before running Smart Fill.');
           const baseline = snapshotForm(latest);
           const photos = smartPhotos(baseline).slice(0, Math.min(6, status.maxPhotos || 3));
           if (!status.enabled && !record.notes.trim()) throw Object.assign(new Error('Photo AI is not configured. Add supplier notes for this product or configure Gemini on the backend.'), { code: 'SMART_FILL_UNAVAILABLE' });
           lastAnalysisStart.current = Date.now();
-          const result = await api.post(`${apiPrefix}/products/smart-fill`, smartRequest(baseline, record.notes, photos), { silent: true, signal: controller.signal });
+          const result = await api.post(endpoint('/products/smart-fill'), smartRequest(baseline, record.notes, photos), { silent: true, signal: controller.signal });
           if (!valid(controller)) break;
           if (result.analysisStatus === 'failed') throw Object.assign(new Error(result.analysisError || result.warnings?.[0] || 'Photo analysis failed. Retry this draft.'), { code: result.errorCode });
           if (!result.suggestion || typeof result.suggestion !== 'object' || Array.isArray(result.suggestion)) throw new Error('Smart Fill returned an incomplete result. Retry this draft.');
-          const rows = suggestionRows(result, baseline, { categories, structure, priceField: 'sellingPrice', seo: true });
+          const rows = suggestionRows(result, baseline, { categories, structure, priceField: published ? 'price' : 'sellingPrice', seo: !published }).filter(row => !published || row.key.startsWith('bridalStyle.'));
+          baseline.bridalStyleAnalysis = { photoKey: JSON.stringify(photos), status: result.analysisStatus, suggestion: result.suggestion.bridalStyle || {} };
           setNotice('');
           update(record.id, { baseline, rows, selected: rows.filter(row => row.empty && !financial(row.key)).map(row => row.key), replace: false,
             similarProducts: result.similarProducts || [], warnings: Array.isArray(result.warnings) ? result.warnings : [], state: rows.length ? 'ready' : 'empty', mode: result.mode });
@@ -136,7 +139,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
     } finally {
       if (operation.current === controller) {
         operation.current = null;
-        if (alive.current) { setBusy(''); onBusyChange?.(false); setNotice(`${saved} draft${saved === 1 ? '' : 's'} saved. Per-product results are shown below.`); if (saved) onSaved?.(saved); }
+        if (alive.current) { setBusy(''); onBusyChange?.(false); setNotice(`${saved} ${published ? 'product' : 'draft'}${saved === 1 ? '' : 's'} saved. Per-product results are shown below.`); if (saved) onSaved?.(saved); }
       }
     }
   };
@@ -145,14 +148,14 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
   const remaining = records.filter(pending).length;
   const labels = { queued: 'Waiting', waiting: 'Waiting for next analysis', reading: 'Reading photos', ready: 'Ready to review', empty: 'No new details', failed: 'Analysis failed', paused: 'Paused', saving: 'Saving', saved: 'Saved', conflict: 'Review required' };
   return <section className="product-smart-fill draft-smart-batch" aria-label="Batch draft Smart Fill">
-    <div className="draft-smart-batch__heading"><div><h2><Sparkles size={19} />Smart Fill selected drafts</h2><p>Run all selected products with one click. Each product uses its own photos and notes.</p></div><button type="button" className="admin-btn-ghost" disabled={!!busy} onClick={onClose}><X size={16} />Close</button></div>
+    <div className="draft-smart-batch__heading"><div><h2><Sparkles size={19} />{published ? 'Analyse matching appearance' : 'Smart Fill selected drafts'}</h2><p>One product at a time. Review suggestions before saving; existing details are protected.</p></div><button type="button" className="admin-btn-ghost" disabled={!!busy} onClick={onClose}><X size={16} />Close</button></div>
     <div className="product-smart-fill__body">
       <p>Keep this page open while the batch runs. Review suggestions, then save the selected details for all products together.</p>
       <div className="draft-smart-batch__progress" role="status">{complete}/{records.length} products analysed · {records.filter(record => record.state === 'saved').length} saved</div>
       <progress aria-label="Smart Fill batch progress" max={records.length || 1} value={complete} />
-      <div className="product-smart-fill__actions"><button type="button" className="admin-btn" disabled={!!busy || !status || !structure || !remaining} onClick={run}>{busy === 'analysis' ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}{busy === 'analysis' ? 'Reading selected products…' : complete || records.some(record => record.state === 'failed') ? `Resume ${remaining} remaining drafts` : `Run Smart Fill for ${records.length} drafts`}</button>
+      <div className="product-smart-fill__actions"><button type="button" className="admin-btn" disabled={!!busy || !status || !structure || !remaining} onClick={run}>{busy === 'analysis' ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}{busy === 'analysis' ? 'Reading selected products…' : complete || records.some(record => record.state === 'failed') ? `Resume ${remaining} remaining ${published ? 'products' : 'drafts'}` : `Run Smart Fill for ${records.length} ${published ? 'products' : 'drafts'}`}</button>
         {busy === 'analysis' && <button type="button" className="admin-btn-ghost" onClick={() => { operation.current?.abort(); setNotice('Analysis stopped. Completed suggestions are kept; resume the remaining drafts when ready.'); }}>Stop analysis</button>}
-        <button type="button" className="admin-btn" disabled={!!busy || !patches.length} onClick={save}><Save size={16} />{busy === 'save' ? 'Saving reviewed details…' : `Save selected details for ${patches.length} drafts`}</button></div>
+        <button type="button" className="admin-btn" disabled={!!busy || !patches.length} onClick={save}><Save size={16} />{busy === 'save' ? 'Saving reviewed details…' : `Save selected details for ${patches.length} ${published ? 'products' : 'drafts'}`}</button></div>
       {statusError && <p role="alert" className="product-smart-fill__warning">{statusError} Close and reopen this batch to retry availability.</p>}
       {status?.enabled === false && <p role="status" className="product-smart-fill__warning">Photo AI is not configured. Enter notes per product to fill explicitly stated details.</p>}
       <AdminFeedback message={notice} type="info" title="Smart Fill" onDismiss={() => setNotice('')} />
@@ -162,7 +165,7 @@ export default function DraftBatchSmartFill({ drafts, categories, structure, api
         {pending(record) && <label className="product-smart-fill__label">Notes for product {index + 1}<textarea rows={2} maxLength={7000} disabled={!!busy} value={record.notes} onChange={event => update(record.id, { notes: event.target.value })} placeholder="Optional details for this product only" /></label>}
         {record.error && <p role="alert" className="product-smart-fill__warning">{record.error}</p>}
         {record.similarProducts?.length > 0 && <section><strong>Similar catalogue products</strong>{record.similarProducts.map(product => <p key={product._id}><a href={`${apiPrefix}/products?edit=${encodeURIComponent(product._id)}`} target="_blank" rel="noopener noreferrer">{product.name}</a> — {product.reason}</p>)}<p>Review before publishing; grouping and merging remain your decision.</p></section>}{record.warnings.map((warning, i) => <p key={i} className="product-smart-fill__warning">{warning}</p>)}
-        {record.state === 'conflict' && <button type="button" className="admin-btn-ghost" disabled={!!busy} onClick={() => update(record.id, { state: 'queued', rows: [], selected: [], error: '' })}>Re-analyse this draft</button>}
+        {record.state === 'conflict' && <button type="button" className="admin-btn-ghost" disabled={!!busy} onClick={() => update(record.id, { state: 'queued', rows: [], selected: [], error: '' })}>{published ? 'Re-analyse this product' : 'Re-analyse this draft'}</button>}
         {record.state === 'ready' && <details open={records.length === 1}><summary>{selectedSmartPatch(record.rows, record.selected, record.baseline, record.replace).length} selected details · Review suggestions</summary>
           <label className="product-smart-fill__choice"><input type="checkbox" checked={record.replace} disabled={!!busy} onChange={event => update(record.id, { replace: event.target.checked, selected: event.target.checked ? record.selected : record.rows.filter(row => row.empty && !financial(row.key)).map(row => row.key) })} />Allow replacing selected existing details for this product</label>
           <div className="product-smart-fill__fields">{record.rows.map(row => {

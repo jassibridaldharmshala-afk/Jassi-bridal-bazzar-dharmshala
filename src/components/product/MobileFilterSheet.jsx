@@ -127,23 +127,23 @@ export default function MobileFilterSheet({ open, onClose, categories = [], para
   };
 
   return (
-    <div ref={overlayRef} className="mobile-filter-overlay z-[80] bg-black/40 lg:hidden" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
-      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="mobile-filter-title" className="mobile-filter-sheet bg-white shadow-2xl outline-none">
+    <div ref={overlayRef} className="mobile-filter-overlay z-[80] bg-[color:color-mix(in_srgb,var(--site-media-black)_40%,transparent)] lg:hidden" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="mobile-filter-title" className="mobile-filter-sheet bg-[color:var(--site-surface)] shadow-2xl outline-none">
         <header className="mobile-filter__header">
           <div className="flex justify-center pt-2">
-            <div className="h-1 w-12 rounded-full bg-slate-200" />
+            <div className="h-1 w-12 rounded-full bg-[color:var(--site-surface-alt)]" />
           </div>
 
-          <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 pb-3 pt-3">
+          <div className="flex items-start justify-between gap-3 border-b border-[color:var(--site-border)] px-4 pb-3 pt-3">
             <div className="min-w-0">
               <h2 id="mobile-filter-title" className="text-[22px] font-bold text-charcoal">Filters</h2>
-              <p className="mt-1 text-[11px] text-slate-500">{selectedCount} selected · {totalResults} current results</p>
+              <p className="mt-1 text-[11px] text-[color:var(--site-muted)]">{selectedCount} selected · {totalResults} current results</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button type="button" onClick={resetFilters} className="min-h-11 text-[11px] font-bold text-wine">
                 Clear All
               </button>
-              <button type="button" onClick={onClose} aria-label="Close filters" className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-500">
+              <button type="button" onClick={onClose} aria-label="Close filters" className="grid h-11 w-11 place-items-center rounded-full bg-[color:var(--site-surface-alt)] text-[color:var(--site-muted)]">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -151,7 +151,7 @@ export default function MobileFilterSheet({ open, onClose, categories = [], para
         </header>
 
         <div className="mobile-filter__body">
-          <aside className="mobile-filter__nav border-r border-slate-100 bg-ivory px-2 py-3" aria-label="Filter sections">
+          <aside className="mobile-filter__nav border-r border-[color:var(--site-border)] bg-ivory px-2 py-3" aria-label="Filter sections">
             <div className="space-y-1.5">
               {visibleNavItems.map((item) => {
                 const active = activeSection === item.key;
@@ -186,14 +186,14 @@ export default function MobileFilterSheet({ open, onClose, categories = [], para
                         aria-pressed={selected}
                         disabled={!count && !selected}
                         onClick={() => setDraft((current) => ({ ...current, category: toggleFilterValue(current.category, value) }))}
-                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2.5 text-left disabled:opacity-40"
+                        className="flex w-full items-center justify-between gap-3 rounded-xl border border-[color:var(--site-border)] px-3 py-2.5 text-left disabled:opacity-40"
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-3">
                           {category.image ? <img src={normalizeImageUrl(category.image)} alt="" className="h-10 w-8 shrink-0 rounded-md bg-blush object-cover" /> : <div className="h-10 w-8 shrink-0 rounded-md bg-blush" />}
-                          <span className="mobile-filter__label text-[13px] font-medium text-charcoal">{category.name} <small className="text-slate-400">({count})</small></span>
+                          <span className="mobile-filter__label text-[13px] font-medium text-charcoal">{category.name} <small className="text-[color:var(--site-faint)]">({count})</small></span>
                         </div>
-                        <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-slate-300 bg-white'}`}>
-                          {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-white" /> : null}
+                        <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-[color:var(--site-border)] bg-[color:var(--site-surface)]'}`}>
+                          {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--site-surface)]" /> : null}
                         </span>
                       </button>
                     );
@@ -291,11 +291,11 @@ export default function MobileFilterSheet({ open, onClose, categories = [], para
           </div>
         </div>
 
-        <footer className="mobile-filter__footer grid grid-cols-2 gap-3 border-t border-slate-100 bg-white px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
-          <button type="button" onClick={resetFilters} className="min-h-12 min-w-0 rounded-lg border border-slate-300 px-2 py-3 text-[14px] font-semibold text-charcoal">
+        <footer className="mobile-filter__footer grid grid-cols-2 gap-3 border-t border-[color:var(--site-border)] bg-[color:var(--site-surface)] px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+          <button type="button" onClick={resetFilters} className="min-h-12 min-w-0 rounded-lg border border-[color:var(--site-border)] px-2 py-3 text-[14px] font-semibold text-charcoal">
             Reset
           </button>
-          <button type="button" onClick={applyFilters} className="min-h-12 min-w-0 rounded-lg bg-wine px-2 py-3 text-[14px] font-semibold text-white">
+          <button type="button" onClick={applyFilters} className="min-h-12 min-w-0 rounded-lg bg-wine px-2 py-3 text-[14px] font-semibold text-[color:var(--site-on-fill)]">
             Apply Filters
           </button>
         </footer>
@@ -315,7 +315,7 @@ function FilterSection({ title, children }) {
 
 function Accordion({ title, open, onToggle, children }) {
   return (
-    <div className="border-b border-slate-100">
+    <div className="border-b border-[color:var(--site-border)]">
       <button type="button" onClick={onToggle} aria-expanded={open} className="flex min-h-11 w-full items-center justify-between gap-2 py-3 text-left text-[13px] font-semibold text-charcoal">
         <span className="mobile-filter__label">{title}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
@@ -339,8 +339,8 @@ function CheckboxList({ items, value, onChange }) {
             className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-1 py-1.5 text-left"
           >
             <span className="mobile-filter__label text-[13px] text-charcoal">{item.label}</span>
-            <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-slate-300 bg-white'}`}>
-              {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-white" /> : null}
+            <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-[color:var(--site-border)] bg-[color:var(--site-surface)]'}`}>
+              {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--site-surface)]" /> : null}
             </span>
           </button>
         );
@@ -363,11 +363,11 @@ function SelectionCardList({ items, value, onChange }) {
             aria-pressed={selected}
             disabled={disabled}
             onClick={() => onChange(item.value)}
-            className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#f0e7e2] bg-white px-4 py-3 text-left shadow-[0_2px_8px_rgba(15,23,42,0.03)] disabled:opacity-40"
+            className="flex w-full items-center justify-between gap-3 rounded-xl border border-[color:var(--site-accent-border)] bg-[color:var(--site-surface)] px-4 py-3 text-left shadow-[0_2px_8px_rgb(var(--site-shadow-rgb)/0.03)] disabled:opacity-40"
           >
-            <span className="mobile-filter__label text-[13px] font-medium text-charcoal">{item.label} <small className="text-slate-400">({item.count || 0})</small></span>
-            <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-slate-300 bg-white'}`}>
-              {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-white" /> : null}
+            <span className="mobile-filter__label text-[13px] font-medium text-charcoal">{item.label} <small className="text-[color:var(--site-faint)]">({item.count || 0})</small></span>
+            <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-[color:var(--site-border)] bg-[color:var(--site-surface)]'}`}>
+              {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--site-surface)]" /> : null}
             </span>
           </button>
         );
@@ -394,13 +394,13 @@ function ColorOptionList({ items, value, onChange }) {
           >
             <span className="flex min-w-0 flex-1 items-center gap-3">
               <span
-                className={`h-4 w-4 shrink-0 rounded-full border border-white shadow-sm ring-1 ${selected ? 'ring-wine' : 'ring-slate-300'}`}
+                className={`h-4 w-4 shrink-0 rounded-full border border-[color:var(--site-border)] shadow-sm ring-1 ${selected ? 'ring-wine' : 'ring-[color:var(--site-border)]'}`}
                 style={{ backgroundColor: getColorSwatch(item.value) }}
               />
-              <span className="mobile-filter__label text-[13px] text-charcoal">{item.label} <small className="text-slate-400">({item.count || 0})</small></span>
+              <span className="mobile-filter__label text-[13px] text-charcoal">{item.label} <small className="text-[color:var(--site-faint)]">({item.count || 0})</small></span>
             </span>
-            <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-slate-300 bg-white'}`}>
-              {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-white" /> : null}
+            <span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${selected ? 'border-wine bg-wine' : 'border-[color:var(--site-border)] bg-[color:var(--site-surface)]'}`}>
+              {selected ? <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--site-surface)]" /> : null}
             </span>
           </button>
         );
@@ -412,11 +412,11 @@ function ColorOptionList({ items, value, onChange }) {
 function PriceInput({ label, value, onChange }) {
   return (
     <label className="grid min-w-0 gap-1">
-      <span className="mobile-filter__label text-[11px] font-medium text-slate-500">{label}</span>
+      <span className="mobile-filter__label text-[11px] font-medium text-[color:var(--site-muted)]">{label}</span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mobile-filter__price-input h-11 rounded-lg border border-slate-200 px-3 text-charcoal"
+        className="mobile-filter__price-input h-11 rounded-lg border border-[color:var(--site-border)] px-3 text-charcoal"
         placeholder="0"
         inputMode="numeric"
       />
@@ -428,7 +428,7 @@ function DynamicFilterOptions({ items = [], value, onChange }) {
   const selected = new Set(splitFilterValues(value).map((item) => item.toLowerCase()));
   return <div className="space-y-2">{items.map((item) => {
     const active = selected.has(String(item.value).toLowerCase());
-    return <button key={item.value} type="button" aria-pressed={active} disabled={!item.count && !active} onClick={() => onChange(item.value)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-3 text-left disabled:opacity-40"><span className="mobile-filter__label text-[13px] text-charcoal">{item.label} <small className="text-slate-400">({item.count})</small></span><span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${active ? 'border-wine bg-wine' : 'border-slate-300 bg-white'}`}>{active ? <span className="h-1.5 w-1.5 rounded-[2px] bg-white" /> : null}</span></button>;
+    return <button key={item.value} type="button" aria-pressed={active} disabled={!item.count && !active} onClick={() => onChange(item.value)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-[color:var(--site-border)] px-3 py-3 text-left disabled:opacity-40"><span className="mobile-filter__label text-[13px] text-charcoal">{item.label} <small className="text-[color:var(--site-faint)]">({item.count})</small></span><span className={`mobile-filter__mark grid h-4 w-4 place-items-center rounded-[4px] border ${active ? 'border-wine bg-wine' : 'border-[color:var(--site-border)] bg-[color:var(--site-surface)]'}`}>{active ? <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--site-surface)]" /> : null}</span></button>;
   })}</div>;
 }
 

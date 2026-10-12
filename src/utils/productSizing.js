@@ -77,6 +77,7 @@ export function inferSizeChartProfile(product = {}) {
 }
 
 export function resolveSizingMode(product = {}) {
+  if (isBangleProduct(product) && hasSizeOptions(product)) return 'sized';
   const explicit = String(product.sizingMode || 'auto').toLowerCase();
   if (explicit === 'free-size') return 'free-size';
   if (!hasSizeOptions(product)) return 'free-size';
@@ -86,10 +87,12 @@ export function resolveSizingMode(product = {}) {
 
 export function getSelectableSizes(product = {}) {
   if (resolveSizingMode(product) !== 'sized') return [];
-  return uniqueStrings(product.sizes).filter((size) => !/^free\s*size$/i.test(size));
+  return uniqueStrings([...(Array.isArray(product.sizes) ? product.sizes : uniqueStrings(product.sizes)), ...(isBangleProduct(product) ? (product.variants || []).filter(v => v.isActive !== false).map(v => v.size) : [])]).filter((size) => !/^free\s*size$/i.test(size));
 }
+export function isBangleProduct(product = {}) { return product.bridalStyle?.accessoryType === 'bangles' || /bangle|chudi|chooda/i.test([product.categoryDefinitionKey, product.category?.definitionKey, product.category?.name, product.categoryName, product.subCategory, product.name].filter(Boolean).join(' ')); }
 
 export function getSizeChartColumns(product = {}) {
+  if (isBangleProduct(product)) return [];
   if (resolveSizingMode(product) !== 'sized') return [];
   const profile = inferSizeChartProfile(product);
   // An explicit selectable-size override still needs an editable chart even

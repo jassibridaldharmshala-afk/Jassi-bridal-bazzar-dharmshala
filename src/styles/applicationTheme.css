@@ -1,5 +1,5 @@
 /* Published appearance is application-wide. Layout overrides remain device
-   specific. Semantic success/warning/error colours deliberately stay stable. */
+   specific. Semantic status colours adapt to the configured surface. */
 html[data-app-theme] {
   --wine: var(--site-primary);
   --rose: var(--site-primary);
@@ -10,13 +10,24 @@ html[data-app-theme] {
   --text-body: var(--site-text);
   --font-sans-app: var(--site-body-font);
   --font-auth-app: var(--site-body-font);
-  --samira-primary-soft: color-mix(in srgb, var(--site-primary) 80%, white);
+  --font-display: var(--site-heading-font);
+  --samira-primary-soft: color-mix(in srgb, var(--site-primary) 80%, var(--site-surface));
   --samira-gold-soft: color-mix(in srgb, var(--site-accent) 40%, var(--site-surface));
   accent-color: var(--site-primary);
+  color-scheme: var(--site-color-scheme);
 }
 html[data-app-theme] body { background: var(--site-background); color: var(--site-text); font-weight: var(--site-body-weight); }
-html[data-app-theme] :is(h1, h2, h3, .font-display) { font-family: var(--site-heading-font); font-weight: var(--site-heading-weight); }
+html[data-app-theme] :is(h1, h2, h3, h4, h5, h6, .font-display) { font-family: var(--site-heading-font); font-weight: var(--site-heading-weight); }
 html[data-app-theme] :is(button, input, select, textarea) { accent-color: var(--site-primary); }
+html[data-app-theme] button { font-family:var(--site-button-font); }
+html[data-app-theme] :is(input, select, textarea) { font-family:var(--site-body-font); }
+/* Native controls need an explicit surface as their browser default may stay
+   white after a dark theme is published. Composite fields override this with
+   their transparent inner control; product colour/range controls keep theirs. */
+html[data-app-theme] :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not([type="range"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
+  textarea, select
+) { background-color: var(--site-surface); color: var(--site-text); }
 /* A zero-specificity fallback must not recolour Tailwind's transparent
    outline-none, or controls with their own focus border/ring get a second box. */
 :where(html[data-app-theme] :focus-visible) { outline-color: var(--site-primary); }
@@ -33,6 +44,11 @@ html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .card-action--primary, 
   transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
 }
 html[data-app-theme] .admin-sidebar__link.is-active { color: var(--site-on-primary); }
+html[data-app-theme] [class*="bg-[color:var(--site-success)]"] { --site-on-fill:var(--site-on-success); }
+html[data-app-theme] [class*="bg-[color:var(--site-danger)]"] { --site-on-fill:var(--site-on-danger); }
+html[data-app-theme] [class*="bg-[color:var(--site-warning)]"] { --site-on-fill:var(--site-on-warning); }
+html[data-app-theme] [class*="bg-[color:var(--site-info)]"] { --site-on-fill:var(--site-on-info); }
+html[data-app-theme] [class*="bg-[color:var(--site-violet)]"] { --site-on-fill:var(--site-on-violet); }
 html[data-app-theme] .admin-shell {
   --admin-wine: var(--site-primary);
   --admin-wine-deep: var(--site-primary-dark);
@@ -63,12 +79,61 @@ html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .admin-btn-ghost, .admi
 html[data-app-theme] [data-mobile-loader] span > span:first-child { border-color: var(--site-loader-track); }
 html[data-app-theme] [data-mobile-loader] span > span:last-child { border-top-color: var(--site-loader); border-right-color: var(--site-loader); }
 html[data-app-theme] [data-storefront-skeleton] .skeleton-block { background: var(--site-skeleton); }
+html[data-app-theme] body :is(.rental-card, .rental-shopping-card,
+  .rental-availability, .rental-checkout-loading__card, .rental-shopping-summary,
+  .rental-checkout-v2 .sc-mobile-checkout__card, .mobile-rental-details) {
+  border-radius: var(--site-card-radius);
+}
+/* Primary actions share the designer's fill, outline/soft style, type and
+   radius. Choice chips, navigation, status badges and secondary actions keep
+   their own shape and use the shared palette instead. */
+html[data-app-theme] body :is(
+  .site-theme-button, [data-theme-action="primary"],
+  .mobile-product-booking-bar__bag, .mobile-product-booking-bar__primary,
+  .rental-shopping-primary, .rental-button:not(.rental-button--secondary):not(.rental-button--danger),
+  .rental-availability__choose, .sc-info__action--primary, .sc-info__action--dark,
+  .sc-bag__primary, .sc-wishlist__primary, .sc-addresses__primary,
+  .sc-address-form button[type="submit"], .sc-mobile-checkout__primary,
+  .sc-checkout__summary > button, .sc-cod-verification__primary,
+  .sc-checkout-pending button:first-child,
+  .rental-checkout-loading__status > button,
+  .inventory-dialog-actions button.is-primary, .returns-primary,
+  .social-primary, .sc-help-panel__footer button.is-primary,
+  .sc-invoice-actions button:first-child,
+  .sc-confirmation__button:not(.sc-confirmation__button--outline),
+  button.bg-wine:not(.rounded-full):not([aria-pressed]), a.bg-wine:not(.rounded-full),
+  button.bg-rose:not(.rounded-full):not([aria-pressed]), a.bg-rose:not(.rounded-full),
+  button.bg-brand-primary:not([aria-pressed]), a.bg-brand-primary,
+  button[class~="bg-[color:var(--site-primary)]"]:not([aria-pressed]):not(.rounded-full),
+  a[class~="bg-[color:var(--site-primary)]"]:not(.rounded-full)
+) {
+  background: var(--site-action-bg); color: var(--site-action-text);
+  border: 1px solid var(--site-action-border); border-radius: var(--site-button-radius);
+  font-family: var(--site-button-font); font-weight: var(--site-button-weight);
+  --site-on-fill: var(--site-action-text);
+  transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  html[data-app-theme] body :is(.site-theme-button, [data-theme-action="primary"],
+    .rental-shopping-primary, .rental-button:not(.rental-button--secondary):not(.rental-button--danger),
+    .sc-info__action--primary, .sc-info__action--dark, .sc-bag__primary,
+    .sc-mobile-checkout__primary, .mobile-product-booking-bar__primary,
+    .sc-confirmation__button:not(.sc-confirmation__button--outline)
+  ):not(:disabled):hover {
+    transform: var(--site-button-hover-transform); filter: var(--site-button-hover-filter);
+    box-shadow: var(--site-button-hover-shadow);
+  }
+}
 @media (max-width: 1023px) {
   html[data-app-theme] .site-storefront, html[data-app-theme] .mobile-home { background: var(--site-mobile-bg); color: var(--site-text); font-family: var(--site-body-font); }
   html[data-app-theme] [data-mobile-header] { background: var(--site-mobile-header-bg); color: var(--site-mobile-header-text); }
   html[data-app-theme] [data-mobile-header] button { color: inherit; }
 }
 @media (prefers-reduced-motion: reduce) {
+  html[data-app-theme] body :is(.site-theme-button, [data-theme-action="primary"],
+    .rental-shopping-primary, .rental-button, .sc-info__action--primary,
+    .sc-info__action--dark, .sc-bag__primary, .sc-mobile-checkout__primary,
+    .mobile-product-booking-bar__primary) { transition: none; transform: none; }
   html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .card-action--primary, .site-theme-button),
   html[data-app-theme] :is(.admin-btn, .admin-btn-primary, .card-action--primary, .site-theme-button):not(:disabled):hover { transition: none; transform: none; }
 }

@@ -24,6 +24,7 @@ import RentalCheckoutContact from '../../components/rentals/RentalCheckoutContac
 import RentalCheckoutPlan, { RentalShopArrangement } from '../../components/rentals/RentalCheckoutPlan';
 import RentalContact from '../../components/rentals/RentalContact';
 import RentalBookingConflict from '../../components/rentals/RentalBookingConflict';
+import RentalCheckoutLoading from '../../components/rentals/RentalCheckoutLoading';
 import '../../components/rentals/RentalShopping.css';
 import './RentalShoppingCheckout.css';
 
@@ -177,9 +178,9 @@ export default function RentalShoppingCheckout({ navigate }) {
   const working = busy || (step === 1 && contactState.busy);
   const shopName = configuration?.contact?.storeName || brand.websiteName || 'Rental checkout';
   const header = <header className="sc-mobile-checkout__header rental-checkout-header"><div><button type="button" aria-label="Back" disabled={working || !!pending} onClick={() => step ? goStep(step - 1) : go('/rental-cart')}><ArrowLeft size={20} /></button><div className="rental-checkout-brand"><strong>{shopName}</strong>{configuration?.contact?.address && <small>{configuration.contact.address}</small>}</div><button type="button" className="rental-checkout-help" onClick={() => go('/contact')}><CircleHelp size={15} />Help</button></div></header>;
-  if (configError) return <section className="rental-shopping-page">{header}<p role="alert">{configError}</p><button onClick={() => setRetry(n => n + 1)}>Retry checkout</button></section>;
-  if (!configuration || !bag.ready || offers.loading) return <section className="rental-shopping-page">{header}<p role="status">Loading rental checkout…</p></section>;
-  if (!bag.items.length && !pending && busy) return <section className="rental-shopping-page">{header}<p role="status">Opening your booking…</p></section>;
+  if (configError) return <RentalCheckoutLoading error={configError} onRetry={() => setRetry(n => n + 1)} onBack={() => go('/rental-cart')} />;
+  if (!configuration || !bag.ready || offers.loading) return <RentalCheckoutLoading onBack={() => go('/rental-cart')} />;
+  if (!bag.items.length && !pending && busy) return <RentalCheckoutLoading label="Opening your booking" />;
   if (!bag.items.length && !pending) return <section className="rental-shopping-page">{header}<h2>Your rental bag is empty</h2><button className="rental-shopping-primary" onClick={() => go('/rental-book')}>Choose rentals</button></section>;
   if (configuration.mode === 'SALE_ONLY') return <section className="rental-shopping-page">{header}<h2>Rentals are currently unavailable</h2><p>Contact the shop for help or continue shopping.</p><button className="rental-shopping-primary" onClick={() => go('/products')}>Browse products</button></section>;
   const ready = quoted && accepted && user?.isPhoneVerified && (form.paymentPlan === 'PICKUP' || method);

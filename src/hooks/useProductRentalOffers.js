@@ -13,7 +13,7 @@ export default function useProductRentalOffers(productId, { storeSlug = '', requ
     if (!active) return undefined;
     let alive = true;
     setResponse(null);
-    api.get(rentalUrl('/rentals/products/' + productId, storeSlug), { silent: true, forceRefetch: true }).then(data => {
+    api.get(rentalUrl('/rentals/products/' + productId, storeSlug), { silent: true, forceRefetch: revision > 0 }).then(data => {
       if (!Array.isArray(data?.listings)) throw new Error('Rental details could not be loaded. Please retry.');
       const listingId = requestedListing
         ? data.listings.some(listing => listing._id === requestedListing) ? requestedListing : ''

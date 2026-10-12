@@ -3,7 +3,7 @@
 .admin-compact.space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 12px; }
 .admin-compact-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .admin-compact-actions :is(.admin-btn,.admin-btn-ghost,.admin-btn-secondary) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border-radius: 9px; }
-.admin-compact-guide { padding: 10px 12px; border: 1px solid var(--site-border,#eadfd7); border-radius: 10px; background: #fff; font-size: 12px; line-height: 1.6; color: var(--site-muted,#756b73); }
+.admin-compact-guide { padding: 10px 12px; border: 1px solid var(--site-border,#eadfd7); border-radius: 10px; background: var(--site-surface); font-size: 12px; line-height: 1.6; color: var(--site-muted,#756b73); }
 .admin-compact-guide summary { cursor: pointer; color: var(--site-primary,#751d39); font-weight: 700; }
 .admin-compact-guide > :not(summary) { margin-top: 8px; }
 .admin-compact .admin-card:is(.p-4,.p-5,.p-6,.p-8,.p-10) { padding: 16px; }
@@ -25,10 +25,10 @@
 .campaign-list-tools { display: grid; grid-template-columns: auto minmax(150px,1fr) 44px; align-items: center; gap: 8px; min-width: 0; }
 .campaign-list-tools > :is(input,select,button) { width: 100%; min-width: 0; height: 44px; }
 .business-compact-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
-.business-compact-period { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--site-border,#eadfd7); border-radius: 10px; background: #fff; }
-.business-compact-period button { min-height: 38px; padding: 0 12px; border-radius: 7px; color: #756b73; font-size: 12px; font-weight: 700; }
-.business-compact-period button[aria-pressed=true] { background: var(--site-primary,#751d39); color: #fff; }
-.business-compact-context { flex-basis: 100%; color: #756b73; font-size: 11px; }
+.business-compact-period { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--site-border,#eadfd7); border-radius: 10px; background: var(--site-surface); }
+.business-compact-period button { min-height: 38px; padding: 0 12px; border-radius: 7px; color: var(--site-muted); font-size: 12px; font-weight: 700; }
+.business-compact-period button[aria-pressed=true] { background: var(--site-primary,#751d39); color: var(--site-on-primary); }
+.business-compact-context { flex-basis: 100%; color: var(--site-muted); font-size: 11px; }
 .business-compact :is(article.p-5,article.sm\:p-6) { padding: 16px; border-radius: 12px; }
 .business-compact :is(.mt-5,.mt-7) { margin-top: 12px; }
 .business-compact .min-h-10 { min-height: 0; }

@@ -54,7 +54,7 @@ export default function ProductTabs({
             <h3>Specifications</h3>
             {(details.specificationGroups || groupSpecifications(details.specifications)).map(({ group, items: rows }) => (
               <div key={group} className="mb-5 last:mb-0">
-                {group !== 'Product information' ? <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-slate-500">{group}</h4> : null}
+                {group !== 'Product information' ? <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-[color:var(--site-muted)]">{group}</h4> : null}
                 <dl className="sc-tabs__details">
                   {rows.map(({ label, value }) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
                 </dl>

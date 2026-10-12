@@ -1,0 +1,21 @@
+.rental-confirmation__item-rent { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-top: 8px; font-size: 13px; }
+.rental-confirmation__item-rent span, .rental-confirmation__item-deposit { color: var(--site-muted); font-size: 11px; }
+.rental-confirmation__item-deposit { margin-top: 5px; }
+.rental-confirmation__schedule { padding: 20px 24px; }
+.rental-confirmation__schedule dl { display: grid; gap: 15px; }
+.rental-confirmation__schedule dl > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 16px; font-size: 13px; }
+.rental-confirmation__schedule dt { color: var(--site-muted); }
+.rental-confirmation__schedule dd { font-weight: 600; overflow-wrap: anywhere; }
+.rental-confirmation__schedule small { display: block; color: var(--site-muted); font-weight: 400; margin-top: 3px; }
+.rental-confirmation__schedule > p { color: var(--site-muted); font-size: 11px; margin-top: 16px; }
+.rental-confirmation__collection { display: flex; align-items: flex-start; gap: 12px; border-top: 1px solid var(--site-border); padding: 18px 24px; font-style: normal; font-size: 12px; }
+.rental-confirmation__collection svg { color: var(--site-primary); margin-top: 2px; }
+.rental-confirmation__collection p { color: var(--site-muted); margin-top: 4px; overflow-wrap: anywhere; }
+.rental-confirmation__pay { display: grid; gap: 12px; margin-top: 16px; }
+.rental-confirmation__pay label { display: grid; gap: 7px; font-size: 12px; font-weight: 600; }
+.rental-confirmation__pay select { min-height: 44px; width: 100%; border: 1px solid var(--site-border); border-radius: var(--site-button-radius); padding: 8px 12px; }
+.rental-confirmation__payment:focus { outline: 2px solid var(--site-primary); outline-offset: 3px; }
+@media (max-width: 767px) {
+  .rental-confirmation__schedule, .rental-confirmation__collection { padding: 18px; }
+  .rental-confirmation__schedule dl > div { grid-template-columns: 100px minmax(0, 1fr); gap: 10px; font-size: 12px; }
+}

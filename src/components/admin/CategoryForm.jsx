@@ -179,7 +179,7 @@ export default function CategoryForm({ mode = 'Add', categoryId, onSaved, onCanc
 
   if (mode === 'Update' && !categoryId) return <p role="alert">Choose a category from the categories list before editing.</p>;
   if (loadError) return <div role="alert" className="admin-card p-5">{loadError} <button type="button" onClick={() => setReload(value => value + 1)} className="admin-btn-ghost">Retry loading category</button></div>;
-  if (loading) return <p role="status" className="p-5 text-sm font-bold text-slate-500">Loading category...</p>;
+  if (loading) return <p role="status" className="p-5 text-sm font-bold text-[color:var(--site-muted)]">Loading category...</p>;
 
   const previewImage = form.image || form.socialImage;
   const selectedParent = parentOptions.find((category) => String(category._id) === String(form.parent));
@@ -270,17 +270,17 @@ export default function CategoryForm({ mode = 'Add', categoryId, onSaved, onCanc
 }
 
 function Input({ label, value, onChange, placeholder = label, type = 'text', required = false, ...props }) {
-  return <label className="grid gap-2 text-sm font-black">{label}<input {...props} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 text-sm font-semibold" placeholder={placeholder} /></label>;
+  return <label className="grid gap-2 text-sm font-black">{label}<input {...props} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="h-12 rounded-xl border border-[color:var(--site-border)] px-4 text-sm font-semibold" placeholder={placeholder} /></label>;
 }
 
 function TextArea({ label, value, onChange, placeholder = label, ...props }) {
-  return <label className="grid gap-2 text-sm font-black">{label}<textarea {...props} value={value} onChange={(event) => onChange(event.target.value)} className="min-h-24 rounded-xl border border-slate-200 p-4 text-sm font-semibold leading-6" placeholder={placeholder} /></label>;
+  return <label className="grid gap-2 text-sm font-black">{label}<textarea {...props} value={value} onChange={(event) => onChange(event.target.value)} className="min-h-24 rounded-xl border border-[color:var(--site-border)] p-4 text-sm font-semibold leading-6" placeholder={placeholder} /></label>;
 }
 
 function Select({ label, value, onChange, children }) {
-  return <label className="grid gap-2 text-sm font-black">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold">{children}</select></label>;
+  return <label className="grid gap-2 text-sm font-black">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="h-12 rounded-xl border border-[color:var(--site-border)] bg-[color:var(--site-surface)] px-4 text-sm font-semibold">{children}</select></label>;
 }
 
 function CharacterCount({ value, max }) {
-  return <p className="mt-1 text-right text-[11px] font-bold text-slate-400">{String(value || '').length}/{max}</p>;
+  return <p className="mt-1 text-right text-[11px] font-bold text-[color:var(--site-faint)]">{String(value || '').length}/{max}</p>;
 }

@@ -1,0 +1,11 @@
+{
+  "_id": "6ac717392896b707f847c550", "number": "R-JB1024", "status": "CONFIRMED", "revision": 1,
+  "createdAt": "2026-10-12T04:30:00.000Z", "confirmedAt": "2026-10-12T04:30:00.000Z",
+  "customer": { "name": "Priya Sharma", "phone": "9876543210", "email": "priya@example.com" },
+  "policy": { "timezone": "Asia/Kolkata", "terms": "Collect and return at the store. The refundable deposit is settled after return inspection." },
+  "schedule": { "pickupAt": "2026-10-22T04:30:00.000Z", "returnDueAt": "2026-10-24T04:30:00.000Z", "useDates": ["2026-10-23"], "days": 1, "billingBasis": "USE_DAYS" },
+  "quote": { "items": [{ "listingId": "6ac717392896b707f847c519", "title": "Orange Lehenga Choli", "quantity": 1, "rentPaise": 100000, "depositPaise": 50000, "feesPaise": 0 }], "rentalPaise": 100000, "depositPaise": 50000, "dueNowPaise": 0, "deliveryMode": "STORE_PICKUP", "paymentPlan": "PICKUP" },
+  "financial": { "collectedPaise": 0, "balancePaise": 150000, "refundedPaise": 0, "refundablePaise": 0, "reservedRefundPaise": 0 },
+  "documents": { "invoice": { "number": "RINV-R-JB1024", "kind": "RENTAL_INVOICE", "issuedAt": "2026-10-12T04:30:00.000Z", "seller": { "storeName": "Jassi Bridal Bazar Dharmshala", "address": "Main Market\nDharamshala, Himachal Pradesh", "contactPhone": "9876543200" }, "customer": { "name": "Priya Sharma", "phone": "9876543210", "email": "priya@example.com" }, "items": [{ "listingId": "6ac717392896b707f847c519", "title": "Orange Lehenga Choli", "quantity": 1, "rentPaise": 100000, "depositPaise": 50000, "feesPaise": 0 }], "rentalPaise": 100000, "depositPaise": 50000, "totalPaise": 150000, "taxPaise": 0, "basisPoints": 0, "policyRevision": 1 }, "receipts": [], "deliveryFeePaise": 0, "returnFeePaise": 0 },
+  "requests": [], "events": [], "pieces": [], "ledger": [], "assessments": []
+}

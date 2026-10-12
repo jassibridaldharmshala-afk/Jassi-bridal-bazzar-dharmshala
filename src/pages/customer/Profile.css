@@ -8,8 +8,8 @@
     min-height: calc(100vh - 150px);
     background:
       radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--site-accent) 8%, transparent), transparent 24%),
-      linear-gradient(180deg, var(--site-background, #fffaf4) 0%, var(--site-background, #fffdfb) 45%, #f8f4ef 100%);
-    color: #1b1720;
+      linear-gradient(180deg, var(--site-background, #fffaf4) 0%, var(--site-background, #fffdfb) 45%, var(--site-accent-soft) 100%);
+    color: var(--site-text);
     padding: 22px 0 30px;
   }
 
@@ -27,7 +27,7 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 14px;
-    color: #8b7a70;
+    color: var(--site-muted);
     font-size: 13px;
   }
 
@@ -56,8 +56,8 @@
   .sc-account__stat,
   .sc-account__service-strip {
     border: 1px solid var(--site-border, #ead8cb);
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 12px 30px rgba(70, 35, 20, 0.06);
+    background: color-mix(in srgb, var(--site-surface) 92%, transparent);
+    box-shadow: 0 12px 30px color-mix(in srgb, rgb(var(--site-shadow-rgb)) 6%, transparent);
   }
 
   .sc-account__sidebar {
@@ -81,8 +81,8 @@
     width: 82px;
     height: 82px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #f2eef0 0%, #e5e1e5 100%);
-    color: #918b92;
+    background: linear-gradient(135deg, var(--site-surface-alt) 0%, var(--site-surface-alt) 100%);
+    color: var(--site-muted);
     font-size: 28px;
     font-weight: 800;
     letter-spacing: 0.02em;
@@ -91,12 +91,12 @@
   .sc-account__profile-card h2 {
     margin: 17px 0 4px;
     font-size: 16px;
-    font-weight: 800;
+    font-weight: var(--site-heading-weight);
   }
 
   .sc-account__profile-card p {
     margin: 0;
-    color: #695d56;
+    color: var(--site-muted);
     font-size: 13px;
   }
 
@@ -106,7 +106,7 @@
     margin-top: 17px;
     border: 1px solid var(--site-primary, #8a0f36);
     border-radius: 4px;
-    background: #fff;
+    background: var(--site-surface);
     color: var(--site-primary, #8a0f36);
     font-size: 12px;
     font-weight: 800;
@@ -128,7 +128,7 @@
     border-left: 3px solid transparent;
     padding: 0 22px;
     background: transparent;
-    color: #4d4642;
+    color: var(--site-text);
     font-size: 13px;
     font-weight: 700;
     text-align: left;
@@ -138,7 +138,7 @@
   .sc-account__menu button.is-active {
     border-left-color: var(--site-primary, #8a0f36);
     background: var(--site-primary, #8a0f36);
-    color: #fff;
+    color: var(--site-on-primary);
   }
 
   .sc-account__main {
@@ -151,16 +151,16 @@
 
   .sc-account__hero h1 {
     margin: 0;
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--site-heading-font);
     font-size: 28px;
     line-height: 1.1;
-    font-weight: 800;
-    color: #161114;
+    font-weight: var(--site-heading-weight);
+    color: var(--site-text);
   }
 
   .sc-account__hero p {
     margin: 7px 0 0;
-    color: #3f3936;
+    color: var(--site-text);
     font-size: 13px;
     font-weight: 600;
   }
@@ -189,18 +189,18 @@
     width: 62px;
     height: 62px;
     border-radius: 999px;
-    background: #f9eaf0;
+    background: var(--site-tint);
     color: var(--site-primary, #8a0f36);
   }
 
   .sc-account__stat--gold .sc-account__stat-icon {
-    background: #fff3dc;
-    color: #c28a36;
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
   }
 
   .sc-account__stat small {
     display: block;
-    color: #4c433e;
+    color: var(--site-text);
     font-size: 10px;
     font-weight: 900;
     letter-spacing: 0.08em;
@@ -250,7 +250,7 @@
   .sc-account__support h2 {
     margin: 0;
     font-size: 16px;
-    font-weight: 900;
+    font-weight: var(--site-heading-weight);
   }
 
   .sc-account__panel-head button {
@@ -276,7 +276,7 @@
     gap: 18px;
     align-items: center;
     min-height: 82px;
-    border-bottom: 1px solid #efe1d7;
+    border-bottom: 1px solid var(--site-accent-border);
     padding: 12px 0;
   }
 
@@ -299,7 +299,7 @@
     flex: 0 0 auto;
     overflow: hidden;
     border-radius: 6px;
-    background: #f5ebe3;
+    background: var(--site-accent-soft);
     color: var(--site-primary, #8a0f36);
   }
 
@@ -312,8 +312,8 @@
   .sc-account__order h3 {
     margin: 0 0 4px;
     font-size: 13px;
-    font-weight: 800;
-    color: #191417;
+    font-weight: var(--site-heading-weight);
+    color: var(--site-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -323,13 +323,13 @@
   .sc-account__order small {
     display: block;
     margin: 0;
-    color: #6d625d;
+    color: var(--site-muted);
     font-size: 11px;
     line-height: 1.55;
   }
 
   .sc-account__order small span {
-    color: #c9b2a4;
+    color: var(--site-accent);
   }
 
   .sc-account__status {
@@ -341,28 +341,28 @@
   }
 
   .sc-account__status.is-delivered {
-    background: #dff6e6;
-    color: #16924d;
+    background: var(--site-success-soft);
+    color: var(--site-success);
   }
 
   .sc-account__status.is-shipped {
-    background: #dbeafe;
-    color: #2d67c8;
+    background: var(--site-info-soft);
+    color: var(--site-info);
   }
 
   .sc-account__status.is-processing {
-    background: #fff1d6;
-    color: #c47b14;
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
   }
 
   .sc-account__status.is-cancelled {
-    background: #ffe4e8;
-    color: #c21d42;
+    background: var(--site-danger-soft);
+    color: var(--site-danger);
   }
 
   .sc-account__date small {
     display: block;
-    color: #75695f;
+    color: var(--site-muted);
     font-size: 11px;
   }
 
@@ -377,7 +377,7 @@
     height: 34px;
     border: 1px solid var(--site-primary, #8a0f36);
     border-radius: 4px;
-    background: #fff;
+    background: var(--site-surface);
     color: var(--site-primary, #8a0f36);
     font-size: 11px;
     font-weight: 900;
@@ -410,8 +410,8 @@
     width: 42px;
     height: 42px;
     border-radius: 999px;
-    background: #f7f2ed;
-    color: #4d4642;
+    background: var(--site-accent-soft);
+    color: var(--site-text);
   }
 
   .sc-account__address-top {
@@ -424,8 +424,8 @@
   .sc-account__address-top span {
     display: inline-flex;
     border-radius: 999px;
-    background: #fff0d4;
-    color: #b4771e;
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
     padding: 3px 9px;
     font-size: 10px;
     font-weight: 900;
@@ -440,7 +440,7 @@
 
   .sc-account__address p {
     margin: 3px 0 0;
-    color: #574d48;
+    color: var(--site-text);
     font-size: 12px;
     line-height: 1.4;
   }
@@ -481,19 +481,19 @@
   }
 
   .sc-account__profile-mini svg {
-    color: #6f625c;
+    color: var(--site-muted);
   }
 
   .sc-account__profile-mini small {
     display: block;
-    color: #6f625c;
+    color: var(--site-muted);
     font-size: 11px;
   }
 
   .sc-account__profile-mini strong {
     display: block;
     max-width: 150px;
-    color: #191417;
+    color: var(--site-text);
     font-size: 12px;
     font-weight: 800;
     overflow: hidden;
@@ -516,7 +516,7 @@
     height: 30px;
     border: 0;
     background: transparent;
-    color: #5f554f;
+    color: var(--site-text);
     font-size: 12px;
     font-weight: 700;
     text-align: left;
@@ -542,7 +542,7 @@
 
   .sc-account__help-card p {
     margin: 5px 0 12px;
-    color: #6d625d;
+    color: var(--site-muted);
     font-size: 12px;
     line-height: 1.4;
   }
@@ -553,7 +553,7 @@
     height: 34px;
     border: 1px solid var(--site-primary, #8a0f36);
     border-radius: 4px;
-    background: #fff;
+    background: var(--site-surface);
     color: var(--site-primary, #8a0f36);
     font-size: 12px;
     font-weight: 900;
@@ -564,7 +564,7 @@
     display: grid;
     place-items: center;
     min-height: 160px;
-    color: #6d625d;
+    color: var(--site-muted);
     font-size: 13px;
     font-weight: 700;
     text-align: center;
@@ -607,7 +607,7 @@
   }
 
   .sc-account__service-strip small {
-    color: #574d48;
+    color: var(--site-text);
     font-size: 11px;
     line-height: 1.35;
   }

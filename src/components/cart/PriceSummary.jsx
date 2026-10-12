@@ -7,7 +7,7 @@ export default function PriceSummary({ cart, cta = 'Checkout', onAction }) {
         <CardTitle className="small-text uppercase tracking-[0.14em] text-charcoal md:text-sm md:tracking-[0.2em]">Price Summary</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="body-text space-y-3 text-slate-600">
+        <div className="body-text space-y-3 text-[color:var(--site-muted)]">
         <Row label="Total MRP" value={`Rs. ${cart.totalMRP}`} />
         <Row label="Discount on MRP" value={`- Rs. ${cart.discount}`} good />
         <Row label="Coupon Discount" value={`- Rs. ${cart.couponDiscount}`} good />
@@ -16,7 +16,7 @@ export default function PriceSummary({ cart, cta = 'Checkout', onAction }) {
         {cart.taxAmount > 0 ? <Row label={`GST (${cart.taxRate || 5}% incl.)`} value={`Rs. ${cart.taxAmount}`} /> : null}
         {cart.codCharge > 0 ? <Row label="Cash on Delivery Fee" value={`Rs. ${cart.codCharge}`} /> : null}
         </div>
-        <div className="flex items-center justify-between border-t border-slate-100 pt-5">
+        <div className="flex items-center justify-between border-t border-[color:var(--site-border)] pt-5">
           <span className="label-text text-charcoal">Total</span>
           <span className="price">Rs. {cart.finalAmount}</span>
         </div>
@@ -27,5 +27,5 @@ export default function PriceSummary({ cart, cta = 'Checkout', onAction }) {
 }
 
 function Row({ label, value, good }) {
-  return <div className="flex justify-between gap-4"><span>{label}</span><span className={good ? 'font-semibold text-emerald-600' : 'font-semibold text-charcoal'}>{value}</span></div>;
+  return <div className="flex justify-between gap-4"><span>{label}</span><span className={good ? 'font-semibold text-[color:var(--site-success)]' : 'font-semibold text-charcoal'}>{value}</span></div>;
 }

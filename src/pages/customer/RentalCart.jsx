@@ -5,11 +5,11 @@ import useRentalOffers from '../../hooks/useRentalOffers';
 import { storefrontPath } from '../../utils/routing';
 import { rentalMoney } from '../../utils/rentals';
 import RentalBagItems from '../../components/rentals/RentalBagItems';
-import BagTypeTabs from '../../components/cart/BagTypeTabs';
 import '../../components/rentals/RentalShopping.css';
 import './Cart.css';
 import '../../styles/MobileShoppingTheme.css';
 import './RentalCart.css';
+import BagTypeTabs from '../../components/cart/BagTypeTabs';
 export default function RentalCart({ navigate }) {
   const { storeSlug } = useStorefront(); const bag = useRentalBag();
   const { rows, loading, error, reload } = useRentalOffers(bag.items, storeSlug);

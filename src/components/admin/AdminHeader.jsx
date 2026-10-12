@@ -64,8 +64,8 @@ export default function AdminHeader({ onOpenSidebar }) {
           <p className="admin-header__subtitle">Welcome back, {user?.name?.split(' ')?.[0] || 'Admin'}</p>
         </div>
         <form className="admin-header__search" onSubmit={submitSearch} role="search">
-          <Search className="h-4 w-4 shrink-0 text-slate-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} className="w-full bg-transparent text-sm text-charcoal outline-none placeholder:text-slate-400" placeholder="Search products..." aria-label="Search admin products" />
+          <Search className="h-4 w-4 shrink-0 text-[color:var(--site-faint)]" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} className="w-full bg-transparent text-sm text-charcoal outline-none placeholder:text-[color:var(--site-faint)]" placeholder="Search products..." aria-label="Search admin products" />
         </form>
         <div className="admin-header__actions">
           <NotificationBell navigate={pushAppRoute} admin />
@@ -73,7 +73,7 @@ export default function AdminHeader({ onOpenSidebar }) {
             <div className="admin-header__avatar">{initials || 'A'}</div>
             <div className="leading-tight">
               <p className="text-[13px] font-semibold text-charcoal">{user?.name || 'Admin'}</p>
-              <p className="text-[11px] text-slate-500">{user?.systemRole === 'MASTER_OWNER' ? 'Master Owner' : 'Store Admin'}</p>
+              <p className="text-[11px] text-[color:var(--site-muted)]">{user?.systemRole === 'MASTER_OWNER' ? 'Master Owner' : 'Store Admin'}</p>
             </div>
           </div>
           <a href={storefrontHref} className="admin-btn-ghost">

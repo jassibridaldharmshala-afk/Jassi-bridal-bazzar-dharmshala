@@ -18,8 +18,8 @@ export default function DeferredMount({ children, minHeight = 480, label = 'prev
     return () => { active = false; observer.disconnect(); };
   }, [mounted, rootMargin]);
   return <div ref={target} style={mounted ? undefined : { minHeight }}>
-    {mounted ? children : <div className="grid place-items-center p-6 text-center text-sm text-slate-500" style={{ minHeight }}>
-      <div><p>The {label} loads when you reach this section.</p><button type="button" onClick={() => setMounted(true)} className="mt-3 rounded-lg border bg-white px-4 py-2 font-bold text-wine">Load {label} now</button></div>
+    {mounted ? children : <div className="grid place-items-center p-6 text-center text-sm text-[color:var(--site-muted)]" style={{ minHeight }}>
+      <div><p>The {label} loads when you reach this section.</p><button type="button" onClick={() => setMounted(true)} className="mt-3 rounded-lg border bg-[color:var(--site-surface)] px-4 py-2 font-bold text-wine">Load {label} now</button></div>
     </div>}
   </div>;
 }

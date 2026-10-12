@@ -3,14 +3,14 @@ import { cn } from '../../lib/utils';
 
 export function Sheet({ open, className = '', children }) {
   if (!open) return null;
-  return <div className={cn('fixed inset-0 z-[80] bg-black/40', className)}>{children}</div>;
+  return <div className={cn('fixed inset-0 z-[80] bg-[color:color-mix(in_srgb,var(--site-media-black)_40%,transparent)]', className)}>{children}</div>;
 }
 
 export function SheetContent({ side = 'bottom', className = '', ...props }) {
   const sideClass = side === 'left'
     ? 'absolute inset-y-0 left-0 h-full w-80 max-w-[86vw]'
     : 'absolute inset-x-0 bottom-0 rounded-t-3xl';
-  return <div className={cn(sideClass, 'bg-white shadow-2xl', className)} {...props} />;
+  return <div className={cn(sideClass, 'bg-[color:var(--site-surface)] shadow-2xl', className)} {...props} />;
 }
 
 export function SheetHeader({ className = '', ...props }) {

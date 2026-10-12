@@ -108,7 +108,7 @@ export default function ProductImageCarousel({
 
   return (
     <div
-      className={`relative overflow-hidden bg-[#f6efe8] ${className}`}
+      className={`relative overflow-hidden bg-[color:var(--site-accent-soft)] ${className}`}
       onClick={handleClick}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -158,7 +158,7 @@ export default function ProductImageCarousel({
                 {images.map((image, dotIndex) => (
                   <span
                     key={`${image.url}-dot-${dotIndex}`}
-                    className={`h-1.5 rounded-full transition-all ${dotIndex === index ? 'w-4 bg-white' : 'w-1.5 bg-white/65'}`}
+                    className={`h-1.5 rounded-full transition-all ${dotIndex === index ? 'w-4 bg-[color:var(--site-surface)]' : 'w-1.5 bg-[color:color-mix(in_srgb,var(--site-surface)_65%,transparent)]'}`}
                   />
                 ))}
               </div>
@@ -169,7 +169,7 @@ export default function ProductImageCarousel({
                   event.stopPropagation();
                   goTo(index - 1);
                 }}
-                className="absolute left-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/92 text-charcoal shadow-sm md:grid"
+                className="absolute left-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-[color:color-mix(in_srgb,var(--site-surface)_92%,transparent)] text-charcoal shadow-sm md:grid"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -180,7 +180,7 @@ export default function ProductImageCarousel({
                   event.stopPropagation();
                   goTo(index + 1);
                 }}
-                className="absolute right-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/92 text-charcoal shadow-sm md:grid"
+                className="absolute right-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-[color:color-mix(in_srgb,var(--site-surface)_92%,transparent)] text-charcoal shadow-sm md:grid"
                 aria-label="Next image"
               >
                 <ChevronRight className="h-4 w-4" />

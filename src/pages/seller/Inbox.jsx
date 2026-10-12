@@ -59,36 +59,36 @@ export default function SellerInbox() {
 
   return (
     <section className="grid gap-5 lg:grid-cols-[280px_1fr]">
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
+      <div className="rounded-2xl bg-[color:var(--site-surface)] p-4 shadow-sm">
         <h1 className="text-xl font-black">Inbox</h1>
-        <p className="mt-1 text-xs font-semibold text-slate-500">Website, order and return enquiries.</p>
+        <p className="mt-1 text-xs font-semibold text-[color:var(--site-muted)]">Website, order and return enquiries.</p>
         {error && <div role="alert" className="mt-3 text-sm font-bold text-rose">{error}<button type="button" className="ml-3 underline" onClick={() => active ? open(active) : load()}>Try again</button></div>}
         <div className="mt-4 grid gap-2">
           {items.map((item) => (
-            <button key={item._id} type="button" onClick={() => open(item)} className={`rounded-xl px-3 py-3 text-left text-sm font-bold ${active?._id === item._id ? 'bg-wine text-white' : 'bg-[#fbf8f4]'}`}>
+            <button key={item._id} type="button" onClick={() => open(item)} className={`rounded-xl px-3 py-3 text-left text-sm font-bold ${active?._id === item._id ? 'bg-wine text-[color:var(--site-on-fill)]' : 'bg-[color:var(--site-accent-soft)]'}`}>
               {item.subject || item.customerName || 'Conversation'}
               <span className="mt-1 block text-xs opacity-70">{item.status} · {item.channel}</span>
             </button>
           ))}
-          {!items.length && <p className="text-sm text-slate-500">No conversations yet.</p>}
+          {!items.length && <p className="text-sm text-[color:var(--site-muted)]">No conversations yet.</p>}
         </div>
       </div>
-      <div className="rounded-2xl bg-white p-5 shadow-sm">
-        {opening ? <PageState loading loadingLabel="Opening conversation..." /> : !active ? <p className="text-sm font-semibold text-slate-500">Select a conversation.</p> : (
+      <div className="rounded-2xl bg-[color:var(--site-surface)] p-5 shadow-sm">
+        {opening ? <PageState loading loadingLabel="Opening conversation..." /> : !active ? <p className="text-sm font-semibold text-[color:var(--site-muted)]">Select a conversation.</p> : (
           <>
             <h2 className="font-black">{active.subject}</h2>
             <div className="mt-4 grid max-h-[50vh] gap-3 overflow-y-auto">
               {messages.map((message) => (
-                <div key={message._id} className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${message.authorRole === 'seller' ? 'ml-auto bg-wine text-white' : 'bg-[#fbf8f4]'}`}>
+                <div key={message._id} className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${message.authorRole === 'seller' ? 'ml-auto bg-wine text-[color:var(--site-on-fill)]' : 'bg-[color:var(--site-accent-soft)]'}`}>
                   {message.authorRole === 'seller' && <p className="mb-1 text-xs font-semibold opacity-75">Internal note</p>}
                   {message.body}
                 </div>
               ))}
             </div>
-            <p id="seller-note-help" className="mt-4 text-xs leading-5 text-slate-500">Saved in this workspace only. Contact the customer separately to share an update.</p>
+            <p id="seller-note-help" className="mt-4 text-xs leading-5 text-[color:var(--site-muted)]">Saved in this workspace only. Contact the customer separately to share an update.</p>
             <form onSubmit={send} className="mt-2 flex gap-3">
               <input aria-label="Write an internal note" aria-describedby="seller-note-help" maxLength={4000} disabled={sending} className="h-11 min-w-0 flex-1 rounded-xl border px-3 font-semibold" value={reply} onChange={(event) => setReply(event.target.value)} placeholder="Write an internal note" />
-              <button disabled={sending || !reply.trim()} className="h-11 rounded-xl bg-wine px-5 text-sm font-black text-white disabled:opacity-50" type="submit">{sending ? 'Saving…' : 'Save note'}</button>
+              <button disabled={sending || !reply.trim()} className="h-11 rounded-xl bg-wine px-5 text-sm font-black text-[color:var(--site-on-fill)] disabled:opacity-50" type="submit">{sending ? 'Saving…' : 'Save note'}</button>
             </form>
           </>
         )}

@@ -30,7 +30,7 @@ export default function Subscribers() {
       {message && <p role="alert" className="rounded-xl bg-rose/10 p-3 text-sm font-bold text-rose">{message} <button type="button" className="admin-btn-ghost" onClick={load}>Retry subscribers</button></p>}
       <SearchFilterBar search={query} onSearch={setQuery} placeholder="Search email" />
       <DataTable title="Subscribers" loading={loading} emptyTitle="No subscribers yet" heads={['Email', 'Source', 'Status', 'Joined']} rows={filtered.map((item) => (
-        <tr key={item._id} className="border-t border-slate-100">
+        <tr key={item._id} className="border-t border-[color:var(--site-border)]">
           <td className="px-4 py-4 font-black">{item.email}</td>
           <td className="px-4 py-4">{item.source || 'footer'}</td>
           <td className="px-4 py-4"><StatusBadge value={item.isActive ? 'Active' : 'Unsubscribed'} /></td>

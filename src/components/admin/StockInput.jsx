@@ -28,6 +28,6 @@ export default function StockInput({ value, onSave, ...props }) {
       onChange={event => { setDraft(event.target.value); setError(''); }} onBlur={save}
       onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); save(); } }} />
     {saving && <small role="status">Saving…</small>}
-    {error && <small role="alert" className="max-w-48 text-xs text-rose-700">{error}</small>}
+    {error && <small role="alert" className="max-w-48 text-xs text-[color:var(--site-primary)]">{error}</small>}
   </span>;
 }
