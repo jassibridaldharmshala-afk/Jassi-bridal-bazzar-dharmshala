@@ -86,3 +86,29 @@ test('account changes during a fresh quote prevent additions to another account 
   await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2)); mockUser = { _id: 'other' }; view.rerender(<CompleteLook productId={outfitId} navigate={jest.fn()} mode="rent" rental={rental} />);
   finish(quote); await screen.findByText(/Your account or product selection changed/); expect(mockAppend).not.toHaveBeenCalled();
 });
+
+test('a legacy server response with no look options shows a retry state instead of crashing the product page', async () => {
+  // Shape observed from the running local backend, despite its HTTP 200 status.
+  api.get.mockResolvedValueOnce({ enabled: true, strategy: 'CONTEXT_MATCHED', products: [{ _id: accessoryId, name: 'Bridal Necklace Set', stock: 2, images: [], discoveryPurchase: 'SALE' }] }).mockResolvedValue({ enabled: true, products: [product] });
+  render(<CompleteLook productId={outfitId} navigate={jest.fn()} />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Matching accessories are temporarily unavailable');
+  fireEvent.click(screen.getByText('Retry matching accessories'));
+  expect(await screen.findByText('Matching necklace')).toBeInTheDocument();
+});
+
+test('a cancelled slow Rent request cannot fail or cancel the current Buy request', async () => {
+  let finishRent, finishBuy;
+  api.get.mockImplementationOnce(() => new Promise(resolve => { finishRent = resolve; })).mockImplementationOnce(() => new Promise(resolve => { finishBuy = resolve; }));
+  const view = render(<CompleteLook productId={outfitId} navigate={jest.fn()} mode="rent" rental={rental} />);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+  const rentSignal = api.get.mock.calls[0][1].signal;
+  view.rerender(<CompleteLook productId={outfitId} navigate={jest.fn()} mode="buy" rental={rental} />);
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+  const buySignal = api.get.mock.calls[1][1].signal;
+  expect(rentSignal.aborted).toBe(true); expect(buySignal.aborted).toBe(false);
+  finishRent({ enabled: true, products: [product] });
+  finishBuy({ enabled: true, products: [] });
+  expect(await screen.findByText('No suitable accessories for this selection yet.')).toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(buySignal.aborted).toBe(false);
+});

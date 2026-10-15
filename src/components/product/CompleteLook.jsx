@@ -12,6 +12,19 @@ import { responsiveImage } from '../../utils/responsiveImages';
 import './CompleteLook.css';
 
 const GROUPS = { necklace: 'Jewellery & necklace sets', bangles: 'Bangles', earrings: 'Earrings', tikka: 'Maang tikka', bag: 'Potli & bags', footwear: 'Footwear' };
+function matchingProducts(data, mode) {
+  const valid = Array.isArray(data?.products) && (!data.mode || data.mode === mode) && data.products.every(p => {
+    const look = p?.look;
+    return p && (p._id || p.id) && GROUPS[look?.group] && Array.isArray(look.options) && look.options.length > 0
+      && ['AVAILABLE', 'DATES_REQUIRED', 'UNAVAILABLE', 'CHECK_FAILED', 'IN_STOCK'].includes(look.availability)
+      && look.options.some(o => o?.id === look.selectedOptionId)
+      && look.options.every(o => o && typeof o.id === 'string' && (o.mode === 'rent'
+        ? /^[a-f\d]{24}$/i.test(o.listingId || '') && Number.isSafeInteger(o.dailyRatePaise) && o.dailyRatePaise > 0 && Number.isSafeInteger(o.depositPaise) && o.depositPaise >= 0
+        : o.mode === 'buy' && Number.isFinite(Number(o.price)) && Number(o.price) >= 0));
+  });
+  if (!valid) throw new Error('Matching accessories are temporarily unavailable. Please try again shortly.');
+  return normalizeProducts(data.products);
+}
 function checkedDates(dates, policy) { try { return policy ? validateRentalCheckoutDates(dates, policy) : {}; } catch (e) { return { error: e.message }; } }
 export default function CompleteLook({ productId, storeSlug = '', navigate, mode = 'buy', colour = '', variantId = '', quantity = 1, rental }) {
   const bag = useRentalBag(), cart = useCart();
@@ -58,8 +71,7 @@ export default function CompleteLook({ productId, storeSlug = '', navigate, mode
       const query = new URLSearchParams({ store: storeSlug, mode, context: JSON.stringify(JSON.parse(key).context) });
       api.get(`/products/${encodeURIComponent(productId)}/complete-look?${query}`, { silent: true, signal: controller.signal, cacheScope: key, forceRefetch: retry > 0 }).then(data => {
         if (!alive) return;
-        if (!Array.isArray(data?.products)) throw new Error('Matching accessories could not be loaded.');
-        const products = normalizeProducts(data.products);
+        const products = matchingProducts(data, mode);
         setResponse({ key, scope, enabled: data.enabled, products });
         setSelected(current => Object.fromEntries(Object.entries(current).filter(([id, optionId]) => products.some(p => String(p._id || p.id) === id && p.look.options.some(o => o.id === optionId) && !['UNAVAILABLE', 'CHECK_FAILED'].includes(p.look.availability)))));
       }).catch(error => { if (alive && !controller.signal.aborted) setFailure(error.message || 'Matching accessories could not be loaded.'); });
@@ -113,7 +125,7 @@ export default function CompleteLook({ productId, storeSlug = '', navigate, mode
     } catch (error) { setNotice(error.message); }
     finally { actionLock.current = false; setBusy(false); }
   };
-  if (!productId || response?.enabled === false || (mode === 'rent' && !rental?.listingId)) return null;
+  if (!productId || (response?.scope === scope && response?.key === key && response?.enabled === false) || (mode === 'rent' && !rental?.listingId)) return null;
   return <section className="bridal-look" aria-label="Complete your bridal look" aria-busy={busy}>
     <header className="bridal-look__heading"><div><h2>Complete your bridal look</h2><p>Optional accessories coordinated with your selection.</p></div><button type="button" className="rental-shopping-link" disabled={busy} onClick={() => setRetry(v => v + 1)} aria-label="Refresh matching accessories"><RefreshCw size={16} /></button></header>
     {mode === 'rent' && <div className="bridal-look__dates"><button type="button" className="rental-shopping-link" aria-expanded={editingDates} onClick={() => setEditingDates(v => !v)}><CalendarDays size={16} />{validDates ? 'Edit rental dates' : 'Choose dates to check availability'}</button>{editingDates && <div className="bridal-look__date-fields">

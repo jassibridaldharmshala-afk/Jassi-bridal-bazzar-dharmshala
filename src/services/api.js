@@ -24,8 +24,8 @@ function customerSafeMessage(message, status, path = '', code = '') {
   if (code.startsWith('SHIPPING_') && message) return message;
   if (code === 'PERSISTENT_UPLOAD_STORAGE_REQUIRED') {
     return path.includes('/videos') || path.includes('reel')
-      ? 'Reel videos need Cloudflare R2 or Cloudinary. Local disk storage is not enough for AI processing.'
-      : 'Image storage is not configured for production uploads yet. Please connect Cloudinary or R2, then upload again.';
+      ? 'Connect Cloudflare R2 before importing reel videos.'
+      : 'Connect Cloudflare R2 before uploading images.';
   }
   const text = String(message || '').toLowerCase();
   if (status === 401 || status === 403 || status === 400) {

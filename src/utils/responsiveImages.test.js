@@ -17,3 +17,16 @@ test('a detail profile for a small original is still excluded from product cards
   expect(responsiveImage(image, 'card').srcSet).toBe('https://media.example/card.webp 771w');
   expect(responsiveImage(image, 'detail').srcSet).toContain('detail.webp 941w');
 });
+
+test('compact uploads use small card images and the existing master for detail and zoom', () => {
+  const image = { url: 'https://media.example/master.webp', variants: [
+    { url: 'https://media.example/master.webp', width: 900, displayWidth: 1600 },
+    ...[160, 360, 720].map(width => ({ url: `https://media.example/${width}.webp`, width, displayWidth: width })),
+  ] };
+  expect(responsiveImage(image, 'thumbnail').src).toBe('https://media.example/160.webp');
+  expect(responsiveImage(image, 'category').src).toBe('https://media.example/360.webp');
+  expect(responsiveImage(image, 'card').src).toBe('https://media.example/720.webp');
+  expect(responsiveImage(image, 'card').srcSet).not.toContain('master.webp');
+  expect(responsiveImage(image, 'detail').src).toBe(image.url);
+  expect(responsiveImage(image, 'zoom').src).toBe(image.url);
+});

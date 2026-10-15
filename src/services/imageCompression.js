@@ -48,9 +48,9 @@ export async function compressImageFile(file, options = {}) {
     let prepared = source;
     if (source.size > 128 * 1024) {
       const { default: imageCompression } = await import('browser-image-compression');
-      const blob = await imageCompression(source, { maxSizeMB: 0.7, maxWidthOrHeight: 2200, initialQuality: 0.9,
+      const blob = await imageCompression(source, { maxSizeMB: 0.45, maxWidthOrHeight: 1600, initialQuality: 0.85,
         maxIteration: 6, alwaysKeepResolution: false, useWebWorker: true, libURL: workerLibraryUrl(), preserveExif: false, fileType: 'image/webp', onProgress: options.onProgress });
-      if (!blob.size || blob.size > 0.7 * 1024 * 1024 || blob.type !== 'image/webp') throw photoError('This photo could not be compressed. Choose another photo.');
+      if (!blob.size || blob.size > 0.45 * 1024 * 1024 || blob.type !== 'image/webp') throw photoError('This photo could not be compressed. Choose another photo.');
       prepared = new File([blob], `${String(file.name).replace(/\.[^.]+$/, '')}.webp`, { type: 'image/webp', lastModified: file.lastModified });
     }
     rememberOriginalUpload(prepared, file);

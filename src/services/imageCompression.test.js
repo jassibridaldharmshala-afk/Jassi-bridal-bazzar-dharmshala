@@ -13,7 +13,7 @@ test.each(['image/jpeg', 'image/png', 'image/webp'])('large %s uploads compress 
   expect(output.size).toBe(200 * 1024);
   expect(output.__compressionMeta).toMatchObject({ skipped: false, lossless: false, convertedToWebp: true });
   expect(progress).toHaveBeenCalledWith(100);
-  expect(mockCompress).toHaveBeenLastCalledWith(file, expect.objectContaining({ maxSizeMB: 0.7, maxWidthOrHeight: 2200, useWebWorker: true, libURL: window.location.origin + '/vendor/browser-image-compression.js' }));
+  expect(mockCompress).toHaveBeenLastCalledWith(file, expect.objectContaining({ maxSizeMB: 0.45, maxWidthOrHeight: 1600, useWebWorker: true, libURL: window.location.origin + '/vendor/browser-image-compression.js' }));
   expect(await compressImageFile(file)).toBe(output);
   expect(getUploadRetryKey({ path: '/admin/uploads', files: [output] })).toBe(getUploadRetryKey({ path: '/admin/uploads', files: [file] }));
 });
